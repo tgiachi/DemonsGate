@@ -6,4 +6,13 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Data\Internal\" />
+      <Folder Include="Metrics\" />
+    </ItemGroup>
+
 </Project>

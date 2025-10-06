@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Network.Args;
 using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Data.Services;
@@ -44,7 +45,7 @@ public class DefaultNetworkService : INetworkService
 
     public DefaultNetworkService(
         IPacketSerializer packetSerializer, IPacketDeserializer packetDeserializer,
-        List<NetworkMessageData> registeredMessages, NetworkConfig networkConfig
+        List<NetworkMessageData> registeredMessages, NetworkConfig networkConfig, IEventLoopTickDispatcher ? eventLoop
     )
     {
         _packetSerializer = packetSerializer;
@@ -64,7 +65,15 @@ public class DefaultNetworkService : INetworkService
         _netListener.ConnectionRequestEvent += OnConnectionRequest;
         _netListener.PeerConnectedEvent += OnPeerEvent;
         _netListener.NetworkReceiveEvent += OnMessageReceived;
+
         RegisterInitialMessages();
+
+        eventLoop.OnTick += OnEventLoopTick;
+    }
+
+    private void OnEventLoopTick(double tickDurationMs)
+    {
+        _netManager?.PollEvents();
     }
 
     private async void OnMessageReceived(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod deliveryMethod)

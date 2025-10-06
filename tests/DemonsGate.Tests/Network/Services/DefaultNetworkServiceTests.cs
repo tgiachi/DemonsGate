@@ -1,4 +1,5 @@
 using DemonsGate.Core.Enums;
+using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Network.Args;
 using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Data.Services;
@@ -15,6 +16,7 @@ public class DefaultNetworkServiceTests
 {
     private IPacketSerializer _mockSerializer = null!;
     private IPacketDeserializer _mockDeserializer = null!;
+    private IEventLoopTickDispatcher _mockEventLoop = null!;
     private NetworkConfig _networkConfig = null!;
     private List<NetworkMessageData> _registeredMessages = null!;
     private DefaultNetworkService _service = null!;
@@ -24,6 +26,7 @@ public class DefaultNetworkServiceTests
     {
         _mockSerializer = Substitute.For<IPacketSerializer>();
         _mockDeserializer = Substitute.For<IPacketDeserializer>();
+        _mockEventLoop = Substitute.For<IEventLoopTickDispatcher>();
         _networkConfig = new NetworkConfig
         {
             Port = 7777,
@@ -40,7 +43,8 @@ public class DefaultNetworkServiceTests
             _mockSerializer,
             _mockDeserializer,
             _registeredMessages,
-            _networkConfig
+            _networkConfig,
+            _mockEventLoop
         );
     }
 

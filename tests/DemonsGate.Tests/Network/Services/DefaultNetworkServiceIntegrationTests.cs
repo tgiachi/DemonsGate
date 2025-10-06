@@ -1,4 +1,5 @@
 using DemonsGate.Core.Enums;
+using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Data.Services;
 using DemonsGate.Network.Interfaces.Processors;
@@ -16,6 +17,7 @@ public class DefaultNetworkServiceIntegrationTests
 {
     private IPacketSerializer _mockSerializer = null!;
     private IPacketDeserializer _mockDeserializer = null!;
+    private IEventLoopTickDispatcher _mockEventLoop = null!;
     private DefaultNetworkService _server = null!;
     private NetManager _client = null!;
     private EventBasedNetListener _clientListener = null!;
@@ -27,6 +29,7 @@ public class DefaultNetworkServiceIntegrationTests
     {
         _mockSerializer = Substitute.For<IPacketSerializer>();
         _mockDeserializer = Substitute.For<IPacketDeserializer>();
+        _mockEventLoop = Substitute.For<IEventLoopTickDispatcher>();
 
         var networkConfig = new NetworkConfig
         {
@@ -45,7 +48,8 @@ public class DefaultNetworkServiceIntegrationTests
             _mockSerializer,
             _mockDeserializer,
             registeredMessages,
-            networkConfig
+            networkConfig,
+            _mockEventLoop
         );
 
         _clientListener = new EventBasedNetListener();
@@ -83,6 +87,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll both server and client
         for (int i = 0; i < 100 && !connectionTcs.Task.IsCompleted; i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             _client.PollEvents();
             await Task.Delay(10);
         }
@@ -111,6 +116,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll both server and client
         for (int i = 0; i < 100 && !serverEventTcs.Task.IsCompleted; i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             _client.PollEvents();
             await Task.Delay(10);
         }
@@ -152,6 +158,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll until connected
         for (int i = 0; i < 100 && !clientConnectedTcs.Task.IsCompleted; i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             _client.PollEvents();
             await Task.Delay(10);
         }
@@ -162,6 +169,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll until message received
         for (int i = 0; i < 100 && !messageReceivedTcs.Task.IsCompleted; i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             _client.PollEvents();
             await Task.Delay(10);
         }
@@ -228,6 +236,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll until both clients connected
         for (int i = 0; i < 100 && !clientsConnectedTcs.Task.IsCompleted; i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             client1.PollEvents();
             client2.PollEvents();
             await Task.Delay(10);
@@ -238,6 +247,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll until messages received
         for (int i = 0; i < 100 && (!message1ReceivedTcs.Task.IsCompleted || !message2ReceivedTcs.Task.IsCompleted); i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             client1.PollEvents();
             client2.PollEvents();
             await Task.Delay(10);
@@ -281,6 +291,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll until connected
         for (int i = 0; i < 100 && !clientConnectedTcs.Task.IsCompleted; i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             _client.PollEvents();
             await Task.Delay(10);
         }
@@ -291,6 +302,7 @@ public class DefaultNetworkServiceIntegrationTests
         // Poll until disconnected
         for (int i = 0; i < 100 && !clientDisconnectedTcs.Task.IsCompleted; i++)
         {
+            _mockEventLoop.OnTick += Raise.Event<IEventLoopTickDispatcher.EventLoopTickHandler>(15.0);
             _client.PollEvents();
             await Task.Delay(10);
         }
