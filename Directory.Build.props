@@ -16,6 +16,7 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>Recommended</AnalysisMode>
     <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+    <NoWarn>$(NoWarn);IL2026;IL2027;IL2060;IL2061;IL2062;IL2070;IL2072;IL2075;IL2077;IL2080;IL2082;IL2087;IL2090;IL2091;IL2092;IL2093;IL2094;IL2095;IL2096;IL2097;IL2098;IL2099</NoWarn>
   </PropertyGroup>
 
   <!-- Package Metadata -->
@@ -25,7 +26,7 @@
     <Copyright>© $(Company) $([System.DateTime]::Now.Year)</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
-    <PackageProjectUrl>https://github.com/youruser/$(MSBuildProjectName)</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/tgiachi/$(MSBuildProjectName)</PackageProjectUrl>
     <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
   </PropertyGroup>
 
