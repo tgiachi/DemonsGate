@@ -35,6 +35,8 @@ public class DefaultNetworkService : INetworkService
     private readonly EventBasedNetListener _netListener = new();
     private readonly NetManager? _netManager;
 
+    private CancellationTokenSource? _pollCts;
+    private Task? _pollTask;
 
     private readonly NetworkConfig _networkConfig;
 
@@ -126,10 +128,49 @@ public class DefaultNetworkService : INetworkService
     {
         _netManager?.Start(_networkConfig.Port);
         _logger.Information("Network service started on port {Port}", _networkConfig.Port);
+
+        _pollCts = new CancellationTokenSource();
+        _pollTask = Task.Run(async () =>
+        {
+            try
+            {
+                while (!_pollCts.Token.IsCancellationRequested)
+                {
+                    _netManager?.PollEvents();
+                    await Task.Delay(15, _pollCts.Token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when stopping
+            }
+        }, _pollCts.Token);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
+        if (_pollCts != null)
+        {
+            await _pollCts.CancelAsync();
+        }
+
+        if (_pollTask != null)
+        {
+            try
+            {
+                await _pollTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when cancelling
+            }
+
+            _pollTask = null;
+        }
+
+        _pollCts?.Dispose();
+        _pollCts = null;
+
         _netManager?.Stop();
 
         _logger.Information("Network service stopped");
