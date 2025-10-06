@@ -1,0 +1,463 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "dotnet-outdated/4.6.8": {
+        "dependencies": {
+          "CsvHelper": "33.0.1",
+          "DotNetOutdatedTool.Core": "4.6.8",
+          "McMaster.Extensions.CommandLineUtils": "4.1.1",
+          "Microsoft.Extensions.DependencyInjection": "9.0.2",
+          "DotNetOutdated.Core": "4.6.8.0"
+        },
+        "runtime": {
+          "dotnet-outdated.dll": {}
+        }
+      },
+      "CsvHelper/33.0.1": {
+        "runtime": {
+          "lib/net8.0/CsvHelper.dll": {
+            "assemblyVersion": "33.0.0.0",
+            "fileVersion": "33.0.1.24"
+          }
+        }
+      },
+      "McMaster.Extensions.CommandLineUtils/4.1.1": {
+        "dependencies": {
+          "System.ComponentModel.Annotations": "5.0.0"
+        },
+        "runtime": {
+          "lib/netstandard2.1/McMaster.Extensions.CommandLineUtils.dll": {
+            "assemblyVersion": "4.1.1.0",
+            "fileVersion": "4.1.1.0"
+          }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection/9.0.2": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.2"
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.225.6610"
+          }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.2": {
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.225.6610"
+          }
+        }
+      },
+      "Newtonsoft.Json/13.0.3": {
+        "runtime": {
+          "lib/net6.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.3.27908"
+          }
+        }
+      },
+      "NuGet.Common/6.12.1": {
+        "dependencies": {
+          "NuGet.Frameworks": "6.12.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/NuGet.Common.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.Configuration/6.12.1": {
+        "dependencies": {
+          "NuGet.Common": "6.12.1",
+          "System.Security.Cryptography.ProtectedData": "4.4.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/NuGet.Configuration.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.Credentials/6.12.1": {
+        "dependencies": {
+          "NuGet.Protocol": "6.12.1"
+        },
+        "runtime": {
+          "lib/net5.0/NuGet.Credentials.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.DependencyResolver.Core/6.12.1": {
+        "dependencies": {
+          "NuGet.Configuration": "6.12.1",
+          "NuGet.LibraryModel": "6.12.1",
+          "NuGet.Protocol": "6.12.1"
+        },
+        "runtime": {
+          "lib/net5.0/NuGet.DependencyResolver.Core.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.Frameworks/6.12.1": {
+        "runtime": {
+          "lib/netstandard2.0/NuGet.Frameworks.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.LibraryModel/6.12.1": {
+        "dependencies": {
+          "NuGet.Common": "6.12.1",
+          "NuGet.Versioning": "6.13.2"
+        },
+        "runtime": {
+          "lib/netstandard2.0/NuGet.LibraryModel.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.Packaging/6.12.1": {
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.3",
+          "NuGet.Configuration": "6.12.1",
+          "NuGet.Versioning": "6.13.2",
+          "System.Formats.Asn1": "9.0.2",
+          "System.Security.Cryptography.Pkcs": "6.0.4"
+        },
+        "runtime": {
+          "lib/net5.0/NuGet.Packaging.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.ProjectModel/6.12.1": {
+        "dependencies": {
+          "NuGet.DependencyResolver.Core": "6.12.1"
+        },
+        "runtime": {
+          "lib/net5.0/NuGet.ProjectModel.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.Protocol/6.12.1": {
+        "dependencies": {
+          "NuGet.Packaging": "6.12.1"
+        },
+        "runtime": {
+          "lib/net5.0/NuGet.Protocol.dll": {
+            "assemblyVersion": "6.12.1.1",
+            "fileVersion": "6.12.1.1"
+          }
+        }
+      },
+      "NuGet.Versioning/6.13.2": {
+        "runtime": {
+          "lib/netstandard2.0/NuGet.Versioning.dll": {
+            "assemblyVersion": "6.13.2.1",
+            "fileVersion": "6.13.2.1"
+          }
+        }
+      },
+      "System.ComponentModel.Annotations/5.0.0": {},
+      "System.Formats.Asn1/9.0.2": {},
+      "System.IO.Abstractions/22.0.11": {
+        "dependencies": {
+          "TestableIO.System.IO.Abstractions": "22.0.11",
+          "TestableIO.System.IO.Abstractions.Wrappers": "22.0.11"
+        },
+        "runtime": {
+          "lib/net9.0/System.IO.Abstractions.dll": {
+            "assemblyVersion": "22.0.11.0",
+            "fileVersion": "22.0.11.0"
+          }
+        }
+      },
+      "System.Security.Cryptography.Pkcs/6.0.4": {
+        "dependencies": {
+          "System.Formats.Asn1": "9.0.2"
+        },
+        "runtime": {
+          "lib/net6.0/System.Security.Cryptography.Pkcs.dll": {
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.0.1923.31806"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net6.0/System.Security.Cryptography.Pkcs.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.0.1923.31806"
+          }
+        }
+      },
+      "System.Security.Cryptography.ProtectedData/4.4.0": {
+        "runtime": {
+          "lib/netstandard2.0/System.Security.Cryptography.ProtectedData.dll": {
+            "assemblyVersion": "4.0.2.0",
+            "fileVersion": "4.6.25519.3"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/netstandard2.0/System.Security.Cryptography.ProtectedData.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "4.0.2.0",
+            "fileVersion": "4.6.25519.3"
+          }
+        }
+      },
+      "TestableIO.System.IO.Abstractions/22.0.11": {
+        "dependencies": {
+          "Testably.Abstractions.FileSystem.Interface": "9.0.0"
+        },
+        "runtime": {
+          "lib/net9.0/TestableIO.System.IO.Abstractions.dll": {
+            "assemblyVersion": "22.0.11.0",
+            "fileVersion": "22.0.11.0"
+          }
+        }
+      },
+      "TestableIO.System.IO.Abstractions.Wrappers/22.0.11": {
+        "dependencies": {
+          "Testably.Abstractions.FileSystem.Interface": "9.0.0"
+        },
+        "runtime": {
+          "lib/net9.0/TestableIO.System.IO.Abstractions.Wrappers.dll": {
+            "assemblyVersion": "22.0.11.0",
+            "fileVersion": "22.0.11.0"
+          }
+        }
+      },
+      "Testably.Abstractions.FileSystem.Interface/9.0.0": {
+        "runtime": {
+          "lib/net9.0/Testably.Abstractions.FileSystem.Interface.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.0.0"
+          }
+        }
+      },
+      "DotNetOutdatedTool.Core/4.6.8": {
+        "dependencies": {
+          "NuGet.Configuration": "6.12.1",
+          "NuGet.Credentials": "6.12.1",
+          "NuGet.ProjectModel": "6.12.1",
+          "NuGet.Protocol": "6.12.1",
+          "NuGet.Versioning": "6.13.2",
+          "System.Formats.Asn1": "9.0.2",
+          "System.IO.Abstractions": "22.0.11"
+        },
+        "runtime": {
+          "DotNetOutdated.Core.dll": {
+            "assemblyVersion": "4.6.8.0",
+            "fileVersion": "4.6.8.0"
+          }
+        }
+      },
+      "DotNetOutdated.Core/4.6.8.0": {
+        "runtime": {
+          "DotNetOutdated.Core.dll": {
+            "assemblyVersion": "4.6.8.0",
+            "fileVersion": "4.6.8.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "dotnet-outdated/4.6.8": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CsvHelper/33.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-fev4lynklAU2A9GVMLtwarkwaanjSYB4wUqO2nOJX5hnzObORzUqVLe+bDYCUyIIRQM4o5Bsq3CcyJR89iMmEQ==",
+      "path": "csvhelper/33.0.1",
+      "hashPath": "csvhelper.33.0.1.nupkg.sha512"
+    },
+    "McMaster.Extensions.CommandLineUtils/4.1.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zxgDY+G5yVq2q8sVB3Z275Qkxed1jC95nwAfnlSyoG4l5Nicvd4+ke1jXusEZEfyuErlAgXCKS937c13FmZWBg==",
+      "path": "mcmaster.extensions.commandlineutils/4.1.1",
+      "hashPath": "mcmaster.extensions.commandlineutils.4.1.1.nupkg.sha512"
+    },
+    "Microsoft.Extensions.DependencyInjection/9.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ZffbJrskOZ40JTzcTyKwFHS5eACSWp2bUQBBApIgGV+es8RaTD4OxUG7XxFr3RIPLXtYQ1jQzF2DjKB5fZn7Qg==",
+      "path": "microsoft.extensions.dependencyinjection/9.0.2",
+      "hashPath": "microsoft.extensions.dependencyinjection.9.0.2.nupkg.sha512"
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-MNe7GSTBf3jQx5vYrXF0NZvn6l7hUKF6J54ENfAgCO8y6xjN1XUmKKWG464LP2ye6QqDiA1dkaWEZBYnhoZzjg==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/9.0.2",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.9.0.2.nupkg.sha512"
+    },
+    "Newtonsoft.Json/13.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ==",
+      "path": "newtonsoft.json/13.0.3",
+      "hashPath": "newtonsoft.json.13.0.3.nupkg.sha512"
+    },
+    "NuGet.Common/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-nk8nTdhQl4x2VaAQUvefI7DDYAuBDlE+OZZRffm50Qx5dUAEq8wkc5JIqrN2lTEohObHPI/SXyG2UFdMQkrdyg==",
+      "path": "nuget.common/6.12.1",
+      "hashPath": "nuget.common.6.12.1.nupkg.sha512"
+    },
+    "NuGet.Configuration/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-IRwlY1379ZgJ0oEJvjD+lDuOhJ5S1fsU5n/bEC5/i0+N9bo2WIMDAdaQ/qIdyK/gMJ/YWS+++GSX6rN7luqEvg==",
+      "path": "nuget.configuration/6.12.1",
+      "hashPath": "nuget.configuration.6.12.1.nupkg.sha512"
+    },
+    "NuGet.Credentials/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VdqUIupqm16kiedkv/iyBX5yaVwCI9piV7IvHf0FLgFciCnx22jI8luHXTqeJgWsHOLJl+nTjeV3RY/AcccK7Q==",
+      "path": "nuget.credentials/6.12.1",
+      "hashPath": "nuget.credentials.6.12.1.nupkg.sha512"
+    },
+    "NuGet.DependencyResolver.Core/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Nn4+pXW1qxGcq0OEQBJBh/FjKvWhzD49+kRzuOC9SkRZOrHsTaA12EsQ1mEE4rMUfqviaosmPEtvodJ4eKCmIw==",
+      "path": "nuget.dependencyresolver.core/6.12.1",
+      "hashPath": "nuget.dependencyresolver.core.6.12.1.nupkg.sha512"
+    },
+    "NuGet.Frameworks/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kPaRD5RJC0ByUg+yGX6bDz5XHMI7OYmQwP8kbtef+vZ+csj/VDb5Bwas4ChxwhoAbI8lEvwP5/3aViQPpgNBow==",
+      "path": "nuget.frameworks/6.12.1",
+      "hashPath": "nuget.frameworks.6.12.1.nupkg.sha512"
+    },
+    "NuGet.LibraryModel/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-IqX7Ze7qSbhx22lsdnMbLJpcqrmwGyQbyNk9JSsZ/u5p6PIaZyeWsvHHy+oXU8fuRmmKfHBnZEsceaCAw6Xy5A==",
+      "path": "nuget.librarymodel/6.12.1",
+      "hashPath": "nuget.librarymodel.6.12.1.nupkg.sha512"
+    },
+    "NuGet.Packaging/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6s5NO3VNX6fIx6GwuWZtIsal9W1xkelYd3Vg2KUAg1zGqnKC3wB5IZlombvVGVGcwyl/A+iDvpUwSvgeDoB3wA==",
+      "path": "nuget.packaging/6.12.1",
+      "hashPath": "nuget.packaging.6.12.1.nupkg.sha512"
+    },
+    "NuGet.ProjectModel/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-nzpVqooG0qumADw5t8YMg9e+ezVqUhhoGvoihVmu5O9gJDqzkRYswQzyIVsE24dirBQabW0X0Sv53f6ZLJCv+g==",
+      "path": "nuget.projectmodel/6.12.1",
+      "hashPath": "nuget.projectmodel.6.12.1.nupkg.sha512"
+    },
+    "NuGet.Protocol/6.12.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VBN7OtG/Y9Rnj1WT3G8X88ZHu5Pq+yzca5Z6OI/FWXcENVAQkUl0ml6Cv8ghOqYyiuvnObGDV9oWLD/bIuVtDw==",
+      "path": "nuget.protocol/6.12.1",
+      "hashPath": "nuget.protocol.6.12.1.nupkg.sha512"
+    },
+    "NuGet.Versioning/6.13.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pGYNyvCVM+Z9jITTiJiuxFC8oJXFdh2k25ZDV4tSAOSuKyAWvh1VcfJy0WZGWdI6J7Avkbl0qra7XENYFSy4Ng==",
+      "path": "nuget.versioning/6.13.2",
+      "hashPath": "nuget.versioning.6.13.2.nupkg.sha512"
+    },
+    "System.ComponentModel.Annotations/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dMkqfy2el8A8/I76n2Hi1oBFEbG1SfxD2l5nhwXV3XjlnOmwxJlQbYpJH4W51odnU9sARCSAgv7S3CyAFMkpYg==",
+      "path": "system.componentmodel.annotations/5.0.0",
+      "hashPath": "system.componentmodel.annotations.5.0.0.nupkg.sha512"
+    },
+    "System.Formats.Asn1/9.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OKWHCPYQr/+cIoO8EVjFn7yFyiT8Mnf1wif/5bYGsqxQV6PrwlX2HQ9brZNx57ViOvRe4ing1xgHCKl/5Ko8xg==",
+      "path": "system.formats.asn1/9.0.2",
+      "hashPath": "system.formats.asn1.9.0.2.nupkg.sha512"
+    },
+    "System.IO.Abstractions/22.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-puMhRgC2Nw0UbkVXiGsRZMfQBon0qweJ/KxkDmdAa0UrAh3t3J/y96J7e8RLRJ5aqFpt6go5BTyGCdE46fFDxA==",
+      "path": "system.io.abstractions/22.0.11",
+      "hashPath": "system.io.abstractions.22.0.11.nupkg.sha512"
+    },
+    "System.Security.Cryptography.Pkcs/6.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-LGbXi1oUJ9QgCNGXRO9ndzBL/GZgANcsURpMhNR8uO+rca47SZmciS3RSQUvlQRwK3QHZSHNOXzoMUASKA+Anw==",
+      "path": "system.security.cryptography.pkcs/6.0.4",
+      "hashPath": "system.security.cryptography.pkcs.6.0.4.nupkg.sha512"
+    },
+    "System.Security.Cryptography.ProtectedData/4.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cJV7ScGW7EhatRsjehfvvYVBvtiSMKgN8bOVI0bQhnF5bU7vnHVIsH49Kva7i7GWaWYvmEzkYVk1TC+gZYBEog==",
+      "path": "system.security.cryptography.protecteddata/4.4.0",
+      "hashPath": "system.security.cryptography.protecteddata.4.4.0.nupkg.sha512"
+    },
+    "TestableIO.System.IO.Abstractions/22.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-U/Oo6IX9HPvz4+5O4ftGN9kL26s83pNKyoDB7T1LMM5zsMSJr0qH1QAKstHIu0NQcmJkrTcsr5mcZ0Uw/3KmKQ==",
+      "path": "testableio.system.io.abstractions/22.0.11",
+      "hashPath": "testableio.system.io.abstractions.22.0.11.nupkg.sha512"
+    },
+    "TestableIO.System.IO.Abstractions.Wrappers/22.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HsaKBbeY1qRmaALkNt3qWfF3QpXCm+Q3KB8f34hQ1vXax3gmtZo2s56xRZPcFiW08N77LrX9GvAYZdV6rVQYEw==",
+      "path": "testableio.system.io.abstractions.wrappers/22.0.11",
+      "hashPath": "testableio.system.io.abstractions.wrappers.22.0.11.nupkg.sha512"
+    },
+    "Testably.Abstractions.FileSystem.Interface/9.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-uksk86YlnzAdyfVNu3wICU0X5iXVe9LF7Q3UkngNliHWEvM5gvAlOUr+jmd9JwmbJWISH5+i1vyXE02lEVz7WQ==",
+      "path": "testably.abstractions.filesystem.interface/9.0.0",
+      "hashPath": "testably.abstractions.filesystem.interface.9.0.0.nupkg.sha512"
+    },
+    "DotNetOutdatedTool.Core/4.6.8": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "DotNetOutdated.Core/4.6.8.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "dotnet-audit/1.0.3": {
+        "runtime": {
+          "dotnet-audit.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "dotnet-audit/1.0.3": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
