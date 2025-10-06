@@ -34,6 +34,13 @@ public static class ServiceRegistrationExtension
         return container;
     }
 
+    public static IContainer AddService<TService, TImplementation>(
+        this IContainer container, int priority = 0
+    ) where TImplementation : TService
+    {
+        return AddService(container, typeof(TService), typeof(TImplementation), priority);
+    }
+
     /// <summary>
     ///     Registers a service where the implementation type is the same as the service type
     /// </summary>
@@ -45,4 +52,11 @@ public static class ServiceRegistrationExtension
     {
         return AddService(container, serviceType, serviceType, priority);
     }
+
+    public static IContainer AddService<TService>(this IContainer container, int priority = 0)
+        where TService : class
+    {
+        return AddService(container, typeof(TService), priority);
+    }
+
 }
