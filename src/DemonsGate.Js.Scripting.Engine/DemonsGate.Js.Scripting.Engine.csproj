@@ -8,12 +8,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
+      <ProjectReference Include="..\DemonsGate.Services\DemonsGate.Services.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Data\Internal\" />
-      <Folder Include="Impl\" />
-      <Folder Include="Metrics\" />
+      <PackageReference Include="Jint" Version="4.4.1" />
     </ItemGroup>
 
 </Project>
