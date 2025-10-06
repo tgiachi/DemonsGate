@@ -20,6 +20,11 @@ public partial class DemonsGatePacket
     public NetworkMessageType MessageType { get; set; }
 
     /// <summary>
+    ///     Gets or sets the flags applied to this packet (e.g., compressed, encrypted)
+    /// </summary>
+    public NetworkMessageFlagType FlagType { get; set; }
+
+    /// <summary>
     ///     Returns a string representation of the packet
     /// </summary>
     /// <returns>A string containing the message type and payload length</returns>

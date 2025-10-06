@@ -1,11 +1,10 @@
-using System.Text;
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Utils;
-using DemonsGate.Network.Data;
 using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Messages;
 using DemonsGate.Network.Packet;
 using DemonsGate.Network.Processors;
+using DemonsGate.Network.Types;
 using MemoryPack;
 
 namespace DemonsGate.Tests.Network.Processors;
@@ -36,12 +35,11 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act
-        var packet = await _processor.SerializeAsync(message);
+        var packetBytes = await _processor.SerializeAsync(message);
 
         // Assert
-        Assert.That(packet, Is.Not.Null);
-        Assert.That(packet.MessageType, Is.EqualTo(message.MessageType));
-        Assert.That(packet.Payload, Is.Not.Empty);
+        Assert.That(packetBytes, Is.Not.Null);
+        Assert.That(packetBytes, Is.Not.Empty);
     }
 
     [Test]
@@ -49,8 +47,7 @@ public class DefaultPacketProcessorTests
     {
         // Arrange
         var originalMessage = new PingMessage();
-        var packet = await _processor.SerializeAsync(originalMessage);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
+        var packetBytes = await _processor.SerializeAsync(originalMessage);
 
         // Act
         var deserializedMessage = await _processor.DeserializeAsync<PingMessage>(packetBytes);
@@ -67,8 +64,7 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act
-        var packet = await _processor.SerializeAsync(message);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
+        var packetBytes = await _processor.SerializeAsync(message);
         var deserializedMessage = await _processor.DeserializeAsync<PingMessage>(packetBytes);
 
         // Assert
@@ -87,8 +83,7 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act
-        var packet = await _processor.SerializeAsync(message);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
+        var packetBytes = await _processor.SerializeAsync(message);
         var deserializedMessage = await _processor.DeserializeAsync<PingMessage>(packetBytes);
 
         // Assert
@@ -108,8 +103,7 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act
-        var packet = await _processor.SerializeAsync(message);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
+        var packetBytes = await _processor.SerializeAsync(message);
         var deserializedMessage = await _processor.DeserializeAsync<PingMessage>(packetBytes);
 
         // Assert
@@ -128,8 +122,7 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act
-        var packet = await _processor.SerializeAsync(message);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
+        var packetBytes = await _processor.SerializeAsync(message);
         var deserializedMessage = await _processor.DeserializeAsync<PingMessage>(packetBytes);
 
         // Assert
@@ -144,13 +137,13 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act - Serialize without compression first
-        var uncompressedPacket = await new DefaultPacketProcessor(new NetworkConfig()).SerializeAsync(message);
+        var uncompressedBytes = await new DefaultPacketProcessor(new NetworkConfig()).SerializeAsync(message);
 
         // Act - Serialize with compression
-        var compressedPacket = await _processor.SerializeAsync(message);
+        var compressedBytes = await _processor.SerializeAsync(message);
 
-        // Assert - The payload should be different (compressed)
-        Assert.That(compressedPacket.Payload, Is.Not.EqualTo(uncompressedPacket.Payload));
+        // Assert - The bytes should be different (compressed)
+        Assert.That(compressedBytes, Is.Not.EqualTo(uncompressedBytes));
     }
 
     [Test]
@@ -164,13 +157,13 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act - Serialize without encryption first
-        var unencryptedPacket = await new DefaultPacketProcessor(new NetworkConfig()).SerializeAsync(message);
+        var unencryptedBytes = await new DefaultPacketProcessor(new NetworkConfig()).SerializeAsync(message);
 
         // Act - Serialize with encryption
-        var encryptedPacket = await _processor.SerializeAsync(message);
+        var encryptedBytes = await _processor.SerializeAsync(message);
 
-        // Assert - The payload should be different (encrypted)
-        Assert.That(encryptedPacket.Payload, Is.Not.EqualTo(unencryptedPacket.Payload));
+        // Assert - The bytes should be different (encrypted)
+        Assert.That(encryptedBytes, Is.Not.EqualTo(unencryptedBytes));
     }
 
     [Test]
@@ -187,10 +180,12 @@ public class DefaultPacketProcessorTests
     public async Task DeserializeAsync_WithoutRegisteredMessageType_ShouldThrowException()
     {
         // Arrange
+        var processorWithRegistration = new DefaultPacketProcessor(_networkConfig);
+        processorWithRegistration.RegisterMessageType<PingMessage>();
+
         var processorWithoutRegistration = new DefaultPacketProcessor(_networkConfig);
         var message = new PingMessage();
-        var packet = await _processor.SerializeAsync(message);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
+        var packetBytes = await processorWithRegistration.SerializeAsync(message);
 
         // Act & Assert
         var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -220,17 +215,83 @@ public class DefaultPacketProcessorTests
         };
 
         var serializeProcessor = new DefaultPacketProcessor(serializeConfig);
+        serializeProcessor.RegisterMessageType<PingMessage>();
+
         var deserializeProcessor = new DefaultPacketProcessor(deserializeConfig);
         deserializeProcessor.RegisterMessageType<PingMessage>();
 
         var message = new PingMessage();
-        var packet = await serializeProcessor.SerializeAsync(message);
-        var packetBytes = MemoryPackSerializer.Serialize(packet);
+        var packetBytes = await serializeProcessor.SerializeAsync(message);
 
         // Act & Assert
         Assert.ThrowsAsync<System.Security.Cryptography.CryptographicException>(async () =>
         {
             await deserializeProcessor.DeserializeAsync<PingMessage>(packetBytes);
         });
+    }
+
+    [Test]
+    public async Task Serialize_WithCompression_ShouldSetCompressedFlag()
+    {
+        // Arrange
+        _networkConfig.CompressionType = CompressionType.GZip;
+        var message = new PingMessage();
+
+        // Act
+        var packetBytes = await _processor.SerializeAsync(message);
+        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+
+        // Assert
+        Assert.That(packet.FlagType.HasFlag(NetworkMessageFlagType.Compressed), Is.True);
+    }
+
+    [Test]
+    public async Task Serialize_WithEncryption_ShouldSetEncryptedFlag()
+    {
+        // Arrange
+        var key = EncryptionUtils.GenerateKey(EncryptionType.AES256);
+        _networkConfig.EncryptionType = EncryptionType.AES256;
+        _networkConfig.EncryptionKey = Convert.ToBase64String(key);
+        var message = new PingMessage();
+
+        // Act
+        var packetBytes = await _processor.SerializeAsync(message);
+        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+
+        // Assert
+        Assert.That(packet.FlagType.HasFlag(NetworkMessageFlagType.Encrypted), Is.True);
+    }
+
+    [Test]
+    public async Task Serialize_WithCompressionAndEncryption_ShouldSetBothFlags()
+    {
+        // Arrange
+        var key = EncryptionUtils.GenerateKey(EncryptionType.AES256);
+        _networkConfig.CompressionType = CompressionType.LZ4;
+        _networkConfig.EncryptionType = EncryptionType.AES256;
+        _networkConfig.EncryptionKey = Convert.ToBase64String(key);
+        var message = new PingMessage();
+
+        // Act
+        var packetBytes = await _processor.SerializeAsync(message);
+        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+
+        // Assert
+        Assert.That(packet.FlagType.HasFlag(NetworkMessageFlagType.Compressed), Is.True);
+        Assert.That(packet.FlagType.HasFlag(NetworkMessageFlagType.Encrypted), Is.True);
+    }
+
+    [Test]
+    public async Task Serialize_WithoutCompressionOrEncryption_ShouldHaveNoFlags()
+    {
+        // Arrange
+        var message = new PingMessage();
+
+        // Act
+        var packetBytes = await _processor.SerializeAsync(message);
+        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+
+        // Assert
+        Assert.That(packet.FlagType, Is.EqualTo(NetworkMessageFlagType.None));
     }
 }

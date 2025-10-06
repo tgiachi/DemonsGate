@@ -24,8 +24,7 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
     }
 
 
-    public async Task<IDemonsGateMessage> DeserializeAsync<
-        T>(
+    public async Task<IDemonsGateMessage> DeserializeAsync<T>(
         byte[] data, CancellationToken cancellationToken = default
     )
         where T : IDemonsGateMessage
@@ -131,7 +130,7 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
     }
 
 
-    public async Task<DemonsGatePacket> SerializeAsync<T>(T message, CancellationToken cancellationToken = default)
+    public async Task<byte[]> SerializeAsync<T>(T message, CancellationToken cancellationToken = default)
         where T : IDemonsGateMessage
     {
         _logger.Debug("Serializing message of type {MessageType}", message.MessageType);
@@ -158,6 +157,7 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
                 originalLength,
                 packet.Payload.Length
             );
+            packet.FlagType |= NetworkMessageFlagType.Encrypted;
         }
 
         if (_networkConfig.CompressionType != CompressionType.None)
@@ -175,8 +175,10 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
                 originalLength,
                 packet.Payload.Length
             );
+
+            packet.FlagType |= NetworkMessageFlagType.Compressed;
         }
 
-        return packet;
+        return MemoryPackSerializer.Serialize(packet);
     }
 }

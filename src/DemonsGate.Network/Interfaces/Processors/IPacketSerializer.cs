@@ -15,5 +15,5 @@ public interface IPacketSerializer
     /// <param name="message">The message to serialize</param>
     /// <param name="cancellationToken">Cancellation token for the async operation</param>
     /// <returns>A task that resolves to the serialized packet</returns>
-    Task<DemonsGatePacket> SerializeAsync<T>(T message, CancellationToken cancellationToken = default) where T : IDemonsGateMessage;
+    Task<byte[]> SerializeAsync<T>(T message, CancellationToken cancellationToken = default) where T : IDemonsGateMessage;
 }
