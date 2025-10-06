@@ -10,7 +10,6 @@ public partial class DemonsGatePacket
 
     public NetworkMessageType MessageType { get; set; }
 
-
     public override string ToString()
     {
         return $"[DemonsGatePacket: MessageType={MessageType}, PayloadLength={Payload?.Length ?? 0}]";
