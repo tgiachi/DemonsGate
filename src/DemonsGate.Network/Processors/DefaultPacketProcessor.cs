@@ -69,7 +69,7 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
 
             payload = EncryptionUtils.Decrypt(
                 new ReadOnlySpan<byte>(payload),
-                new ReadOnlySpan<byte>(Encoding.UTF8.GetBytes(_networkConfig.EncryptionKey)),
+                new ReadOnlySpan<byte>(Convert.FromBase64String(_networkConfig.EncryptionKey)),
                 _networkConfig.EncryptionType
             );
 
@@ -125,7 +125,7 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
 
             packet.Payload = EncryptionUtils.Encrypt(
                 new ReadOnlySpan<byte>(packet.Payload),
-                new ReadOnlySpan<byte>(Encoding.UTF8.GetBytes(_networkConfig.EncryptionKey)),
+                new ReadOnlySpan<byte>(Convert.FromBase64String(_networkConfig.EncryptionKey)),
                 _networkConfig.EncryptionType
             );
 

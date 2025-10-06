@@ -244,6 +244,11 @@ resharper_web_config_wrong_module_highlighting = warning
 resharper_wrong_indent_size_highlighting = warning
 resharper_convert_constructor_to_member_initializers_highlighting = none
 resharper_arrange_method_or_operator_body_highlighting = none
+
+# Suppress CA1707 for test files (allow underscores in test method names)
+[tests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none
+
 # ReSharper inspection severities
 resharper_enforce_do_while_statement_braces_highlighting = hint
 resharper_enforce_fixed_statement_braces_highlighting = hint

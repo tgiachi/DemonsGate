@@ -122,19 +122,32 @@ public class EncryptionUtilsTests
     }
 
     [Test]
-    [TestCase(EncryptionType.AES256)]
-    [TestCase(EncryptionType.ChaCha20Poly1305)]
-    public void Decrypt_WithWrongKey_ShouldThrowException(EncryptionType encryptionType)
+    public void Decrypt_AES256_WithWrongKey_ShouldThrowException()
     {
         // Arrange
-        var correctKey = EncryptionUtils.GenerateKey(encryptionType);
-        var wrongKey = EncryptionUtils.GenerateKey(encryptionType);
-        var encrypted = EncryptionUtils.Encrypt(TestData, correctKey, encryptionType);
+        var correctKey = EncryptionUtils.GenerateKey(EncryptionType.AES256);
+        var wrongKey = EncryptionUtils.GenerateKey(EncryptionType.AES256);
+        var encrypted = EncryptionUtils.Encrypt(TestData, correctKey, EncryptionType.AES256);
 
         // Act & Assert
         Assert.Throws<CryptographicException>(() =>
         {
-            EncryptionUtils.Decrypt(encrypted, wrongKey, encryptionType);
+            EncryptionUtils.Decrypt(encrypted, wrongKey, EncryptionType.AES256);
+        });
+    }
+
+    [Test]
+    public void Decrypt_ChaCha20_WithWrongKey_ShouldThrowException()
+    {
+        // Arrange
+        var correctKey = EncryptionUtils.GenerateKey(EncryptionType.ChaCha20Poly1305);
+        var wrongKey = EncryptionUtils.GenerateKey(EncryptionType.ChaCha20Poly1305);
+        var encrypted = EncryptionUtils.Encrypt(TestData, correctKey, EncryptionType.ChaCha20Poly1305);
+
+        // Act & Assert - ChaCha20 throws AuthenticationTagMismatchException, which is a subclass of CryptographicException
+        Assert.Throws<System.Security.Cryptography.AuthenticationTagMismatchException>(() =>
+        {
+            EncryptionUtils.Decrypt(encrypted, wrongKey, EncryptionType.ChaCha20Poly1305);
         });
     }
 
