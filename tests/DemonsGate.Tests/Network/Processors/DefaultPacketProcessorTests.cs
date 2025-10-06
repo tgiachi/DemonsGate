@@ -2,6 +2,7 @@ using System.Text;
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Utils;
 using DemonsGate.Network.Data;
+using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Messages;
 using DemonsGate.Network.Packet;
 using DemonsGate.Network.Processors;

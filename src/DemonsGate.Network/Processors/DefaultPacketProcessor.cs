@@ -1,10 +1,10 @@
-using System.Text;
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Utils;
-using DemonsGate.Network.Data;
+using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Processors;
 using DemonsGate.Network.Packet;
+using DemonsGate.Network.Types;
 using MemoryPack;
 using Serilog;
 
@@ -102,6 +102,29 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
             var deserializedMessage = MemoryPackSerializer.Deserialize<T>(data);
             return deserializedMessage ??
                    throw new InvalidOperationException($"Failed to deserialize message of type {typeof(T).Name}");
+        };
+
+        _logger.Information("Registered message type {MessageType}", messageType);
+    }
+
+    public void RegisterMessageType(Type type, NetworkMessageType messageType)
+    {
+        if (!typeof(IDemonsGateMessage).IsAssignableFrom(type))
+        {
+            throw new ArgumentException($"Type {type.Name} does not implement IDemonsGateMessage");
+        }
+
+        if (_deserializers.ContainsKey((byte)messageType))
+        {
+            _logger.Warning("Message type {MessageType} is already registered", messageType);
+            return;
+        }
+
+        _deserializers[(byte)messageType] = (data) =>
+        {
+            var deserializedMessage = (IDemonsGateMessage?)MemoryPackSerializer.Deserialize(type, data);
+            return deserializedMessage ??
+                   throw new InvalidOperationException($"Failed to deserialize message of type {type.Name}");
         };
 
         _logger.Information("Registered message type {MessageType}", messageType);
