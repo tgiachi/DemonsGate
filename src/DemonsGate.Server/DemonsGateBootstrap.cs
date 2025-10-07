@@ -88,18 +88,27 @@ public class DemonsGateBootstrap : IDisposable
 
                     var commandService = _container.Resolve<ICommandService>();
 
-                    var commandResult = await commandService.ExecuteCommandAsync(command, CommandSourceType.Console, -1);
+                    try
+                    {
+                        var commandResult = await commandService.ExecuteCommandAsync(command, CommandSourceType.Console, -1);
 
-                    if (!commandResult.Success)
+                        if (!commandResult.Success)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Error: {commandResult.Exception?.Message}");
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine(commandResult.Output);
+                        }
+                    }
+                    catch (Exception ex)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Error: {commandResult.Exception?.Message}");
+                        Console.WriteLine($"Unhandled Exception: {ex.Message}");
                     }
-                    else
-                    {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine(commandResult.Output);
-                    }
+
 
                     Console.ResetColor();
                 }

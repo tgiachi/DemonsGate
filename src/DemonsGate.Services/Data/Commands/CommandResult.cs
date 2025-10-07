@@ -20,5 +20,8 @@ public class CommandResult
         Output = exception.Message;
     }
 
-    public static CommandResult FromOutput(string output) => new CommandResult(output);
+
+    public static CommandResult Ok(string result) => new CommandResult(result);
+
+    public static CommandResult Fail(Exception ex) => new CommandResult(ex);
 }

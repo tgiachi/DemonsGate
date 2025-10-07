@@ -6,8 +6,8 @@ namespace DemonsGate.Services.Types;
 /// </summary>
 public enum CommandSourceType
 {
-    Console,
     InGame,
+    Console,
     All = Console | InGame
 }
 

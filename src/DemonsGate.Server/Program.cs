@@ -14,6 +14,7 @@ using DemonsGate.Services.Context;
 using DemonsGate.Services.Data.Config.Options;
 using DemonsGate.Services.Impl;
 using DemonsGate.Services.Interfaces;
+using DemonsGate.Services.Modules;
 using DemonsGate.Services.Types;
 using DryIoc;
 
@@ -39,7 +40,6 @@ await ConsoleApp.RunAsync(
         string configFileName = "demonsgate_server.json"
     ) =>
     {
-
         JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
 
         var options = new DemonsGateServerOptions()
@@ -70,8 +70,6 @@ await ConsoleApp.RunAsync(
                     .AddService<IEventLoopService, EventLoopService>()
                     .AddService<IDiagnosticService, DiagnosticService>()
                     .AddService<ICommandService, CommandService>()
-
-
                     ;
 
                 container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());
@@ -81,7 +79,9 @@ await ConsoleApp.RunAsync(
 
                 container
                     .AddScriptModule<ConsoleModule>()
-                    .AddScriptModule<LoggerModule>();
+                    .AddScriptModule<LoggerModule>()
+                    .AddScriptModule<CommandModule>()
+                    ;
 
                 container
                     .RegisterNetworkServices();
