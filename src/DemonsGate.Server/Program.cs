@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using ConsoleAppFramework;
 using DemonsGate.Core.Extensions.Services;
 using DemonsGate.Core.Interfaces.EventLoop;
@@ -36,7 +36,6 @@ await ConsoleApp.RunAsync(
         string configFileName = "demonsgate_server.json"
     ) =>
     {
-
 
         JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
 

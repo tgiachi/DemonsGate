@@ -497,7 +497,7 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
             _logger.Debug("Generating TypeScript definitions");
 
             var documentation = TypeScriptDocumentationGenerator.GenerateDocumentation(
-                "Spectra",
+                "DemonsGate",
                 _versionService.GetVersionInfo().Version,
                 _scriptModules,
                 new Dictionary<string, object>(_constants),
