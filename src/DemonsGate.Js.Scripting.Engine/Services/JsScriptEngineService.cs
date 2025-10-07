@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using DemonsGate.Core.Attributes.Scripts;
 using DemonsGate.Core.Data.Scripts;
 using DemonsGate.Core.Directories;
@@ -655,7 +656,7 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
     /// <summary>
     ///     Creates detailed error information from a JavaScript exception
     /// </summary>
-    private ScriptErrorInfo CreateErrorInfo(JavaScriptException jsEx, string sourceCode)
+    private static ScriptErrorInfo CreateErrorInfo(JavaScriptException jsEx, string sourceCode)
     {
         var errorInfo = new ScriptErrorInfo
         {
@@ -679,7 +680,7 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
     /// </summary>
     private static string GetScriptHash(string script)
     {
-        var hashBytes = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(script));
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(script));
         return Convert.ToBase64String(hashBytes);
     }
 }
