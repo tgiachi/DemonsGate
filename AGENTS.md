@@ -21,4 +21,4 @@ This ensures that single-type files have basic documentation.
 
 Command: `/oco`
 
-Description: Analyzes the current git changes, generates a human-written commit message without referencing AI, commits the changes, and pushes to the remote repository.
+Description: Analyzes the current git changes, generates a conventional commit message, commits the changes, and pushes to the remote repository.
