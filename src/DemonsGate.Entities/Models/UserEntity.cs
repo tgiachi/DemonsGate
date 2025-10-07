@@ -18,5 +18,4 @@ public partial class UserEntity : BaseEntity
 
     public bool IsLocked { get; set; }
 
-
 }
