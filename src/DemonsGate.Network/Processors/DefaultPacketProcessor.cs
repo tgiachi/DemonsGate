@@ -11,7 +11,7 @@ using Serilog;
 namespace DemonsGate.Network.Processors;
 
 /// <summary>
-/// public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer.
+/// Implements the packet processor for serializing and deserializing network messages.
 /// </summary>
 public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
 {

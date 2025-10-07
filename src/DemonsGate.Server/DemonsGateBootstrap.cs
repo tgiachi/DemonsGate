@@ -8,14 +8,17 @@ using DemonsGate.Core.Json;
 using DemonsGate.Services.Data.Config;
 using DemonsGate.Services.Data.Config.Options;
 using DemonsGate.Services.Extensions.Loggers;
+using DemonsGate.Services.Interfaces;
+using DemonsGate.Services.Types;
 using DryIoc;
 using Serilog;
 using Serilog.Formatting.Compact;
 
 namespace DemonsGate.Server;
 
+// ##REFORMAT##
 /// <summary>
-/// public class DemonsGateBootstrap : IDisposable.
+/// Handles the initialization and lifecycle of the DemonsGate server.
 /// </summary>
 public class DemonsGateBootstrap : IDisposable
 {
@@ -48,6 +51,11 @@ public class DemonsGateBootstrap : IDisposable
 
         await StartServicesAsync(cancellationToken);
 
+        if (_options.IsShellEnabled)
+        {
+            HookShellCommands(cancellationToken);
+        }
+
         try
         {
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -58,6 +66,46 @@ public class DemonsGateBootstrap : IDisposable
         }
 
         await StopAsync(cancellationToken);
+    }
+
+    private void HookShellCommands(CancellationToken cancellationToken)
+    {
+        Task.Run(
+            async () =>
+            {
+                Log.Debug("Hooking Shell Commands");
+
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    Console.Write("DEMONS> ");
+                    var input = Console.ReadLine();
+                    if (input == null)
+                    {
+                        continue;
+                    }
+
+                    var command = input.Trim().ToLowerInvariant();
+
+                    var commandService = _container.Resolve<ICommandService>();
+
+                    var commandResult = await commandService.ExecuteCommandAsync(command, CommandSourceType.Console, -1);
+
+                    if (!commandResult.Success)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Error: {commandResult.Exception?.Message}");
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine(commandResult.Output);
+                    }
+
+                    Console.ResetColor();
+                }
+            },
+            cancellationToken
+        );
     }
 
     private async Task StopAsync(CancellationToken cancellationToken)

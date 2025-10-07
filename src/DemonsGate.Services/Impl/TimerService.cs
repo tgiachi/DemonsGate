@@ -7,7 +7,7 @@ using Serilog;
 namespace DemonsGate.Services.Impl;
 
 /// <summary>
-/// public class TimerService : ITimerService.
+/// Implements the timer service for scheduling and managing timed operations.
 /// </summary>
 public class TimerService : ITimerService
 {

@@ -6,6 +6,9 @@ using DemonsGate.Services.Data.Internal.Diagnostic;
 
 namespace DemonsGate.Services.Context;
 
+/// <summary>
+/// Provides JSON serialization context for DemonsGate configuration types.
+/// </summary>
 [JsonSerializable(typeof(DemonsGateServerConfig))]
 [JsonSerializable(typeof(DemonsGateServerOptions))]
 [JsonSerializable(typeof(GameNetworkConfig))]

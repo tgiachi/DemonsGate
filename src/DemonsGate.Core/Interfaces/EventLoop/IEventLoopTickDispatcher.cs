@@ -1,7 +1,7 @@
 namespace DemonsGate.Core.Interfaces.EventLoop;
 
 /// <summary>
-/// public interface IEventLoopTickDispatcher.
+/// Defines the contract for dispatching event loop ticks.
 /// </summary>
 public interface IEventLoopTickDispatcher
 {

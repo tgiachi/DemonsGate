@@ -8,9 +8,6 @@ namespace DemonsGate.Js.Scripting.Engine.Modules;
 ///     JavaScript console API implementation (console.log, console.error, etc.)
 /// </summary>
 [ScriptModule("console", "JavaScript-style console API for logging and debugging")]
-/// <summary>
-/// public class ConsoleModule.
-/// </summary>
 public class ConsoleModule
 {
     private readonly ILogger _logger = Serilog.Log.ForContext<ConsoleModule>();

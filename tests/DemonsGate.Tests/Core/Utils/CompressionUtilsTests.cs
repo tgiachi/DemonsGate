@@ -6,7 +6,7 @@ namespace DemonsGate.Tests.Core.Utils;
 
 [TestFixture]
 /// <summary>
-/// CompressionUtilsTests.
+/// Contains test cases for compression utilities.
 /// </summary>
 public class CompressionUtilsTests
 {

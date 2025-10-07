@@ -17,7 +17,9 @@ using DemonsGate.Services.Interfaces;
 using DemonsGate.Services.Types;
 using DryIoc;
 
+
 var cts = new CancellationTokenSource();
+
 
 Console.CancelKeyPress += (s, e) =>
 {
@@ -33,6 +35,7 @@ await ConsoleApp.RunAsync(
         string pidFileName = "demonsgame.pid",
         LogLevelType logLevel = LogLevelType.Information,
         string? rootDirectory = null,
+        bool isShellEnabled = true,
         string configFileName = "demonsgate_server.json"
     ) =>
     {
@@ -44,7 +47,8 @@ await ConsoleApp.RunAsync(
             LogLevel = logLevel,
             PidFileName = pidFileName,
             RootDirectory = rootDirectory,
-            ConfigFileName = configFileName
+            ConfigFileName = configFileName,
+            IsShellEnabled = isShellEnabled
         };
 
         if (showHeader)
@@ -64,7 +68,11 @@ await ConsoleApp.RunAsync(
                     .AddService<IScriptEngineService, JsScriptEngineService>()
                     .AddService<ITimerService, TimerService>()
                     .AddService<IEventLoopService, EventLoopService>()
-                    .AddService<IDiagnosticService, DiagnosticService>();
+                    .AddService<IDiagnosticService, DiagnosticService>()
+                    .AddService<ICommandService, CommandService>()
+
+
+                    ;
 
                 container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());
 

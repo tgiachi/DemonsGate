@@ -5,9 +5,6 @@ namespace DemonsGate.Core.Attributes.Scripts;
 /// </summary>
 /// <param name="name">The name under which the module will be accessible in JavaScript</param>
 [AttributeUsage(AttributeTargets.Class)]
-/// <summary>
-/// public class ScriptModuleAttribute(string name, string? helpText = null) : Attribute.
-/// </summary>
 public class ScriptModuleAttribute(string name, string? helpText = null) : Attribute
 {
     public string Name { get; } = name;

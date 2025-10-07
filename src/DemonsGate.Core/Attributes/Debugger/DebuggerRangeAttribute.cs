@@ -2,7 +2,7 @@ namespace DemonsGate.Core.Attributes.Debugger;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 /// <summary>
-/// public class DebuggerRangeAttribute : Attribute.
+/// Specifies a range for debugger display.
 /// </summary>
 public class DebuggerRangeAttribute : Attribute
 {

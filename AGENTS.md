@@ -6,16 +6,9 @@ This file documents custom commands and agents for the project.
 
 Command: `/format`
 
-Description: Searches all .cs files in the project. For each file that contains exactly one type (class, record, struct, interface, enum, etc.), checks if the type has XML documentation comments (///). If not, adds a standard XML documentation comment above the type.
+Description: Searches all .cs files in the project. For each file that contains exactly one type (class, record, struct, interface, enum, etc.), checks if the type has XML documentation comments (///). If not, analyzes the context of the type and adds appropriate XML documentation comments above the type. If the file contains the token '##REFORMAT##', removes existing XML documentation comments and regenerates them from scratch.
 
-Standard comment format:
-```csharp
-/// <summary>
-/// [Type name].
-/// </summary>
-```
-
-This ensures that single-type files have basic documentation.
+This ensures that single-type files have meaningful documentation based on their purpose and structure.
 
 ## /oco
 

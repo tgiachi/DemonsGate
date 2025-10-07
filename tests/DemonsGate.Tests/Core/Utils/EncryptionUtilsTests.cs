@@ -7,7 +7,7 @@ namespace DemonsGate.Tests.Core.Utils;
 
 [TestFixture]
 /// <summary>
-/// public class EncryptionUtilsTests.
+/// Contains test cases for encryption utilities.
 /// </summary>
 public class EncryptionUtilsTests
 {

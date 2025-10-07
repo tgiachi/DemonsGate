@@ -11,7 +11,7 @@ namespace DemonsGate.Tests.Network.Processors;
 
 [TestFixture]
 /// <summary>
-/// public class DefaultPacketProcessorTests.
+/// Contains test cases for DefaultPacketProcessor.
 /// </summary>
 public class DefaultPacketProcessorTests
 {

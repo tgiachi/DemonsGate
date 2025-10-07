@@ -3,7 +3,7 @@ using DemonsGate.Core.Enums;
 namespace DemonsGate.Services.Data.Config.Sections;
 
 /// <summary>
-/// public class GameNetworkConfig.
+/// Represents the network configuration for the game.
 /// </summary>
 public class GameNetworkConfig
 {

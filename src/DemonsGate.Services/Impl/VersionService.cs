@@ -5,7 +5,7 @@ using DemonsGate.Services.Interfaces;
 namespace DemonsGate.Services.Impl;
 
 /// <summary>
-/// public class VersionService : IVersionService.
+/// Implements the version service for retrieving application version information.
 /// </summary>
 public class VersionService : IVersionService
 {

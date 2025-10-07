@@ -2,7 +2,7 @@ namespace DemonsGate.Core.Attributes.Debugger;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
 /// <summary>
-/// public class DebuggerHeaderAttribute : Attribute.
+/// Specifies a header for debugger display.
 /// </summary>
 public class DebuggerHeaderAttribute : Attribute
 {

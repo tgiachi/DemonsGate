@@ -12,7 +12,7 @@ using Serilog;
 namespace DemonsGate.Services.Impl;
 
 /// <summary>
-/// public class DiagnosticService : IDiagnosticService, IMetricsProvider.
+/// Implements the diagnostic service for collecting and providing system metrics.
 /// </summary>
 public class DiagnosticService : IDiagnosticService, IMetricsProvider
 {

@@ -15,7 +15,7 @@ namespace DemonsGate.Tests.Network.Services;
 
 [TestFixture]
 /// <summary>
-/// public class DefaultNetworkServiceIntegrationTests.
+/// Contains integration test cases for DefaultNetworkService.
 /// </summary>
 public class DefaultNetworkServiceIntegrationTests
 {

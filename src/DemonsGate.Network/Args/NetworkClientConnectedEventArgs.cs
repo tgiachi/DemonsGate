@@ -1,6 +1,6 @@
 namespace DemonsGate.Network.Args;
 
 /// <summary>
-/// public record NetworkClientConnectedEventArgs(int ClientId);.
+/// Represents event arguments for client connection.
 /// </summary>
 public record NetworkClientConnectedEventArgs(int ClientId);

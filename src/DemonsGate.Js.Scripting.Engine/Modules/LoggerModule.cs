@@ -6,7 +6,7 @@ namespace DemonsGate.Js.Scripting.Engine.Modules;
 
 [ScriptModule("logger", "Log messages with different severity levels")]
 /// <summary>
-/// public class LoggerModule.
+/// Provides logging functionality for JavaScript scripts.
 /// </summary>
 public class LoggerModule
 {

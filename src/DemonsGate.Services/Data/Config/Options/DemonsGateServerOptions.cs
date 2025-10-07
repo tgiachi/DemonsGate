@@ -11,4 +11,5 @@ public class DemonsGateServerOptions
     public string ConfigFileName { get; set; } = "demonsgate_server.json";
     public LogLevelType LogLevel { get; set; } = LogLevelType.Information;
     public string RootDirectory { get; set; }
+    public bool IsShellEnabled { get; set; } = true;
 }

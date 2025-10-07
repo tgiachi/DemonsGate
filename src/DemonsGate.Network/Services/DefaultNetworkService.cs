@@ -15,7 +15,7 @@ using Serilog;
 namespace DemonsGate.Network.Services;
 
 /// <summary>
-/// public class DefaultNetworkService : INetworkService.
+/// Implements the network service for handling client connections and messaging.
 /// </summary>
 public class DefaultNetworkService : INetworkService
 {

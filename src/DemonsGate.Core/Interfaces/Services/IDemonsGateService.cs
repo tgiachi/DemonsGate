@@ -1,7 +1,7 @@
 namespace DemonsGate.Core.Interfaces.Services;
 
 /// <summary>
-/// public interface IDemonsGateService.
+/// Defines the contract for a Demons Gate service.
 /// </summary>
 public interface IDemonsGateService
 {

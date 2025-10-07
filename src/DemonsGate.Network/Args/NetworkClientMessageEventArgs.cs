@@ -4,7 +4,7 @@ using DemonsGate.Network.Types;
 namespace DemonsGate.Network.Args;
 
 /// <summary>
-/// public record NetworkClientMessageEventArgs( int ClientId, IDemonsGateMessage Message, NetworkMessageType MessageType);.
+/// Represents event arguments for message reception.
 /// </summary>
 public record NetworkClientMessageEventArgs( int ClientId, IDemonsGateMessage Message, NetworkMessageType MessageType);
 
