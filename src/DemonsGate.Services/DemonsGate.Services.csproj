@@ -12,6 +12,7 @@
 
     <ItemGroup>
       <Folder Include="Events\" />
+      <Folder Include="Extensions\" />
       <Folder Include="Metrics\" />
     </ItemGroup>
 

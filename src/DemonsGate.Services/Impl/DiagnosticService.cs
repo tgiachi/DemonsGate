@@ -94,7 +94,7 @@ public class DiagnosticService : IDiagnosticService, IMetricsProvider
         WritePidFile();
 
 
-     
+
 
          _timerService.RegisterTimer("diagnostic_metrics_timer",
             _diagnosticServiceConfig.MetricsIntervalInSeconds * 1000,
