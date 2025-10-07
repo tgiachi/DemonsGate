@@ -10,10 +10,5 @@
       <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Events\" />
-      <Folder Include="Extensions\" />
-      <Folder Include="Metrics\" />
-    </ItemGroup>
-
+   
 </Project>

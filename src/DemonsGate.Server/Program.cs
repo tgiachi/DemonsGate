@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using ConsoleAppFramework;
 using DemonsGate.Core.Extensions.Services;
+using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Core.Json;
 using DemonsGate.Core.Utils;
 using DemonsGate.Js.Scripting.Engine.Extensions.Scripts;
@@ -14,6 +15,7 @@ using DemonsGate.Services.Data.Config.Options;
 using DemonsGate.Services.Impl;
 using DemonsGate.Services.Interfaces;
 using DemonsGate.Services.Types;
+using DryIoc;
 
 var cts = new CancellationTokenSource();
 
@@ -64,6 +66,8 @@ await ConsoleApp.RunAsync(
                     .AddService<ITimerService, TimerService>()
                     .AddService<IEventLoopService, EventLoopService>()
                     .AddService<IDiagnosticService, DiagnosticService>();
+
+                container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());
 
                 container.RegisterNetworkMessage<PingMessage>();
 

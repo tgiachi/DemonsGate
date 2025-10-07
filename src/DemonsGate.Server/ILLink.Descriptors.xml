@@ -7,10 +7,6 @@
         <type fullname="DemonsGate.Js.Scripting.Engine.*" preserve="all"/>
     </assembly>
 
-    <assembly fullname="Moongate.Core">
-        <type fullname="Moongate.Core.*" preserve="all"/>
-    </assembly>
-
     <assembly fullname="DemonsGate.Network">
         <type fullname="DemonsGate.Network.*" preserve="all"/>
     </assembly>

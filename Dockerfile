@@ -20,7 +20,7 @@ RUN dotnet build "DemonsGate.Server.csproj" -c $BUILD_CONFIGURATION -o /app/buil
 # Publish image with single file
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-ARG TARGETARCH=x64
+ARG TARGETARCH=arm64
 RUN dotnet publish "DemonsGate.Server.csproj" -c $BUILD_CONFIGURATION -o /app/publish \
     -a $TARGETARCH \
     -p:PublishSingleFile=true \

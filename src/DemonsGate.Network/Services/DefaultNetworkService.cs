@@ -1,11 +1,12 @@
 using System.Collections.Concurrent;
 using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Network.Args;
-using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Data.Services;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Processors;
 using DemonsGate.Network.Interfaces.Services;
+using DemonsGate.Services.Data.Config.Sections;
+using DemonsGate.Services.Interfaces;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Microsoft.Extensions.ObjectPool;
@@ -39,13 +40,13 @@ public class DefaultNetworkService : INetworkService
     private CancellationTokenSource? _pollCts;
     private Task? _pollTask;
 
-    private readonly NetworkConfig _networkConfig;
+    private readonly GameNetworkConfig _networkConfig;
 
     private readonly List<NetworkMessageData> _registeredMessages;
 
     public DefaultNetworkService(
         IPacketSerializer packetSerializer, IPacketDeserializer packetDeserializer,
-        List<NetworkMessageData> registeredMessages, NetworkConfig networkConfig, IEventLoopTickDispatcher ? eventLoop
+        List<NetworkMessageData> registeredMessages, GameNetworkConfig networkConfig, IEventLoopService eventLoop
     )
     {
         _packetSerializer = packetSerializer;

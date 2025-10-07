@@ -105,11 +105,14 @@ public class EventLoopService : IEventLoopService, IMetricsProvider
     /// </summary>
     private async Task EventLoopAsync()
     {
+        // Capture token locally to avoid race condition with Dispose
+        var cancellationToken = _cancellationTokenSource.Token;
+
         try
         {
             _logger.Debug("Event loop task started");
 
-            while (!_cancellationTokenSource.Token.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 long tickStartTimestamp = Stopwatch.GetTimestamp();
 
@@ -126,7 +129,7 @@ public class EventLoopService : IEventLoopService, IMetricsProvider
                     : (int)(TickIntervalMs - tickDurationMs);
 
                 // Wait until the next tick
-                await Task.Delay(delayMs, _cancellationTokenSource.Token);
+                await Task.Delay(delayMs, cancellationToken);
             }
         }
         catch (OperationCanceledException)
@@ -385,8 +388,6 @@ public class EventLoopService : IEventLoopService, IMetricsProvider
             }
 
             _lastTickTimestamp = Stopwatch.GetTimestamp();
-
-
         }
         catch (Exception ex)
         {

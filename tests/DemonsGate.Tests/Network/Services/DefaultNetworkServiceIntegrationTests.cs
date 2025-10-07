@@ -1,11 +1,12 @@
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Interfaces.EventLoop;
-using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Data.Services;
 using DemonsGate.Network.Interfaces.Processors;
 using DemonsGate.Network.Messages;
 using DemonsGate.Network.Services;
 using DemonsGate.Network.Types;
+using DemonsGate.Services.Data.Config.Sections;
+using DemonsGate.Services.Interfaces;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using NSubstitute;
@@ -17,7 +18,7 @@ public class DefaultNetworkServiceIntegrationTests
 {
     private IPacketSerializer _mockSerializer = null!;
     private IPacketDeserializer _mockDeserializer = null!;
-    private IEventLoopTickDispatcher _mockEventLoop = null!;
+    private IEventLoopService _mockEventLoop = null!;
     private DefaultNetworkService _server = null!;
     private NetManager _client = null!;
     private EventBasedNetListener _clientListener = null!;
@@ -29,9 +30,9 @@ public class DefaultNetworkServiceIntegrationTests
     {
         _mockSerializer = Substitute.For<IPacketSerializer>();
         _mockDeserializer = Substitute.For<IPacketDeserializer>();
-        _mockEventLoop = Substitute.For<IEventLoopTickDispatcher>();
+        _mockEventLoop = Substitute.For<IEventLoopService>();
 
-        var networkConfig = new NetworkConfig
+        var networkConfig = new GameNetworkConfig
         {
             Port = TestPort,
             CompressionType = CompressionType.None,

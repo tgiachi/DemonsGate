@@ -1,10 +1,10 @@
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Utils;
-using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Processors;
 using DemonsGate.Network.Packet;
 using DemonsGate.Network.Types;
+using DemonsGate.Services.Data.Config.Sections;
 using MemoryPack;
 using Serilog;
 
@@ -14,11 +14,11 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
 {
     private readonly ILogger _logger = Log.ForContext<DefaultPacketProcessor>();
 
-    private readonly NetworkConfig _networkConfig;
+    private readonly GameNetworkConfig _networkConfig;
 
     private readonly Dictionary<byte, Func<byte[], IDemonsGateMessage>> _deserializers = new();
 
-    public DefaultPacketProcessor(NetworkConfig networkConfig)
+    public DefaultPacketProcessor(GameNetworkConfig networkConfig)
     {
         _networkConfig = networkConfig;
     }

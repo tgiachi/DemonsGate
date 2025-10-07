@@ -14,7 +14,7 @@ using Serilog.Formatting.Compact;
 
 namespace DemonsGate.Server;
 
-public class DemonsGateBootstrap
+public class DemonsGateBootstrap : IDisposable
 {
     private readonly DemonsGateServerOptions _options;
 
@@ -166,5 +166,11 @@ public class DemonsGateBootstrap
         _container.RegisterInstance(config.Diagnostic);
 
         Log.Information("Configuration loaded from {ConfigFileName}", configFileName);
+    }
+
+    public void Dispose()
+    {
+        _container.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

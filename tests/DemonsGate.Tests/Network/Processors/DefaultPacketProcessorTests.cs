@@ -1,10 +1,10 @@
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Utils;
-using DemonsGate.Network.Data.Config;
 using DemonsGate.Network.Messages;
 using DemonsGate.Network.Packet;
 using DemonsGate.Network.Processors;
 using DemonsGate.Network.Types;
+using DemonsGate.Services.Data.Config.Sections;
 using MemoryPack;
 
 namespace DemonsGate.Tests.Network.Processors;
@@ -12,13 +12,13 @@ namespace DemonsGate.Tests.Network.Processors;
 [TestFixture]
 public class DefaultPacketProcessorTests
 {
-    private NetworkConfig _networkConfig = null!;
+    private GameNetworkConfig _networkConfig = null!;
     private DefaultPacketProcessor _processor = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _networkConfig = new NetworkConfig
+        _networkConfig = new GameNetworkConfig
         {
             CompressionType = CompressionType.None,
             EncryptionType = EncryptionType.None,
@@ -137,7 +137,7 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act - Serialize without compression first
-        var uncompressedBytes = await new DefaultPacketProcessor(new NetworkConfig()).SerializeAsync(message);
+        var uncompressedBytes = await new DefaultPacketProcessor(new GameNetworkConfig()).SerializeAsync(message);
 
         // Act - Serialize with compression
         var compressedBytes = await _processor.SerializeAsync(message);
@@ -157,7 +157,7 @@ public class DefaultPacketProcessorTests
         var message = new PingMessage();
 
         // Act - Serialize without encryption first
-        var unencryptedBytes = await new DefaultPacketProcessor(new NetworkConfig()).SerializeAsync(message);
+        var unencryptedBytes = await new DefaultPacketProcessor(new GameNetworkConfig()).SerializeAsync(message);
 
         // Act - Serialize with encryption
         var encryptedBytes = await _processor.SerializeAsync(message);
@@ -202,13 +202,13 @@ public class DefaultPacketProcessorTests
         var correctKey = EncryptionUtils.GenerateKey(EncryptionType.AES256);
         var wrongKey = EncryptionUtils.GenerateKey(EncryptionType.AES256);
 
-        var serializeConfig = new NetworkConfig
+        var serializeConfig = new GameNetworkConfig
         {
             EncryptionType = EncryptionType.AES256,
             EncryptionKey = Convert.ToBase64String(correctKey)
         };
 
-        var deserializeConfig = new NetworkConfig
+        var deserializeConfig = new GameNetworkConfig
         {
             EncryptionType = EncryptionType.AES256,
             EncryptionKey = Convert.ToBase64String(wrongKey)
