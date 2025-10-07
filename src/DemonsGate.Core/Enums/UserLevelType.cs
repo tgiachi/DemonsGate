@@ -1,4 +1,4 @@
-namespace DemonsGate.Services.Types;
+namespace DemonsGate.Core.Enums;
 
 [Flags]
 /// <summary>

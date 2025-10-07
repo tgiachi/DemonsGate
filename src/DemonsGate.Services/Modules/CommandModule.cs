@@ -1,4 +1,5 @@
 using DemonsGate.Core.Attributes.Scripts;
+using DemonsGate.Core.Enums;
 using DemonsGate.Services.Data.Commands;
 using DemonsGate.Services.Interfaces;
 using DemonsGate.Services.Types;
