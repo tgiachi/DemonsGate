@@ -10,6 +10,9 @@ using MemoryPack;
 namespace DemonsGate.Tests.Network.Processors;
 
 [TestFixture]
+/// <summary>
+/// public class DefaultPacketProcessorTests.
+/// </summary>
 public class DefaultPacketProcessorTests
 {
     private GameNetworkConfig _networkConfig = null!;

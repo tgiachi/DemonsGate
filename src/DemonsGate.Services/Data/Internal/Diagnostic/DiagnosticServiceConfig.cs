@@ -1,5 +1,8 @@
 namespace DemonsGate.Services.Data.Internal.Diagnostic;
 
+/// <summary>
+/// public class DiagnosticServiceConfig.
+/// </summary>
 public class DiagnosticServiceConfig
 {
     public int MetricsIntervalInSeconds { get; set; } = 60;

@@ -2,6 +2,9 @@ using DemonsGate.Services.Types;
 
 namespace DemonsGate.Services.Data.Config.Options;
 
+/// <summary>
+/// public class DemonsGateServerOptions.
+/// </summary>
 public class DemonsGateServerOptions
 {
     public string PidFileName { get; set; } = "demonsgate.pid";

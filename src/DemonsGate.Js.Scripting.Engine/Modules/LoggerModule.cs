@@ -5,6 +5,9 @@ using Serilog.Events;
 namespace DemonsGate.Js.Scripting.Engine.Modules;
 
 [ScriptModule("logger", "Log messages with different severity levels")]
+/// <summary>
+/// public class LoggerModule.
+/// </summary>
 public class LoggerModule
 {
     private readonly ILogger _logger = Log.ForContext<LoggerModule>();

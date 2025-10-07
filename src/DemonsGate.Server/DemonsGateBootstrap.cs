@@ -14,6 +14,9 @@ using Serilog.Formatting.Compact;
 
 namespace DemonsGate.Server;
 
+/// <summary>
+/// public class DemonsGateBootstrap : IDisposable.
+/// </summary>
 public class DemonsGateBootstrap : IDisposable
 {
     private readonly DemonsGateServerOptions _options;

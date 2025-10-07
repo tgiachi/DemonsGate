@@ -4,6 +4,9 @@ using DemonsGate.Services.Interfaces;
 
 namespace DemonsGate.Services.Impl;
 
+/// <summary>
+/// public class VersionService : IVersionService.
+/// </summary>
 public class VersionService : IVersionService
 {
     public VersionInfoData GetVersionInfo()

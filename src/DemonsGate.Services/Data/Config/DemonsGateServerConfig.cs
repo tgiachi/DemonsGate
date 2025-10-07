@@ -3,6 +3,9 @@ using DemonsGate.Services.Data.Internal.Diagnostic;
 
 namespace DemonsGate.Services.Data.Config;
 
+/// <summary>
+/// public class DemonsGateServerConfig.
+/// </summary>
 public class DemonsGateServerConfig
 {
 

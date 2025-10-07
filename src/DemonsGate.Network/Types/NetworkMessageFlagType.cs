@@ -4,6 +4,9 @@ namespace DemonsGate.Network.Types;
 ///     Defines flags that can be applied to network messages
 /// </summary>
 [Flags]
+/// <summary>
+/// public enum NetworkMessageFlagType.
+/// </summary>
 public enum NetworkMessageFlagType
 {
     /// <summary>No flags applied</summary>

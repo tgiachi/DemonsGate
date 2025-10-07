@@ -2,6 +2,9 @@ using System.Diagnostics;
 
 namespace DemonsGate.Services.Metrics.Diagnostic;
 
+/// <summary>
+/// public record DiagnosticMetrics.
+/// </summary>
 public record DiagnosticMetrics
 {
     // Memory metrics

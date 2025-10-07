@@ -2,6 +2,9 @@ using DemonsGate.Services.Types;
 
 namespace DemonsGate.Services.Data.Config.Sections;
 
+/// <summary>
+/// public class ScriptEngineConfig.
+/// </summary>
 public class ScriptEngineConfig
 {
 

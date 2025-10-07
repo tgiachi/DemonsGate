@@ -6,6 +6,9 @@ using DemonsGate.Core.Utils;
 namespace DemonsGate.Tests.Core.Utils;
 
 [TestFixture]
+/// <summary>
+/// public class EncryptionUtilsTests.
+/// </summary>
 public class EncryptionUtilsTests
 {
     private static readonly byte[] TestData = Encoding.UTF8.GetBytes("Sensitive data that needs encryption!");

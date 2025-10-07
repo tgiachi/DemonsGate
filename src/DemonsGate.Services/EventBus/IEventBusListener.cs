@@ -1,5 +1,8 @@
 namespace DemonsGate.Services.EventBus;
 
+/// <summary>
+/// public interface IEventBusListener<in TEvent>.
+/// </summary>
 public interface IEventBusListener<in TEvent>
 {
     /// <summary>

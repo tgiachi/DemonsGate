@@ -6,6 +6,9 @@ using Serilog;
 
 namespace DemonsGate.Services.Impl;
 
+/// <summary>
+/// public class TimerService : ITimerService.
+/// </summary>
 public class TimerService : ITimerService
 {
     private readonly ILogger _logger = Log.ForContext<TimerService>();

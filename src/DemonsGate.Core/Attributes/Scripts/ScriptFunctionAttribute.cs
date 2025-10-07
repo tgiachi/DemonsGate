@@ -5,6 +5,9 @@ namespace DemonsGate.Core.Attributes.Scripts;
 /// </summary>
 /// <param name="helpText">Optional help text describing the function's purpose</param>
 [AttributeUsage(AttributeTargets.Method)]
+/// <summary>
+/// public class ScriptFunctionAttribute(string? helpText = null) : Attribute.
+/// </summary>
 public class ScriptFunctionAttribute(string? helpText = null) : Attribute
 {
     public string? HelpText { get; } = helpText;

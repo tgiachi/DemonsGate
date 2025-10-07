@@ -5,6 +5,9 @@ using DemonsGate.Core.Utils;
 namespace DemonsGate.Tests.Core.Utils;
 
 [TestFixture]
+/// <summary>
+/// CompressionUtilsTests.
+/// </summary>
 public class CompressionUtilsTests
 {
     private static readonly byte[] TestData = Encoding.UTF8.GetBytes("Hello, World! This is a test compression string with some repeated data. Hello, World!");

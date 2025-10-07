@@ -14,6 +14,9 @@ using NSubstitute;
 namespace DemonsGate.Tests.Network.Services;
 
 [TestFixture]
+/// <summary>
+/// public class DefaultNetworkServiceIntegrationTests.
+/// </summary>
 public class DefaultNetworkServiceIntegrationTests
 {
     private IPacketSerializer _mockSerializer = null!;

@@ -10,6 +10,9 @@ using Serilog;
 
 namespace DemonsGate.Network.Processors;
 
+/// <summary>
+/// public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer.
+/// </summary>
 public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
 {
     private readonly ILogger _logger = Log.ForContext<DefaultPacketProcessor>();

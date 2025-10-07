@@ -1,5 +1,8 @@
 namespace DemonsGate.Core.Interfaces.EventLoop;
 
+/// <summary>
+/// public interface IEventLoopTickDispatcher.
+/// </summary>
 public interface IEventLoopTickDispatcher
 {
 

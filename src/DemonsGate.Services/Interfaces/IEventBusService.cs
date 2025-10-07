@@ -3,6 +3,9 @@ using DemonsGate.Services.EventBus;
 
 namespace DemonsGate.Services.Interfaces;
 
+/// <summary>
+/// public interface IEventBusService.
+/// </summary>
 public interface IEventBusService
 {
     /// <summary>

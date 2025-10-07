@@ -1,5 +1,8 @@
 namespace DemonsGate.Services.Metrics.Diagnostic;
 
+/// <summary>
+/// public class MetricProviderData.
+/// </summary>
 public class MetricProviderData
 {
     public string Name { get; set; }

@@ -4,6 +4,9 @@ using DemonsGate.Services.Metrics.Diagnostic;
 
 namespace DemonsGate.Services.Interfaces;
 
+/// <summary>
+/// public interface IDiagnosticService : IDemonsGateStartableService.
+/// </summary>
 public interface IDiagnosticService : IDemonsGateStartableService
 {
     /// <summary>

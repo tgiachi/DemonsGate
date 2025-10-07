@@ -4,6 +4,9 @@ using DemonsGate.Network.Interfaces.Messages;
 
 namespace DemonsGate.Network.Interfaces.Services;
 
+/// <summary>
+/// public interface INetworkService : IDemonsGateStartableService.
+/// </summary>
 public interface INetworkService : IDemonsGateStartableService
 {
 

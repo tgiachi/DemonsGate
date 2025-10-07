@@ -1,5 +1,8 @@
 namespace DemonsGate.Services.Types;
 
+/// <summary>
+/// public enum LogLevelType : byte.
+/// </summary>
 public enum LogLevelType : byte
 {
     /// <summary>

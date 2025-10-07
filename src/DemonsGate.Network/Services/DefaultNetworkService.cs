@@ -14,6 +14,9 @@ using Serilog;
 
 namespace DemonsGate.Network.Services;
 
+/// <summary>
+/// public class DefaultNetworkService : INetworkService.
+/// </summary>
 public class DefaultNetworkService : INetworkService
 {
     public event INetworkService.NetworkClientRawMessageReceivedHandler? ClientRawMessageReceived;

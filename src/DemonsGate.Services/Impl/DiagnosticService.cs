@@ -11,6 +11,9 @@ using Serilog;
 
 namespace DemonsGate.Services.Impl;
 
+/// <summary>
+/// public class DiagnosticService : IDiagnosticService, IMetricsProvider.
+/// </summary>
 public class DiagnosticService : IDiagnosticService, IMetricsProvider
 {
     public string ProviderName => "SystemMetrics";
