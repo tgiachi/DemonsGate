@@ -1,13 +1,10 @@
-using Spectra.Scripting.Types;
+using DemonsGate.Services.Types;
 
-namespace DemonsGate.Js.Scripting.Engine.Configs;
+namespace DemonsGate.Services.Data.Config.Sections;
 
-/// <summary>
-///     Configuration class for the JavaScript engine service
-///     Defines paths, naming conventions, and initialization scripts
-/// </summary>
 public class ScriptEngineConfig
 {
+
     public string DefinitionPath { get; set; } = "scripts";
 
     public ScriptNameConversion ScriptNameConversion { get; set; } = ScriptNameConversion.CamelCase;

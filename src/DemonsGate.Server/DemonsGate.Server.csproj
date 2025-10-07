@@ -6,6 +6,17 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <NoWarn>$(NoWarn);IL3050</NoWarn>
+        <NoWarn>$(NoWarn);IL2026</NoWarn>
+        <NoWarn>$(NoWarn);IL2062</NoWarn>
+        <NoWarn>$(NoWarn);IL2072</NoWarn>
+        <NoWarn>$(NoWarn);IL2070</NoWarn>
+        <NoWarn>$(NoWarn);IL2075</NoWarn>
+        
+        <PublishAot>true</PublishAot>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        
+        
     </PropertyGroup>
 
     <ItemGroup>
@@ -29,6 +40,10 @@
     <ItemGroup>
       <None Remove="Assets\**\*" />
       <EmbeddedResource Include="Assets\**\*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
     </ItemGroup>
 
 </Project>

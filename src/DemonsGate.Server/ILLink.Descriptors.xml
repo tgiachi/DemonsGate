@@ -1,0 +1,38 @@
+<linker>
+    <assembly fullname="DemonsGate.Core">
+        <type fullname="DemonsGate.Core.*" preserve="all"/>
+    </assembly>
+
+    <assembly fullname="DemonsGate.Js.Scripting.Engine">
+        <type fullname="DemonsGate.Js.Scripting.Engine.*" preserve="all"/>
+    </assembly>
+
+    <assembly fullname="Moongate.Core">
+        <type fullname="Moongate.Core.*" preserve="all"/>
+    </assembly>
+
+    <assembly fullname="DemonsGate.Network">
+        <type fullname="DemonsGate.Network.*" preserve="all"/>
+    </assembly>
+
+    <assembly fullname="DemonsGate.Services">
+        <type fullname="DemonsGate.Services.*" preserve="all"/>
+    </assembly>
+
+
+    <assembly fullname="Jint">
+        <type fullname="Jint.*" preserve="all"/>
+        <type fullname="Jint.Native.*" preserve="all"/>
+        <type fullname="Jint.Runtime.*" preserve="all"/>
+        <type fullname="Jint.Parser.*" preserve="all"/>
+        <type fullname="Jint.Interpreter.*" preserve="all"/>
+        <type fullname="Jint.Engine" preserve="all"/>
+    </assembly>
+
+    <assembly fullname="DryIoc">
+        <type fullname="DryIoc.ReflectionTools">
+            <method name="GetDefault"/>
+        </type>
+    </assembly>
+
+</linker>

@@ -1,25 +1,39 @@
 ﻿using System.Text;
 using ConsoleAppFramework;
+using DemonsGate.Core.Extensions.Services;
+using DemonsGate.Core.Json;
 using DemonsGate.Core.Utils;
+using DemonsGate.Js.Scripting.Engine.Extensions.Scripts;
+using DemonsGate.Js.Scripting.Engine.Modules;
+using DemonsGate.Js.Scripting.Engine.Services;
+using DemonsGate.Network.Extensions;
+using DemonsGate.Network.Messages;
 using DemonsGate.Server;
-using DemonsGate.Services.Data.Config;
+using DemonsGate.Services.Context;
+using DemonsGate.Services.Data.Config.Options;
+using DemonsGate.Services.Impl;
+using DemonsGate.Services.Interfaces;
 using DemonsGate.Services.Types;
 
 await ConsoleApp.RunAsync(
     args,
     async (
-        CancellationTokenRegistration ct = new CancellationTokenRegistration(),
         bool showHeader = true,
         string pidFileName = "demonsgame.pid",
         LogLevelType logLevel = LogLevelType.Information,
-        string rootDirectory = "."
+        string? rootDirectory = null,
+        string configFileName = "demonsgate_server.json"
     ) =>
     {
+        CancellationTokenRegistration ct = new CancellationTokenRegistration();
+        JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
+
         var options = new DemonsGateServerOptions()
         {
             LogLevel = logLevel,
             PidFileName = pidFileName,
-            RootDirectory = rootDirectory
+            RootDirectory = rootDirectory,
+            ConfigFileName = configFileName
         };
 
         if (showHeader)
@@ -31,7 +45,30 @@ await ConsoleApp.RunAsync(
 
         var bootstrap = new DemonsGateBootstrap(options, ct.Token);
 
-        await bootstrap.RunAsync();
+        bootstrap.RegisterServices(container =>
+            {
+                container
+                    .AddService<IEventBusService, EventBusService>()
+                    .AddService<IVersionService, VersionService>()
+                    .AddService<IScriptEngineService, JsScriptEngineService>()
+                    .AddService<ITimerService, TimerService>()
+                    .AddService<IEventLoopService, EventLoopService>()
+                    .AddService<IDiagnosticService, DiagnosticService>();
 
+                container.RegisterNetworkMessage<PingMessage>();
+
+
+                container
+                    .AddScriptModule<ConsoleModule>()
+                    .AddScriptModule<LoggerModule>();
+
+                container
+                    .RegisterNetworkServices();
+
+                return container;
+            }
+        );
+
+        await bootstrap.RunAsync();
     }
 );

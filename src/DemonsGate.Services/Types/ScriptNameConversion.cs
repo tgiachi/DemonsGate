@@ -1,4 +1,4 @@
-namespace Spectra.Scripting.Types;
+namespace DemonsGate.Services.Types;
 
 public enum ScriptNameConversion
 {

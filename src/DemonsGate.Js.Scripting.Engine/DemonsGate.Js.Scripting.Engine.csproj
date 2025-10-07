@@ -15,4 +15,8 @@
       <PackageReference Include="Jint" Version="4.4.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Types\" />
+    </ItemGroup>
+
 </Project>
