@@ -18,8 +18,6 @@ public class DemonsGateBootstrap
 {
     private readonly DemonsGateServerOptions _options;
 
-    private readonly CancellationToken _terminationToken;
-
     private readonly IContainer _container;
 
     private Func<IContainer, IContainer> _registerServicesCallback;
@@ -27,10 +25,10 @@ public class DemonsGateBootstrap
     private DirectoriesConfig _directoriesConfig;
 
 
-    public DemonsGateBootstrap(DemonsGateServerOptions options, CancellationToken terminationToken)
+    public DemonsGateBootstrap(DemonsGateServerOptions options)
     {
         _options = options;
-        _terminationToken = terminationToken;
+
         _container = new Container(Rules.Default.WithUseInterpretation());
 
         InitializeDirectories();
@@ -39,26 +37,30 @@ public class DemonsGateBootstrap
     }
 
 
-    public async Task RunAsync()
+    public async Task RunAsync(CancellationToken cancellationToken)
     {
         Log.Information("Starting DemonsGate Server...");
 
         _registerServicesCallback?.Invoke(_container);
 
-        await StartServicesAsync();
+        await StartServicesAsync(cancellationToken);
 
-        while (!_terminationToken.IsCancellationRequested)
+        try
         {
-            await Task.Delay(1000, _terminationToken);
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Information("Shutdown signal received.");
         }
 
-        await StopAsync();
+        await StopAsync(cancellationToken);
     }
 
-    public async Task StopAsync()
+    private async Task StopAsync(CancellationToken cancellationToken)
     {
         Log.Information("Stopping DemonsGate Server...");
-        await StopServicesAsync();
+        await StopServicesAsync(cancellationToken);
         Log.Information("DemonsGate Server stopped.");
         await Log.CloseAndFlushAsync();
     }
@@ -106,7 +108,7 @@ public class DemonsGateBootstrap
         _registerServicesCallback = registerServices;
     }
 
-    private async Task StartServicesAsync()
+    private async Task StartServicesAsync(CancellationToken cancellationToken)
     {
         var servicesToStart = _container.Resolve<List<ServiceDefinitionObject>>().OrderBy(s => s.Priority);
 
@@ -118,13 +120,13 @@ public class DemonsGateBootstrap
             if (serviceInstance is IDemonsGateStartableService startableService)
             {
                 Log.Information("Starting service: {ServiceName}", serviceDefinition.ServiceType.Name);
-                await startableService.StartAsync(_terminationToken);
+                await startableService.StartAsync(cancellationToken);
                 Log.Information("Service started: {ServiceName}", serviceDefinition.ServiceType.Name);
             }
         }
     }
 
-    private async Task StopServicesAsync()
+    private async Task StopServicesAsync(CancellationToken cancellationToken)
     {
         var servicesToStop = _container.Resolve<List<ServiceDefinitionObject>>().OrderByDescending(s => s.Priority);
 
@@ -136,7 +138,7 @@ public class DemonsGateBootstrap
             if (serviceInstance is IDemonsGateStartableService startableService)
             {
                 Log.Information("Stopping service: {ServiceName}", serviceDefinition.ServiceType.Name);
-                await startableService.StopAsync(_terminationToken);
+                await startableService.StopAsync(cancellationToken);
                 Log.Information("Service stopped: {ServiceName}", serviceDefinition.ServiceType.Name);
             }
         }

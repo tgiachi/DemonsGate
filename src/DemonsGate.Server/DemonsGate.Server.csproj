@@ -14,7 +14,7 @@
         <NoWarn>$(NoWarn);IL2075</NoWarn>
         
         <PublishAot>true</PublishAot>
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+<!--        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
         
         
     </PropertyGroup>

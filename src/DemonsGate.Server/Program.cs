@@ -15,9 +15,18 @@ using DemonsGate.Services.Impl;
 using DemonsGate.Services.Interfaces;
 using DemonsGate.Services.Types;
 
+var cts = new CancellationTokenSource();
+
+Console.CancelKeyPress += (s, e) =>
+{
+    e.Cancel = true;
+    cts.Cancel();
+};
+
 await ConsoleApp.RunAsync(
     args,
     async (
+        ConsoleAppContext context,
         bool showHeader = true,
         string pidFileName = "demonsgame.pid",
         LogLevelType logLevel = LogLevelType.Information,
@@ -25,7 +34,8 @@ await ConsoleApp.RunAsync(
         string configFileName = "demonsgate_server.json"
     ) =>
     {
-        CancellationTokenRegistration ct = new CancellationTokenRegistration();
+
+
         JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
 
         var options = new DemonsGateServerOptions()
@@ -43,7 +53,7 @@ await ConsoleApp.RunAsync(
             Console.WriteLine(Encoding.UTF8.GetString(headerContext));
         }
 
-        var bootstrap = new DemonsGateBootstrap(options, ct.Token);
+        var bootstrap = new DemonsGateBootstrap(options);
 
         bootstrap.RegisterServices(container =>
             {
@@ -69,6 +79,6 @@ await ConsoleApp.RunAsync(
             }
         );
 
-        await bootstrap.RunAsync();
+        await bootstrap.RunAsync(cts.Token);
     }
 );
