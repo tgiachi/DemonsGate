@@ -592,25 +592,35 @@ public static class TypeScriptDocumentationGenerator
 
             if (genericTypeDefinition == typeof(Action<>))
             {
-                return $"(arg: {ConvertToTypeScriptType(genericArgs[0])}) => void";
+                var paramName = GetDescriptiveParameterName(genericArgs[0]);
+                return $"({paramName}: {ConvertToTypeScriptType(genericArgs[0])}) => void";
             }
 
             if (genericTypeDefinition == typeof(Action<,>))
             {
+                var param1Name = GetDescriptiveParameterName(genericArgs[0]);
+                var param2Name = GetDescriptiveParameterName(genericArgs[1]);
                 return
-                    $"(arg1: {ConvertToTypeScriptType(genericArgs[0])}, arg2: {ConvertToTypeScriptType(genericArgs[1])}) => void";
+                    $"({param1Name}: {ConvertToTypeScriptType(genericArgs[0])}, {param2Name}: {ConvertToTypeScriptType(genericArgs[1])}) => void";
             }
 
             if (genericTypeDefinition == typeof(Action<,,>))
             {
+                var param1Name = GetDescriptiveParameterName(genericArgs[0]);
+                var param2Name = GetDescriptiveParameterName(genericArgs[1]);
+                var param3Name = GetDescriptiveParameterName(genericArgs[2]);
                 return
-                    $"(arg1: {ConvertToTypeScriptType(genericArgs[0])}, arg2: {ConvertToTypeScriptType(genericArgs[1])}, arg3: {ConvertToTypeScriptType(genericArgs[2])}) => void";
+                    $"({param1Name}: {ConvertToTypeScriptType(genericArgs[0])}, {param2Name}: {ConvertToTypeScriptType(genericArgs[1])}, {param3Name}: {ConvertToTypeScriptType(genericArgs[2])}) => void";
             }
 
             if (genericTypeDefinition == typeof(Action<,,,>))
             {
+                var param1Name = GetDescriptiveParameterName(genericArgs[0]);
+                var param2Name = GetDescriptiveParameterName(genericArgs[1]);
+                var param3Name = GetDescriptiveParameterName(genericArgs[2]);
+                var param4Name = GetDescriptiveParameterName(genericArgs[3]);
                 return
-                    $"(arg1: {ConvertToTypeScriptType(genericArgs[0])}, arg2: {ConvertToTypeScriptType(genericArgs[1])}, arg3: {ConvertToTypeScriptType(genericArgs[2])}, arg4: {ConvertToTypeScriptType(genericArgs[3])}) => void";
+                    $"({param1Name}: {ConvertToTypeScriptType(genericArgs[0])}, {param2Name}: {ConvertToTypeScriptType(genericArgs[1])}, {param3Name}: {ConvertToTypeScriptType(genericArgs[2])}, {param4Name}: {ConvertToTypeScriptType(genericArgs[3])}) => void";
             }
 
             // Handle Func delegates
@@ -621,13 +631,16 @@ public static class TypeScriptDocumentationGenerator
 
             if (genericTypeDefinition == typeof(Func<,>))
             {
-                return $"(arg: {ConvertToTypeScriptType(genericArgs[0])}) => {ConvertToTypeScriptType(genericArgs[1])}";
+                var paramName = GetDescriptiveParameterName(genericArgs[0]);
+                return $"({paramName}: {ConvertToTypeScriptType(genericArgs[0])}) => {ConvertToTypeScriptType(genericArgs[1])}";
             }
 
             if (genericTypeDefinition == typeof(Func<,,>))
             {
+                var param1Name = GetDescriptiveParameterName(genericArgs[0]);
+                var param2Name = GetDescriptiveParameterName(genericArgs[1]);
                 return
-                    $"(arg1: {ConvertToTypeScriptType(genericArgs[0])}, arg2: {ConvertToTypeScriptType(genericArgs[1])}) => {ConvertToTypeScriptType(genericArgs[2])}";
+                    $"({param1Name}: {ConvertToTypeScriptType(genericArgs[0])}, {param2Name}: {ConvertToTypeScriptType(genericArgs[1])}) => {ConvertToTypeScriptType(genericArgs[2])}";
             }
 
             // Handle List<T>
@@ -703,7 +716,7 @@ public static class TypeScriptDocumentationGenerator
                 var parameters = method.GetParameters();
                 var paramStrings = parameters.Select((p, i) =>
                     {
-                        var paramName = p.Name ?? $"arg{i}";
+                        var paramName = p.Name ?? GetDescriptiveParameterName(p.ParameterType);
                         return $"{paramName}: {ConvertToTypeScriptType(p.ParameterType)}";
                     }
                 );
@@ -848,6 +861,58 @@ public static class TypeScriptDocumentationGenerator
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    ///     Gets a descriptive parameter name based on the type
+    /// </summary>
+    private static string GetDescriptiveParameterName(Type type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+
+        // Get the base type name without generic parameters
+        var typeName = type.Name;
+
+        // Remove generic type indicators (e.g., `1, `2)
+        var genericTickIndex = typeName.IndexOf('`');
+        if (genericTickIndex >= 0)
+        {
+            typeName = typeName[..genericTickIndex];
+        }
+
+        // Remove common prefixes
+        if (typeName.StartsWith("Script", StringComparison.Ordinal) && typeName.Length > 6)
+        {
+            typeName = typeName[6..]; // Remove "Script" prefix
+        }
+
+        // Convert to camelCase
+        if (typeName.Length > 0)
+        {
+            typeName = char.ToLowerInvariant(typeName[0]) + typeName[1..];
+        }
+
+        // Handle common naming patterns to make them more concise
+        typeName = typeName switch
+        {
+            "executionContext" => "context",
+            "commandRequest"   => "request",
+            "commandResult"    => "result",
+            "eventArgs"        => "args",
+            "eventData"        => "data",
+            "configuration"    => "config",
+            "information"      => "info",
+            "parameters"       => "params",
+            _                  => typeName
+        };
+
+        // Ensure the name is not empty or too short
+        if (string.IsNullOrEmpty(typeName) || typeName.Length < 2)
+        {
+            return "arg";
+        }
+
+        return typeName;
     }
 
     /// <summary>
