@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -37,6 +37,7 @@
         <ProjectReference Include="..\..\src\DemonsGate.Core\DemonsGate.Core.csproj"/>
         <ProjectReference Include="..\..\src\DemonsGate.Entities\DemonsGate.Entities.csproj"/>
         <ProjectReference Include="..\..\src\DemonsGate.Network\DemonsGate.Network.csproj"/>
+        <ProjectReference Include="..\..\src\DemonsGate.Services\DemonsGate.Services.csproj"/>
     </ItemGroup>
 
 </Project>

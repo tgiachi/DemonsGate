@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
-using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Network.Args;
 using DemonsGate.Network.Data.Services;
+using DemonsGate.Network.Interfaces.Listeners;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Processors;
 using DemonsGate.Network.Interfaces.Services;
+using DemonsGate.Network.Types;
 using DemonsGate.Services.Data.Config.Sections;
 using DemonsGate.Services.Interfaces;
 using LiteNetLib;
@@ -26,7 +27,12 @@ public class DefaultNetworkService : INetworkService
     public event INetworkService.NetworkClientMessageHandler? ClientMessageReceived;
     public event INetworkService.NetworkClientConnectedMessages? ClientConnectedHelloMessages;
 
+
+    private readonly IEventLoopService _eventLoopService;
+
     private readonly ILogger _logger = Log.ForContext<DefaultNetworkService>();
+
+    private readonly Dictionary<NetworkMessageType, List<INetworkMessageListener>> _messageListeners = new();
 
     private readonly ConcurrentDictionary<int, NetPeer> _clients = new();
 
@@ -49,13 +55,15 @@ public class DefaultNetworkService : INetworkService
 
     public DefaultNetworkService(
         IPacketSerializer packetSerializer, IPacketDeserializer packetDeserializer,
-        List<NetworkMessageData> registeredMessages, GameNetworkConfig networkConfig, IEventLoopService eventLoop
+        List<NetworkMessageData> registeredMessages, GameNetworkConfig networkConfig,
+        IEventLoopService eventLoopService
     )
     {
         _packetSerializer = packetSerializer;
         _packetDeserializer = packetDeserializer;
         _registeredMessages = registeredMessages;
         _networkConfig = networkConfig;
+        _eventLoopService = eventLoopService;
 
         _netManager = new NetManager(_netListener)
         {
@@ -72,7 +80,7 @@ public class DefaultNetworkService : INetworkService
 
         RegisterInitialMessages();
 
-        eventLoop.OnTick += OnEventLoopTick;
+        eventLoopService.OnTick += OnEventLoopTick;
     }
 
     private void OnEventLoopTick(double tickDurationMs)
@@ -94,6 +102,8 @@ public class DefaultNetworkService : INetworkService
 
             var message = await _packetDeserializer.DeserializeAsync<IDemonsGateMessage>(messageData);
 
+            await DispatchMessageToListenersAsync(peer.Id, message);
+
             _logger.Debug(
                 "Deserialized message of type {MessageType} from {Id}",
                 message.MessageType,
@@ -104,6 +114,37 @@ public class DefaultNetworkService : INetworkService
         {
             _logger.Error(ex, "Error processing message from {EndPoint}", peer.Id);
         }
+    }
+
+    private async Task DispatchMessageToListenersAsync(int clientId, IDemonsGateMessage message)
+    {
+        if (_messageListeners.TryGetValue(message.MessageType, out var listeners))
+        {
+            foreach (var networkMessageListener in listeners)
+            {
+                _eventLoopService.EnqueueTask(
+                    $"HandleMessage_{message.MessageType}",
+                    async () =>
+                    {
+                        try
+                        {
+                            await networkMessageListener.HandleMessageAsync(clientId, message);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(
+                                ex,
+                                "Error in listener {Listener} for message type {MessageType}",
+                                networkMessageListener.GetType().Name,
+                                message.MessageType
+                            );
+                        }
+                    }
+                );
+            }
+        }
+
+        _logger.Warning("No listeners registered for message type {MessageType}", message.MessageType);
     }
 
     private void OnPeerEvent(NetPeer peer)
@@ -199,6 +240,31 @@ public class DefaultNetworkService : INetworkService
         _logger.Information("Network service stopped");
     }
 
+
+    public void AddMessageListener(NetworkMessageType messageType, INetworkMessageListener listener)
+    {
+        if (!_messageListeners.TryGetValue(messageType, out List<INetworkMessageListener>? value))
+        {
+            value = [];
+            _messageListeners[messageType] = value;
+        }
+
+        value.Add(listener);
+
+        _logger.Debug("Added listener for message type {MessageType}", messageType);
+    }
+
+    public void AddMessageListener<TMessage>(INetworkMessageListener listener) where TMessage : IDemonsGateMessage
+    {
+        var messageData = _registeredMessages.FirstOrDefault(m => m.type == typeof(TMessage));
+        if (messageData == null)
+        {
+            _logger.Error("Message type {MessageType} not registered", typeof(TMessage).Name);
+            throw new InvalidOperationException($"Message type {typeof(TMessage).Name} not registered");
+        }
+
+        AddMessageListener(messageData.MessageType, listener);
+    }
 
     public async Task SendMessageAsync<TMessage>(
         int clientId, TMessage message, CancellationToken cancellationToken = default

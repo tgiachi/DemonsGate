@@ -230,6 +230,40 @@ public class EventLoopService : IEventLoopService, IMetricsProvider
     }
 
     /// <summary>
+    /// Enqueues an async task to be executed with normal priority.
+    /// </summary>
+    public string EnqueueTask(string name, Func<Task> task)
+    {
+        return EnqueueTask(name, task, EventLoopPriority.Normal);
+    }
+
+    /// <summary>
+    /// Enqueues an async task to be executed with the specified priority.
+    /// </summary>
+    public string EnqueueTask(string name, Func<Task> task, EventLoopPriority priority)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+
+        var queuedAction = new QueuedAction(name, task, priority);
+        var queue = _priorityQueues[priority];
+        queue.Enqueue(queuedAction);
+
+        // Register the action to allow cancellation later
+        _actionRegistry[queuedAction.Id] = new QueuedActionReference(priority, queuedAction.Id);
+
+        UpdatePriorityMetrics();
+
+        _logger.Verbose(
+            "Async task '{Name}' with ID {Id} enqueued with priority {Priority}",
+            name,
+            queuedAction.Id,
+            priority
+        );
+
+        return queuedAction.Id;
+    }
+
+    /// <summary>
     /// Enqueues an action to be executed after the specified delay with normal priority.
     /// </summary>
     public string EnqueueDelayedAction(string name, Action action, TimeSpan delay)
@@ -255,6 +289,41 @@ public class EventLoopService : IEventLoopService, IMetricsProvider
 
         _logger.Verbose(
             "Delayed action '{Name}' with ID {Id} enqueued with priority {Priority} to execute at {ExecuteAt}",
+            name,
+            queuedAction.Id,
+            priority,
+            executeAt
+        );
+
+        return queuedAction.Id;
+    }
+
+    /// <summary>
+    /// Enqueues an async task to be executed after the specified delay with normal priority.
+    /// </summary>
+    public string EnqueueDelayedTask(string name, Func<Task> task, TimeSpan delay)
+    {
+        return EnqueueDelayedTask(name, task, delay, EventLoopPriority.Normal);
+    }
+
+    /// <summary>
+    /// Enqueues an async task to be executed after the specified delay with the specified priority.
+    /// </summary>
+    public string EnqueueDelayedTask(string name, Func<Task> task, TimeSpan delay, EventLoopPriority priority)
+    {
+        if (task == null)
+        {
+            throw new ArgumentNullException(nameof(task));
+        }
+
+        var queuedAction = new QueuedAction(name, task, priority);
+        var executeAt = DateTime.UtcNow.Add(delay);
+        var delayedAction = new DelayedAction(queuedAction, executeAt);
+
+        _delayedActions[queuedAction.Id] = delayedAction;
+
+        _logger.Verbose(
+            "Delayed async task '{Name}' with ID {Id} enqueued with priority {Priority} to execute at {ExecuteAt}",
             name,
             queuedAction.Id,
             priority,
@@ -474,8 +543,17 @@ public class EventLoopService : IEventLoopService, IMetricsProvider
                     // Record start timestamp
                     var executionStartTimestamp = Stopwatch.GetTimestamp();
 
-                    // Execute the action
-                    action.Action.Invoke();
+                    // Execute the action or task
+                    if (action.IsAsync)
+                    {
+                        // Execute async task synchronously within the event loop
+                        action.AsyncTask!.Invoke().GetAwaiter().GetResult();
+                    }
+                    else
+                    {
+                        // Execute synchronous action
+                        action.Action!.Invoke();
+                    }
 
                     // Record end timestamp
                     var executionEndTimestamp = Stopwatch.GetTimestamp();

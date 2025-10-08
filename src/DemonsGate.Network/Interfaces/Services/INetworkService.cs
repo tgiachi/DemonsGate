@@ -1,6 +1,8 @@
 using DemonsGate.Core.Interfaces.Services;
 using DemonsGate.Network.Args;
+using DemonsGate.Network.Interfaces.Listeners;
 using DemonsGate.Network.Interfaces.Messages;
+using DemonsGate.Network.Types;
 
 namespace DemonsGate.Network.Interfaces.Services;
 
@@ -10,9 +12,9 @@ namespace DemonsGate.Network.Interfaces.Services;
 public interface INetworkService : IDemonsGateStartableService
 {
 
+
     delegate void NetworkClientConnectedHandler(object sender, NetworkClientConnectedEventArgs e);
     delegate void NetworkClientDisconnectedHandler(object sender, NetworkClientConnectedEventArgs e);
-
     delegate void NetworkClientMessageHandler(object sender, NetworkClientMessageEventArgs e);
 
     delegate void NetworkClientRawMessageReceivedHandler(object sender, NetworkClientRawMessageArgs e);
@@ -28,6 +30,13 @@ public interface INetworkService : IDemonsGateStartableService
 
     event NetworkClientConnectedMessages? ClientConnectedHelloMessages;
 
+    void AddMessageListener(NetworkMessageType messageType, INetworkMessageListener listener);
+
+    void AddMessageListener<TMessage>(INetworkMessageListener listener)
+        where TMessage : IDemonsGateMessage;
+
+
+
     Task SendMessageAsync<TMessage>(int clientId, TMessage message, CancellationToken cancellationToken = default)
         where TMessage : IDemonsGateMessage;
 
@@ -35,6 +44,9 @@ public interface INetworkService : IDemonsGateStartableService
         where TMessage : IDemonsGateMessage;
 
     Task DisconnectClientAsync(int clientId, CancellationToken cancellationToken = default);
+
+
+
 
 
 }

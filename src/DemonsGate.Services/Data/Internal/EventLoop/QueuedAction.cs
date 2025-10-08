@@ -21,7 +21,17 @@ public struct QueuedAction
     /// <summary>
     /// Gets the action to be executed.
     /// </summary>
-    public Action Action { get; }
+    public Action? Action { get; }
+
+    /// <summary>
+    /// Gets the async task to be executed.
+    /// </summary>
+    public Func<Task>? AsyncTask { get; }
+
+    /// <summary>
+    /// Gets whether this is an async task.
+    /// </summary>
+    public bool IsAsync => AsyncTask != null;
 
     /// <summary>
     /// Gets the priority of the action.
@@ -54,6 +64,25 @@ public struct QueuedAction
         Id = Guid.NewGuid().ToString();
         Name = name.ToLower(CultureInfo.InvariantCulture);
         Action = action;
+        AsyncTask = null;
+        Priority = priority;
+        EnqueuedAt = DateTime.UtcNow;
+        ExecutionStartTimestamp = 0;
+        ExecutionEndTimestamp = 0;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="QueuedAction"/> struct for async tasks.
+    /// </summary>
+    /// <param name="name">The name of the action for identification.</param>
+    /// <param name="asyncTask">The async task to be executed.</param>
+    /// <param name="priority">The priority of the action.</param>
+    public QueuedAction(string name, Func<Task> asyncTask, EventLoopPriority priority)
+    {
+        Id = Guid.NewGuid().ToString();
+        Name = name.ToLower(CultureInfo.InvariantCulture);
+        Action = null;
+        AsyncTask = asyncTask;
         Priority = priority;
         EnqueuedAt = DateTime.UtcNow;
         ExecutionStartTimestamp = 0;

@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemonsGate.Js.Scripting.Eng
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemonsGate.Entities", "src\DemonsGate.Entities\DemonsGate.Entities.csproj", "{E6AD7059-945C-4111-A6DF-07CAFA486940}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemonsGate.Services.Game", "src\DemonsGate.Services.Game\DemonsGate.Services.Game.csproj", "{13A919D8-EFDE-4031-8601-00FF916337A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -115,6 +117,18 @@ Global
 		{E6AD7059-945C-4111-A6DF-07CAFA486940}.Release|x64.Build.0 = Release|Any CPU
 		{E6AD7059-945C-4111-A6DF-07CAFA486940}.Release|x86.ActiveCfg = Release|Any CPU
 		{E6AD7059-945C-4111-A6DF-07CAFA486940}.Release|x86.Build.0 = Release|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Debug|x64.Build.0 = Debug|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Debug|x86.Build.0 = Debug|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Release|x64.ActiveCfg = Release|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Release|x64.Build.0 = Release|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Release|x86.ActiveCfg = Release|Any CPU
+		{13A919D8-EFDE-4031-8601-00FF916337A8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,5 +141,6 @@ Global
 		{7CFE471F-D79A-4D7E-BC2F-831F0994051F} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{E67619C6-8C68-43F3-8A6E-A9DCD74B14A5} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{E6AD7059-945C-4111-A6DF-07CAFA486940} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{13A919D8-EFDE-4031-8601-00FF916337A8} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
