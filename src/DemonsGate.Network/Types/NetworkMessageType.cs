@@ -10,4 +10,10 @@ public enum NetworkMessageType : byte
 
     /// <summary>Pong message in response to a ping</summary>
     Pong,
+
+    /// <summary>Login request message for user authentication</summary>
+    LoginRequest,
+
+    /// <summary>Login response message indicating success or failure</summary>
+    LoginResponse,
 }

@@ -10,6 +10,8 @@ using DemonsGate.Js.Scripting.Engine.Modules;
 using DemonsGate.Js.Scripting.Engine.Services;
 using DemonsGate.Network.Extensions;
 using DemonsGate.Network.Messages;
+using DemonsGate.Network.Messages.Auth;
+using DemonsGate.Network.Messages.System;
 using DemonsGate.Server;
 using DemonsGate.Services.Context;
 using DemonsGate.Services.Data.Config.Options;
@@ -76,7 +78,12 @@ await ConsoleApp.RunAsync(
 
                 container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());
 
-                container.RegisterNetworkMessage<PingMessage>();
+                container
+                    .RegisterNetworkMessage<PingMessage>()
+                    .RegisterNetworkMessage<PongMessage>()
+                    .RegisterNetworkMessage<LoginRequestMessage>()
+                    .RegisterNetworkMessage<LoginResponseMessage>()
+                    ;
 
                 container.RegisterEntityServices();
 

@@ -2,7 +2,7 @@ using DemonsGate.Network.Messages.Base;
 using DemonsGate.Network.Types;
 using MemoryPack;
 
-namespace DemonsGate.Network.Messages;
+namespace DemonsGate.Network.Messages.System;
 
 /// <summary>
 ///     Represents a ping message used to check connection status and measure latency
