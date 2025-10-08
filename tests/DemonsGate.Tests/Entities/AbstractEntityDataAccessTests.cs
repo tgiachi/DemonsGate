@@ -46,7 +46,7 @@ public class AbstractEntityDataAccessTests
         };
 
         // Act
-        var result = await _dataAccess.CreateAsync(entity);
+        var result = await _dataAccess.InsertAsync(entity);
 
         // Assert
         Assert.That(result.Id, Is.Not.EqualTo(Guid.Empty));
@@ -71,9 +71,9 @@ public class AbstractEntityDataAccessTests
     public async Task GetAllAsync_ShouldReturnAllEntities()
     {
         // Arrange
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Entity 1", Value = 1 });
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Entity 2", Value = 2 });
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Entity 3", Value = 3 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Entity 1", Value = 1 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Entity 2", Value = 2 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Entity 3", Value = 3 });
 
         // Act
         var result = await _dataAccess.GetAllAsync();
@@ -86,7 +86,7 @@ public class AbstractEntityDataAccessTests
     public async Task GetByIdAsync_ShouldReturnEntity_WhenExists()
     {
         // Arrange
-        var created = await _dataAccess.CreateAsync(new TestEntity { Name = "Test", Value = 100 });
+        var created = await _dataAccess.InsertAsync(new TestEntity { Name = "Test", Value = 100 });
 
         // Act
         var result = await _dataAccess.GetByIdAsync(created.Id);
@@ -112,7 +112,7 @@ public class AbstractEntityDataAccessTests
     public async Task UpdateAsync_ShouldUpdateEntity()
     {
         // Arrange
-        var created = await _dataAccess.CreateAsync(new TestEntity { Name = "Original", Value = 1 });
+        var created = await _dataAccess.InsertAsync(new TestEntity { Name = "Original", Value = 1 });
         var originalUpdated = created.Updated;
 
         // Wait a bit to ensure Updated timestamp changes
@@ -154,7 +154,7 @@ public class AbstractEntityDataAccessTests
     public async Task DeleteAsync_ShouldDeleteEntity_WhenExists()
     {
         // Arrange
-        var created = await _dataAccess.CreateAsync(new TestEntity { Name = "To Delete", Value = 1 });
+        var created = await _dataAccess.InsertAsync(new TestEntity { Name = "To Delete", Value = 1 });
 
         // Act
         var result = await _dataAccess.DeleteAsync(created.Id);
@@ -191,9 +191,9 @@ public class AbstractEntityDataAccessTests
     public async Task CountAsync_ShouldReturnCorrectCount()
     {
         // Arrange
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Entity 1", Value = 1 });
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Entity 2", Value = 2 });
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Entity 3", Value = 3 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Entity 1", Value = 1 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Entity 2", Value = 2 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Entity 3", Value = 3 });
 
         // Act
         var count = await _dataAccess.CountAsync();
@@ -206,9 +206,9 @@ public class AbstractEntityDataAccessTests
     public async Task SearchAsync_ShouldReturnMatchingEntities()
     {
         // Arrange
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Apple", Value = 1 });
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Banana", Value = 2 });
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Apple Pie", Value = 3 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Apple", Value = 1 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Banana", Value = 2 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Apple Pie", Value = 3 });
 
         // Act
         var result = await _dataAccess.SearchAsync(e => e.Name.Contains("Apple"));
@@ -223,7 +223,7 @@ public class AbstractEntityDataAccessTests
     public async Task SearchAsync_ShouldReturnEmpty_WhenNoMatches()
     {
         // Arrange
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Test", Value = 1 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Test", Value = 1 });
 
         // Act
         var result = await _dataAccess.SearchAsync(e => e.Name == "NonExistent");
@@ -236,7 +236,7 @@ public class AbstractEntityDataAccessTests
     public async Task SearchSingleAsync_ShouldReturnEntity_WhenMatches()
     {
         // Arrange
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Unique", Value = 999 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Unique", Value = 999 });
 
         // Act
         var result = await _dataAccess.SearchSingleAsync(e => e.Value == 999);
@@ -251,7 +251,7 @@ public class AbstractEntityDataAccessTests
     public async Task SearchSingleAsync_ShouldReturnNull_WhenNoMatch()
     {
         // Arrange
-        await _dataAccess.CreateAsync(new TestEntity { Name = "Test", Value = 1 });
+        await _dataAccess.InsertAsync(new TestEntity { Name = "Test", Value = 1 });
 
         // Act
         var result = await _dataAccess.SearchSingleAsync(e => e.Value == 999);
@@ -264,7 +264,7 @@ public class AbstractEntityDataAccessTests
     public async Task DataPersistence_ShouldPersistAcrossInstances()
     {
         // Arrange - Create entity with first instance
-        var entity = await _dataAccess.CreateAsync(new TestEntity { Name = "Persistent", Value = 42 });
+        var entity = await _dataAccess.InsertAsync(new TestEntity { Name = "Persistent", Value = 42 });
         _dataAccess.Dispose();
 
         // Act - Create new instance and retrieve
@@ -289,7 +289,7 @@ public class AbstractEntityDataAccessTests
             var index = i;
             tasks.Add(Task.Run(async () =>
             {
-                await _dataAccess.CreateAsync(new TestEntity { Name = $"Entity {index}", Value = index });
+                await _dataAccess.InsertAsync(new TestEntity { Name = $"Entity {index}", Value = index });
             }));
         }
 

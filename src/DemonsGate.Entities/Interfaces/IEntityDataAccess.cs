@@ -9,7 +9,7 @@ public interface IEntityDataAccess<TEntity> where TEntity : BaseEntity
 
     Task<TEntity?> GetByIdAsync(Guid id);
 
-    Task<TEntity> CreateAsync(TEntity entity);
+    Task<TEntity> InsertAsync(TEntity entity);
 
     Task<TEntity> UpdateAsync(TEntity entity);
 

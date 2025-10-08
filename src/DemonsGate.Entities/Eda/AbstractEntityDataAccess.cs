@@ -88,7 +88,7 @@ public class AbstractEntityDataAccess<TEntity> : IEntityDataAccess<TEntity>, IDi
         }
     }
 
-    public async Task<TEntity> CreateAsync(TEntity entity)
+    public async Task<TEntity> InsertAsync(TEntity entity)
     {
         _logger.Debug("Creating new entity");
         await _lock.WaitAsync();

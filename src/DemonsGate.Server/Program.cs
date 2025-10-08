@@ -71,6 +71,7 @@ await ConsoleApp.RunAsync(
                     .AddService<IEventLoopService, EventLoopService>()
                     .AddService<IDiagnosticService, DiagnosticService>()
                     .AddService<ICommandService, CommandService>()
+                    .AddService<ISeedService, SeedService>(100)
                     ;
 
                 container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());

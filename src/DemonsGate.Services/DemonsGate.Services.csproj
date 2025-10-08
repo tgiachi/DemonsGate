@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
+      <ProjectReference Include="..\DemonsGate.Entities\DemonsGate.Entities.csproj" />
     </ItemGroup>
 
    
