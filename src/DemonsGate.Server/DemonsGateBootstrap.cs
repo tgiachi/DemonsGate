@@ -7,6 +7,7 @@ using DemonsGate.Core.Interfaces.Services;
 using DemonsGate.Core.Json;
 using DemonsGate.Services.Data.Config;
 using DemonsGate.Services.Data.Config.Options;
+using DemonsGate.Services.Events.Engine;
 using DemonsGate.Services.Extensions.Loggers;
 using DemonsGate.Services.Interfaces;
 using DemonsGate.Services.Types;
@@ -56,6 +57,8 @@ public class DemonsGateBootstrap : IDisposable
             HookShellCommands(cancellationToken);
         }
 
+        await _container.Resolve<IEventBusService>().PublishAsync(new EngineStartedEvent());
+
         try
         {
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -64,6 +67,8 @@ public class DemonsGateBootstrap : IDisposable
         {
             Log.Information("Shutdown signal received.");
         }
+
+        await _container.Resolve<IEventBusService>().PublishAsync(new EngineStoppingEvent());
 
         await StopAsync(cancellationToken);
     }

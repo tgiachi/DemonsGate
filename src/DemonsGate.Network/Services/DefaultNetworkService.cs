@@ -88,15 +88,22 @@ public class DefaultNetworkService : INetworkService
             channel,
             deliveryMethod
         );
-        var messageData = reader.GetBytesWithLength();
+        try
+        {
+            var messageData = reader.GetBytesWithLength();
 
-        var message = await _packetDeserializer.DeserializeAsync<IDemonsGateMessage>(messageData);
+            var message = await _packetDeserializer.DeserializeAsync<IDemonsGateMessage>(messageData);
 
-        _logger.Debug(
-            "Deserialized message of type {MessageType} from {Id}",
-            message.MessageType,
-            peer.Id
-        );
+            _logger.Debug(
+                "Deserialized message of type {MessageType} from {Id}",
+                message.MessageType,
+                peer.Id
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error processing message from {EndPoint}", peer.Id);
+        }
     }
 
     private void OnPeerEvent(NetPeer peer)
@@ -143,21 +150,24 @@ public class DefaultNetworkService : INetworkService
         _logger.Information("Network service started on port {Port}", _networkConfig.Port);
 
         _pollCts = new CancellationTokenSource();
-        _pollTask = Task.Run(async () =>
-        {
-            try
+        _pollTask = Task.Run(
+            async () =>
             {
-                while (!_pollCts.Token.IsCancellationRequested)
+                try
                 {
-                    _netManager?.PollEvents();
-                    await Task.Delay(15, _pollCts.Token);
+                    while (!_pollCts.Token.IsCancellationRequested)
+                    {
+                        _netManager?.PollEvents();
+                        await Task.Delay(15, _pollCts.Token);
+                    }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when stopping
-            }
-        }, _pollCts.Token);
+                catch (OperationCanceledException)
+                {
+                    // Expected when stopping
+                }
+            },
+            _pollCts.Token
+        );
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)

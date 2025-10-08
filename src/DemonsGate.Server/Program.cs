@@ -4,6 +4,7 @@ using DemonsGate.Core.Extensions.Services;
 using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Core.Json;
 using DemonsGate.Core.Utils;
+using DemonsGate.Entities.Extensions;
 using DemonsGate.Js.Scripting.Engine.Extensions.Scripts;
 using DemonsGate.Js.Scripting.Engine.Modules;
 using DemonsGate.Js.Scripting.Engine.Services;
@@ -75,6 +76,8 @@ await ConsoleApp.RunAsync(
                 container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());
 
                 container.RegisterNetworkMessage<PingMessage>();
+
+                container.RegisterEntityServices();
 
 
                 container
