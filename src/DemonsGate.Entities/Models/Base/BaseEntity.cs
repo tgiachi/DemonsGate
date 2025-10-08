@@ -1,6 +1,9 @@
+using MemoryPack;
+
 namespace DemonsGate.Entities.Models.Base;
 
-public class BaseEntity
+[MemoryPackable]
+public partial class BaseEntity
 {
     public Guid Id { get; set; }
 
