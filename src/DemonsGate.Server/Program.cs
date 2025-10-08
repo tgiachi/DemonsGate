@@ -9,8 +9,8 @@ using DemonsGate.Js.Scripting.Engine.Extensions.Scripts;
 using DemonsGate.Js.Scripting.Engine.Modules;
 using DemonsGate.Js.Scripting.Engine.Services;
 using DemonsGate.Network.Extensions;
-using DemonsGate.Network.Messages;
 using DemonsGate.Network.Messages.Auth;
+using DemonsGate.Network.Messages.Pings;
 using DemonsGate.Network.Messages.System;
 using DemonsGate.Server;
 using DemonsGate.Services.Context;
@@ -100,6 +100,7 @@ await ConsoleApp.RunAsync(
                 return container;
             }
         );
+
 
         await bootstrap.RunAsync(cts.Token);
     }

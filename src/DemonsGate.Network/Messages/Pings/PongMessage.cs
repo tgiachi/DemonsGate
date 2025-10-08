@@ -2,7 +2,7 @@ using DemonsGate.Network.Messages.Base;
 using DemonsGate.Network.Types;
 using MemoryPack;
 
-namespace DemonsGate.Network.Messages.System;
+namespace DemonsGate.Network.Messages.Pings;
 
 [MemoryPackable]
 public partial class PongMessage : BaseDemonsGameMessage

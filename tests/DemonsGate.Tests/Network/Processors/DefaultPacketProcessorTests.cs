@@ -1,7 +1,7 @@
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Utils;
 using DemonsGate.Network.Messages;
-using DemonsGate.Network.Messages.System;
+using DemonsGate.Network.Messages.Pings;
 using DemonsGate.Network.Packet;
 using DemonsGate.Network.Processors;
 using DemonsGate.Network.Types;
