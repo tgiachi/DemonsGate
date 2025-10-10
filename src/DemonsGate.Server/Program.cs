@@ -50,10 +50,8 @@ await ConsoleApp.RunAsync(
 
         // Register MemoryPack formatters for AOT compatibility
         // Warmup serializers to force NativeAOT to generate formatters for collections
-        MemoryPackFormatterProvider.Register<UserEntity>();
-        var warmupList = new List<UserEntity>();
-        var warmupBytes = MemoryPackSerializer.Serialize(warmupList);
-        _ = MemoryPackSerializer.Deserialize<List<UserEntity>>(warmupBytes);
+        // Ensure formatter for the collection itself is preserved under trimming/AOT
+        MemoryPackFormatterProvider.RegisterCollection<List<UserEntity>, UserEntity>();
 
         var options = new DemonsGateServerOptions()
         {
