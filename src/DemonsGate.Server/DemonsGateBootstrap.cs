@@ -57,7 +57,7 @@ public class DemonsGateBootstrap : IDisposable
             HookShellCommands(cancellationToken);
         }
 
-        await _container.Resolve<IEventBusService>().PublishAsync(new EngineStartedEvent());
+        await _container.Resolve<IEventBusService>().PublishAsync(new EngineStartedEvent(), cancellationToken);
 
         try
         {
@@ -68,7 +68,7 @@ public class DemonsGateBootstrap : IDisposable
             Log.Information("Shutdown signal received.");
         }
 
-        await _container.Resolve<IEventBusService>().PublishAsync(new EngineStoppingEvent());
+        await _container.Resolve<IEventBusService>().PublishAsync(new EngineStoppingEvent(), cancellationToken);
 
         await StopAsync(cancellationToken);
     }

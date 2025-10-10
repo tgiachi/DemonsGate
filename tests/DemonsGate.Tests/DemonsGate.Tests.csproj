@@ -38,6 +38,7 @@
         <ProjectReference Include="..\..\src\DemonsGate.Entities\DemonsGate.Entities.csproj"/>
         <ProjectReference Include="..\..\src\DemonsGate.Game.Data\DemonsGate.Game.Data.csproj" />
         <ProjectReference Include="..\..\src\DemonsGate.Network\DemonsGate.Network.csproj"/>
+        <ProjectReference Include="..\..\src\DemonsGate.Services.Game\DemonsGate.Services.Game.csproj" />
         <ProjectReference Include="..\..\src\DemonsGate.Services\DemonsGate.Services.csproj"/>
     </ItemGroup>
 

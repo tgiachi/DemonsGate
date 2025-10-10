@@ -76,46 +76,6 @@ public class ConsoleModule
         }
     }
 
-    [ScriptFunction(functionName: "time")]
-    public void Time(string label)
-    {
-        // Store timer start time (would need dictionary in real implementation)
-        _logger.Debug("[Console] Timer '{Label}' started", label);
-    }
-
-    [ScriptFunction(functionName: "timeEnd")]
-    public void TimeEnd(string label)
-    {
-        // Calculate elapsed time (would need dictionary in real implementation)
-        _logger.Debug("[Console] Timer '{Label}' ended", label);
-    }
-
-    [ScriptFunction(functionName: "count")]
-    public void Count(string label = "default")
-    {
-        // Increment counter (would need dictionary in real implementation)
-        _logger.Debug("[Console] Count '{Label}'", label);
-    }
-
-    [ScriptFunction(functionName: "group")]
-    public void Group(params object[] args)
-    {
-        var message = args.Length > 0 ? string.Join(" ", args.Select(FormatArg)) : "Group";
-        _logger.Information("[Console] Group: {Message}", message);
-    }
-
-    [ScriptFunction(functionName: "groupEnd")]
-    public void GroupEnd()
-    {
-        _logger.Information("[Console] Group end");
-    }
-
-    [ScriptFunction(functionName: "table")]
-    public void Table(object data)
-    {
-        var formatted = FormatArg(data);
-        _logger.Information("[Console] Table:\n{Data}", formatted);
-    }
 
     private static string FormatArg(object? arg)
     {
