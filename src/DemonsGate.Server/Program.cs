@@ -54,6 +54,7 @@ await ConsoleApp.RunAsync(
         MemoryPackFormatterProvider.Register<UserEntity>();
         MemoryPackFormatterProvider.RegisterCollection<List<UserEntity>, UserEntity>();
 
+
         var options = new DemonsGateServerOptions()
         {
             LogLevel = logLevel,
