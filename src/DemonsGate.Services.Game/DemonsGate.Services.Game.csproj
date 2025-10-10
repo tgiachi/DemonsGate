@@ -10,12 +10,9 @@
     <ItemGroup>
       <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
       <ProjectReference Include="..\DemonsGate.Game.Data\DemonsGate.Game.Data.csproj" />
+      <ProjectReference Include="..\DemonsGate.Lua.Scripting.Engine\DemonsGate.Lua.Scripting.Engine.csproj" />
       <ProjectReference Include="..\DemonsGate.Network\DemonsGate.Network.csproj" />
       <ProjectReference Include="..\DemonsGate.Services\DemonsGate.Services.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Impl\" />
     </ItemGroup>
 
 </Project>

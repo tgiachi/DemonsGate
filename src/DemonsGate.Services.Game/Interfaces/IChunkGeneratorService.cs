@@ -6,6 +6,7 @@ namespace DemonsGate.Services.Game.Interfaces;
 
 public interface IChunkGeneratorService : IDemonsGateService
 {
-    Task<ChunkEntity> GetChunk(Vector3 position);
+
+    Task<ChunkEntity> GetChunkByWorldPosition(Vector3 position);
 
 }
