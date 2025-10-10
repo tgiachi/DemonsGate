@@ -9,12 +9,13 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
+      <ProjectReference Include="..\DemonsGate.Game.Data\DemonsGate.Game.Data.csproj" />
       <ProjectReference Include="..\DemonsGate.Network\DemonsGate.Network.csproj" />
       <ProjectReference Include="..\DemonsGate.Services\DemonsGate.Services.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Interfaces\" />
+      <Folder Include="Impl\" />
     </ItemGroup>
 
 </Project>
