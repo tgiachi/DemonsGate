@@ -13,4 +13,8 @@
       <ProjectReference Include="..\DemonsGate.Services\DemonsGate.Services.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Interfaces\" />
+    </ItemGroup>
+
 </Project>
