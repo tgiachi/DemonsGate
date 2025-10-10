@@ -132,7 +132,9 @@ public class ChunkGeneratorService : IChunkGeneratorService, IDisposable
         var tasks = chunksToGenerate.Select(GetChunkByWorldPosition);
         await Task.WhenAll(tasks);
 
-        _logger.Information("Initial chunk generation completed. Generated {Count} chunks", chunksToGenerate.Count);
+        var elapsed = Stopwatch.GetElapsedTime(startTime);
+        _logger.Information("Initial chunk generation completed. Generated {Count} chunks in {Elapsed:F2}ms",
+            chunksToGenerate.Count, elapsed.TotalMilliseconds);
     }
 
     /// <summary>
