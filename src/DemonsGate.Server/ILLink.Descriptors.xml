@@ -15,6 +15,19 @@
         <type fullname="DemonsGate.Services.*" preserve="all"/>
     </assembly>
 
+    <assembly fullname="DemonsGate.Services.Game">
+        <type fullname="DemonsGate.Services.Game.*" preserve="all"/>
+    </assembly>
+
+    <assembly fullname="MoonSharp.Interpreter">
+        <type fullname="MoonSharp.Interpreter.*" preserve="all"/>
+    </assembly>
+
+
+    <assembly fullname="DemonsGate.Entities">
+        <type fullname="DemonsGate.Entities.*" preserve="all"/>
+    </assembly>
+
 
     <assembly fullname="Jint">
         <type fullname="Jint.*" preserve="all"/>
@@ -25,10 +38,19 @@
         <type fullname="Jint.Engine" preserve="all"/>
     </assembly>
 
+
     <assembly fullname="DryIoc">
         <type fullname="DryIoc.ReflectionTools">
             <method name="GetDefault"/>
         </type>
+    </assembly>
+
+    <assembly fullname="DemonsGate.Lua.Scripting.Engine">
+        <type fullname="DemonsGate.Lua.Scripting.Engine.*" preserve="all"/>
+    </assembly>
+
+    <assembly fullname="MemoryPack">
+        <type fullname="MemoryPack.*" preserve="all"/>
     </assembly>
 
 </linker>

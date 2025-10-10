@@ -1,14 +1,13 @@
 namespace DemonsGate.Core.Attributes.Scripts;
 
 /// <summary>
-///     Attribute to mark a method as a script function that will be exposed to JavaScript
+///     Attribute to mark a method as a script function that will be exposed to JavaScript.
 /// </summary>
-/// <param name="helpText">Optional help text describing the function's purpose</param>
+/// <param name="functionName">Optional name override for the script function.</param>
+/// <param name="helpText">Optional help text describing the function's purpose.</param>
 [AttributeUsage(AttributeTargets.Method)]
-/// <summary>
-/// public class ScriptFunctionAttribute(string? helpText = null) : Attribute.
-/// </summary>
-public class ScriptFunctionAttribute(string? helpText = null) : Attribute
+public class ScriptFunctionAttribute(string? functionName = null, string? helpText = null) : Attribute
 {
+    public string? FunctionName { get; } = functionName;
     public string? HelpText { get; } = helpText;
 }

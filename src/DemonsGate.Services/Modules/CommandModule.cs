@@ -17,7 +17,7 @@ public class CommandModule
         _commandService = commandService;
     }
 
-    [ScriptFunction("Register a command with the command service.")]
+    [ScriptFunction(helpText: "Register a command with the command service.")]
     public void RegisterCommand(
         string command, Func<ScriptExecutionContext, CommandResult> handler,
         CommandSourceType allowedSources = CommandSourceType.All, UserLevelType minimumUserLevel = UserLevelType.User

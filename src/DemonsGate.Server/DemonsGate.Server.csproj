@@ -33,8 +33,9 @@
     <ItemGroup>
       <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
       <ProjectReference Include="..\DemonsGate.Entities\DemonsGate.Entities.csproj" />
-      <ProjectReference Include="..\DemonsGate.Js.Scripting.Engine\DemonsGate.Js.Scripting.Engine.csproj" />
+      <ProjectReference Include="..\DemonsGate.Lua.Scripting.Engine\DemonsGate.Lua.Scripting.Engine.csproj" />
       <ProjectReference Include="..\DemonsGate.Network\DemonsGate.Network.csproj" />
+      <ProjectReference Include="..\DemonsGate.Services.Game\DemonsGate.Services.Game.csproj" />
       <ProjectReference Include="..\DemonsGate.Services\DemonsGate.Services.csproj" />
     </ItemGroup>
 

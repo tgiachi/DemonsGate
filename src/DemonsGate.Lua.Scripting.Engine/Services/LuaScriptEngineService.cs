@@ -1,64 +1,66 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using DemonsGate.Core.Attributes.Scripts;
 using DemonsGate.Core.Data.Scripts;
 using DemonsGate.Core.Directories;
 using DemonsGate.Core.Enums;
 using DemonsGate.Core.Extensions.Strings;
-using DemonsGate.Js.Scripting.Engine.Utils;
+using DemonsGate.Core.Json;
+using DemonsGate.Lua.Scripting.Engine.Data;
+using DemonsGate.Lua.Scripting.Engine.Loaders;
+using DemonsGate.Lua.Scripting.Engine.Utils;
 using DemonsGate.Services.Data.Config.Sections;
 using DemonsGate.Services.Data.Scripts;
 using DemonsGate.Services.Interfaces;
 using DemonsGate.Services.Types;
 using DryIoc;
-using Jint;
-using Jint.Native;
-using Jint.Runtime;
-using Jint.Runtime.Interop;
+using MoonSharp.Interpreter;
 using Serilog;
-using Spectra.Scripting.Utils;
 
-namespace DemonsGate.Js.Scripting.Engine.Services;
+namespace DemonsGate.Lua.Scripting.Engine.Services;
 
 /// <summary>
-///     JavaScript engine service that integrates Jint with the Dust and Rune game engine
-///     Provides script execution, module loading, and TypeScript definition generation
+///     Lua engine service that integrates MoonSharp with the DemonsGate game engine
+///     Provides script execution, module loading, and Lua meta file generation
 /// </summary>
-public class JsScriptEngineService : IScriptEngineService, IDisposable
+public class LuaScriptEngineService : IScriptEngineService, IDisposable
 {
+    private static readonly string[] collection = new[] { "log", "delay" };
+
     // Thread-safe collections
     private readonly ConcurrentDictionary<string, Action<object[]>> _callbacks = new();
     private readonly ConcurrentDictionary<string, object> _constants = new();
-    private readonly ConcurrentDictionary<string, JsValue> _loadedModules = new();
-
-    // Script caching - using hash to avoid re-parsing identical scripts
-    private readonly ConcurrentDictionary<string, string> _scriptCache = new();
-    private int _cacheHits;
-    private int _cacheMisses;
 
     private readonly DirectoriesConfig _directoriesConfig;
     private readonly List<string> _initScripts;
-    private readonly ILogger _logger = Log.ForContext<JsScriptEngineService>();
+    private readonly ConcurrentDictionary<string, object> _loadedModules = new();
+    private readonly ILogger _logger = Log.ForContext<LuaScriptEngineService>();
+
+    // Script caching - using hash to avoid re-parsing identical scripts
+    private readonly ConcurrentDictionary<string, string> _scriptCache = new();
     private readonly ScriptEngineConfig _scriptEngineConfig;
     private readonly List<ScriptModuleData> _scriptModules;
     private readonly IContainer _serviceProvider;
     private readonly IVersionService _versionService;
-    private readonly SourceMapResolver? _sourceMapResolver;
+    private int _cacheHits;
+    private int _cacheMisses;
 
     private bool _disposed;
     private bool _isInitialized;
     private Func<string, string> _nameResolver;
 
-    /// <summary>
-    ///     Event raised when a script error occurs
-    /// </summary>
-    public event EventHandler<ScriptErrorInfo>? OnScriptError;
-
-    public JsScriptEngineService(
+    public LuaScriptEngineService(
         DirectoriesConfig directoriesConfig,
         ScriptEngineConfig scriptEngineConfig,
         List<ScriptModuleData> scriptModules,
@@ -79,21 +81,12 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
         _serviceProvider = serviceProvider;
         _initScripts = _scriptEngineConfig.InitScriptsFileNames;
 
-        // Initialize source map resolver if enabled
-        if (_scriptEngineConfig.EnableSourceMaps)
-        {
-            var sourceMapsPath = Path.Combine(_directoriesConfig.Root, _scriptEngineConfig.SourceMapsPath);
-            _sourceMapResolver = new SourceMapResolver(sourceMapsPath);
-        }
-
         CreateNameResolver();
 
-        JsEngine = CreateOptimizedEngine();
+        LuaScript = CreateOptimizedEngine();
     }
 
-    public Jint.Engine JsEngine { get; }
-
-    public object Engine => JsEngine;
+    public MoonSharp.Interpreter.Script LuaScript { get; }
 
     public void Dispose()
     {
@@ -108,20 +101,26 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
             _callbacks.Clear();
             _constants.Clear();
 
-            JsEngine.Dispose();
             GC.SuppressFinalize(this);
 
-            _logger.Debug("JavaScript engine disposed successfully");
+            _logger.Debug("Lua engine disposed successfully");
         }
         catch (Exception ex)
         {
-            _logger.Warning(ex, "Error during JavaScript engine disposal");
+            _logger.Warning(ex, "Error during Lua engine disposal");
         }
         finally
         {
             _disposed = true;
         }
     }
+
+    /// <summary>
+    ///     Event raised when a script error occurs
+    /// </summary>
+    public event EventHandler<ScriptErrorInfo>? OnScriptError;
+
+    public object Engine => LuaScript;
 
     public void AddInitScript(string script)
     {
@@ -157,18 +156,18 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
                 }
             }
 
-            JsEngine.Execute(script);
+            LuaScript.DoString(script);
             _logger.Debug("Script executed successfully in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
         }
-        catch (JavaScriptException jsEx)
+        catch (ScriptRuntimeException luaEx)
         {
             stopwatch.Stop();
-            var errorInfo = CreateErrorInfo(jsEx, script);
+            var errorInfo = CreateErrorInfo(luaEx, script);
             OnScriptError?.Invoke(this, errorInfo);
 
             _logger.Error(
-                jsEx,
-                "JavaScript error at line {Line}, column {Column}: {Message}",
+                luaEx,
+                "Lua error at line {Line}, column {Column}: {Message}",
                 errorInfo.LineNumber,
                 errorInfo.ColumnNumber,
                 errorInfo.Message
@@ -232,7 +231,7 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
         }
 
         _constants[normalizedName] = value;
-        JsEngine.SetValue(normalizedName, value);
+        LuaScript.Globals[normalizedName] = value;
 
         _logger.Debug("Constant added: {Name}", normalizedName);
     }
@@ -278,18 +277,18 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
     {
         try
         {
-            var result = JsEngine.Evaluate(command);
+            var result = LuaScript.DoString($"return {command}");
 
             return ScriptResultBuilder.CreateSuccess().WithData(result.ToObject()).Build();
         }
-        catch (JavaScriptException jsEx)
+        catch (ScriptRuntimeException luaEx)
         {
-            var errorInfo = CreateErrorInfo(jsEx, command);
+            var errorInfo = CreateErrorInfo(luaEx, command);
             OnScriptError?.Invoke(this, errorInfo);
 
             _logger.Error(
-                jsEx,
-                "JavaScript error at line {Line}, column {Column}: {Message}",
+                luaEx,
+                "Lua error at line {Line}, column {Column}: {Message}",
                 errorInfo.LineNumber,
                 errorInfo.ColumnNumber,
                 errorInfo.Message
@@ -325,43 +324,22 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
             await RegisterScriptModulesAsync(CancellationToken.None);
 
             AddConstant("version", _versionService.GetVersionInfo().Version);
-            AddConstant("engine", "Spectra");
+            AddConstant("engine", "DemonsGate");
             AddConstant("platform", Environment.OSVersion.Platform.ToString());
 
-            _ = Task.Run(() => GenerateTypeScriptDefinitionsAsync(CancellationToken.None), CancellationToken.None);
+            _ = Task.Run(() => GenerateLuaMetaFileAsync(CancellationToken.None), CancellationToken.None);
 
             RegisterGlobalFunctions();
-
 
             ExecuteBootstrap();
 
             ExecuteBootFunction();
             _isInitialized = true;
-            _logger.Information("JavaScript engine initialized successfully");
+            _logger.Information("Lua engine initialized successfully");
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to initialize JavaScript engine");
-            throw;
-        }
-    }
-
-    private void ExecuteBootFunction()
-    {
-        if (JsEngine.GetValue("onReady").IsUndefined())
-        {
-            _logger.Warning("No onReady function defined in scripts");
-            return;
-        }
-
-        try
-        {
-            JsEngine.Invoke("onReady");
-            _logger.Debug("Boot function executed successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Error executing onReady function");
+            _logger.Error(ex, "Failed to initialize Lua engine");
             throw;
         }
     }
@@ -371,33 +349,66 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
         return Task.CompletedTask;
     }
 
-    private Jint.Engine CreateOptimizedEngine()
+    /// <summary>
+    ///     Gets execution metrics for performance monitoring
+    /// </summary>
+    public ScriptExecutionMetrics GetExecutionMetrics()
     {
-        var typeResolver = TypeResolver.Default;
-        typeResolver.MemberNameCreator = MemberNameCreator;
+        return new ScriptExecutionMetrics
+        {
+            CacheHits = _cacheHits,
+            CacheMisses = _cacheMisses,
+            TotalScriptsCached = _scriptCache.Count
+        };
+    }
 
-        return new Jint.Engine(options =>
+    /// <summary>
+    ///     Clears the script cache
+    /// </summary>
+    public void ClearScriptCache()
+    {
+        _scriptCache.Clear();
+        _cacheHits = 0;
+        _cacheMisses = 0;
+        _logger.Information("Script cache cleared");
+    }
+
+    private void ExecuteBootFunction()
+    {
+        try
+        {
+            var onReadyFunc = LuaScript.Globals.Get("onReady");
+            if (onReadyFunc.Type == DataType.Nil)
             {
-                options.EnableModules(_directoriesConfig[DirectoryType.Scripts]);
-
-                options.AllowClr(GetType().Assembly);
-
-                options.SetTypeResolver(typeResolver);
-
-                options.Strict();
-
-                // Use configurable limits
-                options.LimitMemory(_scriptEngineConfig.MaxMemoryBytes);
-
-                options.TimeoutInterval(TimeSpan.FromSeconds(_scriptEngineConfig.TimeoutSeconds));
-
-                options.MaxStatements(_scriptEngineConfig.MaxStatements);
-
-                options.DebugMode(_scriptEngineConfig.EnableDebugMode);
-
-                options.Culture(CultureInfo.InvariantCulture);
+                _logger.Warning("No onReady function defined in scripts");
+                return;
             }
-        );
+
+            LuaScript.Call(onReadyFunc);
+            _logger.Debug("Boot function executed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error executing onReady function");
+            throw;
+        }
+    }
+
+    private MoonSharp.Interpreter.Script CreateOptimizedEngine()
+    {
+        var script = new MoonSharp.Interpreter.Script
+        {
+            Options =
+            {
+                // Configure MoonSharp options
+                DebugPrint = s => _logger.Debug("[Lua] {Message}", s),
+                ScriptLoader = new LuaScriptLoader(_directoriesConfig)
+            }
+        };
+
+        _logger.Debug("Lua script loader configured for require() functionality");
+
+        return script;
     }
 
     private void CreateNameResolver()
@@ -412,14 +423,6 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
             _                               => _nameResolver
         };
     }
-
-    private IEnumerable<string> MemberNameCreator(MemberInfo memberInfo)
-    {
-        var memberType = _nameResolver(memberInfo.Name);
-        _logger.Verbose("[JS] Creating member name  {MemberInfo}", memberType);
-        yield return memberType;
-    }
-
 
     private void ExecuteBootstrap()
     {
@@ -462,42 +465,165 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
             var moduleName = scriptModuleAttribute.Name;
             _logger.Debug("Registering script module {Name}", moduleName);
 
-            _loadedModules[moduleName] = JsValue.FromObject(JsEngine, instance);
-            JsEngine.SetValue(moduleName, instance);
+            // Register the type with MoonSharp
+            UserData.RegisterType(module.ModuleType, InteropAccessMode.Reflection);
+
+            // Create a table for the module
+            var moduleTable = CreateModuleTable(instance, module.ModuleType);
+            LuaScript.Globals[moduleName] = moduleTable;
+
+            _loadedModules[moduleName] = instance;
         }
 
         RegisterEnums();
     }
 
+    private Table CreateModuleTable(
+        object instance,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+        Type moduleType
+    )
+    {
+        var moduleTable = new Table(LuaScript);
+
+        var methods = moduleType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Where(m => m.GetCustomAttribute<ScriptFunctionAttribute>() is not null);
+
+        foreach (var method in methods)
+        {
+            var scriptFunctionAttr = method.GetCustomAttribute<ScriptFunctionAttribute>();
+            if (scriptFunctionAttr is null)
+            {
+                continue;
+            }
+
+            var functionName = string.IsNullOrWhiteSpace(scriptFunctionAttr.FunctionName)
+                ? _nameResolver(method.Name)
+                : scriptFunctionAttr.FunctionName;
+
+            // Create a closure that captures the instance and method
+            var closure = CreateMethodClosure(instance, method);
+            moduleTable[functionName] = closure;
+        }
+
+        return moduleTable;
+    }
+
+    private DynValue CreateMethodClosure(object instance, MethodInfo method)
+    {
+        return DynValue.NewCallback((context, args) =>
+            {
+                try
+                {
+                    var parameters = method.GetParameters();
+                    var convertedArgs = new object[parameters.Length];
+
+                    for (var i = 0; i < parameters.Length && i < args.Count; i++)
+                    {
+                        convertedArgs[i] = ConvertFromLua(args[i], parameters[i].ParameterType);
+                    }
+
+                    var result = method.Invoke(instance, convertedArgs);
+
+                    if (method.ReturnType == typeof(void))
+                    {
+                        return DynValue.Nil;
+                    }
+
+                    return ConvertToLua(result);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error calling method {MethodName}", method.Name);
+                    throw new ScriptRuntimeException(ex.Message);
+                }
+            }
+        );
+    }
+
+    private static object? ConvertFromLua(DynValue dynValue, Type targetType)
+    {
+        return dynValue.Type switch
+        {
+            DataType.Nil     => null,
+            DataType.Boolean => dynValue.Boolean,
+            DataType.Number  => Convert.ChangeType(dynValue.Number, targetType, CultureInfo.InvariantCulture),
+            DataType.String  => dynValue.String,
+            DataType.Table   => dynValue.ToObject(),
+            _                => dynValue.ToObject()
+        };
+    }
+
+    private DynValue ConvertToLua(object? value)
+    {
+        if (value == null)
+        {
+            return DynValue.Nil;
+        }
+
+        return DynValue.FromObject(LuaScript, value);
+    }
+
+    [RequiresUnreferencedCode(
+        "Enum metadata is discovered dynamically when building Lua documentation."
+    )]
     private void RegisterEnums()
     {
-        var enumsFound = TypeScriptDocumentationGenerator.FoundEnums;
+        var enumsFound = LuaDocumentationGenerator.FoundEnums;
 
         foreach (var enumFound in enumsFound)
         {
             var enumName = _nameResolver(enumFound.Name);
-            JsEngine.SetValue(enumName, TypeReference.CreateTypeReference(JsEngine, enumFound));
+            var enumTable = new Table(LuaScript);
+
+            var names = Enum.GetNames(enumFound);
+            var underlyingValues = Enum.GetValuesAsUnderlyingType(enumFound);
+
+            for (var i = 0; i < names.Length; i++)
+            {
+                var rawValue = underlyingValues.GetValue(i);
+                if (rawValue is null)
+                {
+                    continue;
+                }
+
+                var coercedValue = Convert.ToInt32(rawValue, CultureInfo.InvariantCulture);
+                enumTable[names[i]] = coercedValue;
+            }
+
+            LuaScript.Globals[enumName] = enumTable;
             _logger.Debug("Registered enum {EnumName}", enumName);
         }
     }
 
     private void RegisterGlobalFunctions()
     {
-        JsEngine.SetValue(
-            "delay",
-            new Func<int, Task>(async milliseconds => { await Task.Delay(Math.Min(milliseconds, 5000)); })
-        );
+        LuaScript.Globals["delay"] = (Func<int, Task>)(async milliseconds =>
+        {
+            await Task.Delay(Math.Min(milliseconds, 5000));
+        });
 
-        JsEngine.SetValue("log", new Action<object>(message => { _logger.Information("JS: {Message}", message); }));
+        LuaScript.Globals["log"] = (Action<object>)(message => { _logger.Information("Lua: {Message}", message); });
     }
 
-    private async Task GenerateTypeScriptDefinitionsAsync(CancellationToken cancellationToken)
+    [RequiresUnreferencedCode(
+        "Lua meta generation relies on reflection-heavy LuaDocumentationGenerator which is not trim-safe."
+    )]
+    private async Task GenerateLuaMetaFileAsync(CancellationToken cancellationToken)
     {
         try
         {
-            _logger.Debug("Generating TypeScript definitions");
+            _logger.Debug("Generating Lua meta files");
 
-            var documentation = TypeScriptDocumentationGenerator.GenerateDocumentation(
+            var definitionDirectory = Path.Combine(_directoriesConfig.Root, _scriptEngineConfig.DefinitionPath);
+
+            if (!Directory.Exists(definitionDirectory))
+            {
+                Directory.CreateDirectory(definitionDirectory);
+            }
+
+            // Generate meta.lua
+            var documentation = LuaDocumentationGenerator.GenerateDocumentation(
                 "DemonsGate",
                 _versionService.GetVersionInfo().Version,
                 _scriptModules,
@@ -505,27 +631,53 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
                 _nameResolver
             );
 
-            var definitionPath = Path.Combine(
-                _directoriesConfig.Root,
-                _scriptEngineConfig.DefinitionPath,
-                "index.d.ts"
-            );
+            var metaLuaPath = Path.Combine(definitionDirectory, "definitions.lua");
+            await File.WriteAllTextAsync(metaLuaPath, documentation, cancellationToken);
+            _logger.Debug("Lua meta file generated at {Path}", metaLuaPath);
 
-            var directory = Path.GetDirectoryName(definitionPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            await File.WriteAllTextAsync(definitionPath, documentation, cancellationToken);
-            _logger.Debug("TypeScript definitions generated at {Path}", definitionPath);
+            // Generate .luarc.json
+            var luarcJson = GenerateLuarcJson();
+            var luarcPath = Path.Combine(_directoriesConfig[DirectoryType.Scripts], ".luarc.json");
+            await File.WriteAllTextAsync(luarcPath, luarcJson, cancellationToken);
+            _logger.Debug("Lua configuration file generated at {Path}", luarcPath);
         }
         catch (Exception ex)
         {
-            _logger.Warning(ex, "Failed to generate TypeScript definitions");
+            _logger.Warning(ex, "Failed to generate Lua meta files");
         }
     }
 
+    [RequiresUnreferencedCode("JSON serialization requires type metadata for script configuration.")]
+    [RequiresDynamicCode("JSON serialization may generate dynamic code for script configuration.")]
+    private string GenerateLuarcJson()
+    {
+        var globalsList = _constants.Keys.ToList();
+        globalsList.AddRange(collection);
+
+        var luarcConfig = new LuarcConfig
+        {
+            Runtime = new LuarcRuntimeConfig
+            {
+                Path =
+                [
+                    "?.lua",
+                    "?/init.lua",
+                    "modules/?.lua",
+                    "modules/?/init.lua"
+                ]
+            },
+            Workspace = new LuarcWorkspaceConfig
+            {
+                Library = [_scriptEngineConfig.DefinitionPath]
+            },
+            Diagnostics = new LuarcDiagnosticsConfig
+            {
+                Globals = [.. globalsList]
+            }
+        };
+
+        return JsonUtils.Serialize(luarcConfig);
+    }
 
     public async Task ExecuteScriptFileAsync(string scriptFile)
     {
@@ -549,69 +701,6 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
         }
     }
 
-    public JsValue EvaluateExpression(string expression)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(expression);
-
-        try
-        {
-            var result = JsEngine.Evaluate(expression);
-            _logger.Debug("Expression evaluated: {Expression}", expression);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Failed to evaluate expression: {Expression}", expression);
-            throw;
-        }
-    }
-
-    public bool IsGlobalDefined(string name)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        try
-        {
-            var value = JsEngine.GetValue(name);
-            return !value.IsUndefined();
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public JsValue GetGlobalValue(string name)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        try
-        {
-            return JsEngine.GetValue(name);
-        }
-        catch (Exception ex)
-        {
-            _logger.Warning(ex, "Failed to get global value: {Name}", name);
-            throw;
-        }
-    }
-
-    public void SetGlobalValue(string name, object? value)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        try
-        {
-            JsEngine.SetValue(name, value);
-            _logger.Debug("Global value set: {Name}", name);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Failed to set global value: {Name}", name);
-            throw;
-        }
-    }
-
     public void Reset()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -621,7 +710,7 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
         _constants.Clear();
         _isInitialized = false;
 
-        _logger.Debug("JavaScript engine reset");
+        _logger.Debug("Lua engine reset");
     }
 
     public (int ModuleCount, int CallbackCount, int ConstantCount, bool IsInitialized) GetStats()
@@ -630,47 +719,20 @@ public class JsScriptEngineService : IScriptEngineService, IDisposable
     }
 
     /// <summary>
-    ///     Gets execution metrics for performance monitoring
+    ///     Creates detailed error information from a Lua exception
     /// </summary>
-    public ScriptExecutionMetrics GetExecutionMetrics()
-    {
-        return new ScriptExecutionMetrics
-        {
-            CacheHits = _cacheHits,
-            CacheMisses = _cacheMisses,
-            TotalScriptsCached = _scriptCache.Count
-        };
-    }
-
-    /// <summary>
-    ///     Clears the script cache
-    /// </summary>
-    public void ClearScriptCache()
-    {
-        _scriptCache.Clear();
-        _cacheHits = 0;
-        _cacheMisses = 0;
-        _logger.Information("Script cache cleared");
-    }
-
-    /// <summary>
-    ///     Creates detailed error information from a JavaScript exception
-    /// </summary>
-    private static ScriptErrorInfo CreateErrorInfo(JavaScriptException jsEx, string sourceCode)
+    private static ScriptErrorInfo CreateErrorInfo(ScriptRuntimeException luaEx, string sourceCode)
     {
         var errorInfo = new ScriptErrorInfo
         {
-            Message = jsEx.Message,
-            StackTrace = jsEx.StackTrace,
-            LineNumber = jsEx.Location.Start.Line,
-            ColumnNumber = jsEx.Location.Start.Column,
-            ErrorType = jsEx.Error?.ToString() ?? "Error",
+            Message = luaEx.DecoratedMessage ?? luaEx.Message,
+            StackTrace = luaEx.StackTrace,
+            LineNumber = 0,
+            ColumnNumber = 0,
+            ErrorType = "LuaError",
             SourceCode = sourceCode,
-            FileName = "script.js"
+            FileName = "script.lua"
         };
-
-        // Source maps not fully implemented yet (SourceLocation doesn't have Source property in this Jint version)
-        // Will be enhanced when upgrading Jint to a version that supports it
 
         return errorInfo;
     }

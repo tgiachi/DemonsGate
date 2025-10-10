@@ -1,9 +1,6 @@
 using DemonsGate.Core.Enums;
-using DemonsGate.Core.Interfaces.EventLoop;
-using DemonsGate.Network.Args;
 using DemonsGate.Network.Data.Services;
 using DemonsGate.Network.Interfaces.Processors;
-using DemonsGate.Network.Messages;
 using DemonsGate.Network.Messages.Pings;
 using DemonsGate.Network.Services;
 using DemonsGate.Network.Types;
@@ -91,10 +88,7 @@ public class DefaultNetworkServiceTests
         var invalidClientId = 999;
 
         // Act & Assert - Should not throw, just log warning
-        Assert.DoesNotThrowAsync(async () =>
-        {
-            await _service.SendMessageAsync(invalidClientId, message);
-        });
+        Assert.DoesNotThrowAsync(async () => { await _service.SendMessageAsync(invalidClientId, message); });
     }
 
     [Test]
@@ -105,10 +99,7 @@ public class DefaultNetworkServiceTests
         var invalidClientId = 999;
 
         // Act & Assert - Should not throw, just log warning
-        Assert.DoesNotThrowAsync(async () =>
-        {
-            await _service.DisconnectClientAsync(invalidClientId);
-        });
+        Assert.DoesNotThrowAsync(async () => { await _service.DisconnectClientAsync(invalidClientId); });
     }
 
     [Test]
@@ -119,49 +110,38 @@ public class DefaultNetworkServiceTests
         var message = new PingMessage();
 
         // Act & Assert - Should not throw when no clients connected
-        Assert.DoesNotThrowAsync(async () =>
-        {
-            await _service.BroadcastMessageAsync(message);
-        });
+        Assert.DoesNotThrowAsync(async () => { await _service.BroadcastMessageAsync(message); });
     }
 
     [Test]
     public void ClientConnected_EventShouldBeSubscribable()
     {
         // Arrange & Act - Verify event can be subscribed to without throwing
-        Assert.DoesNotThrow(() =>
-        {
-            _service.ClientConnected += (sender, args) => { };
-        });
+        Assert.DoesNotThrow(() => { _service.ClientConnected += (sender, args) => { }; });
     }
 
     [Test]
     public void ClientDisconnected_EventShouldBeSubscribable()
     {
         // Arrange & Act - Verify event can be subscribed to without throwing
-        Assert.DoesNotThrow(() =>
-        {
-            _service.ClientDisconnected += (sender, args) => { };
-        });
+        Assert.DoesNotThrow(() => { _service.ClientDisconnected += (sender, args) => { }; });
     }
 
     [Test]
     public void ClientRawMessageSent_EventShouldBeSubscribable()
     {
         // Arrange & Act - Verify event can be subscribed to without throwing
-        Assert.DoesNotThrow(() =>
-        {
-            _service.ClientRawMessageSent += (sender, args) => { };
-        });
+        Assert.DoesNotThrow(() => { _service.ClientRawMessageSent += (sender, args) => { }; });
     }
 
     [Test]
     public void Constructor_ShouldRegisterInitialMessages()
     {
         // Assert - Verify that deserializer's RegisterMessageType was called for each registered message
-        _mockDeserializer.Received(_registeredMessages.Count).RegisterMessageType(
-            Arg.Any<Type>(),
-            Arg.Any<NetworkMessageType>()
-        );
+        _mockDeserializer.Received(_registeredMessages.Count)
+            .RegisterMessageType(
+                Arg.Any<Type>(),
+                Arg.Any<NetworkMessageType>()
+            );
     }
 }

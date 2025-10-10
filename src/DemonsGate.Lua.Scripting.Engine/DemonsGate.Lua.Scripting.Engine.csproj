@@ -8,16 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj" />
-      <ProjectReference Include="..\DemonsGate.Services\DemonsGate.Services.csproj" />
+        <ProjectReference Include="..\DemonsGate.Core\DemonsGate.Core.csproj"/>
+        <ProjectReference Include="..\DemonsGate.Services\DemonsGate.Services.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Jint" Version="4.4.1" />
+        <PackageReference Include="MoonSharp" Version="2.0.0"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Types\" />
-    </ItemGroup>
-
+  
 </Project>

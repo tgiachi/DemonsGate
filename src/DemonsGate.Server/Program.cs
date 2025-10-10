@@ -5,21 +5,23 @@ using DemonsGate.Core.Interfaces.EventLoop;
 using DemonsGate.Core.Json;
 using DemonsGate.Core.Utils;
 using DemonsGate.Entities.Extensions;
-using DemonsGate.Js.Scripting.Engine.Extensions.Scripts;
-using DemonsGate.Js.Scripting.Engine.Modules;
-using DemonsGate.Js.Scripting.Engine.Services;
+using DemonsGate.Lua.Scripting.Engine.Extensions.Scripts;
 using DemonsGate.Network.Extensions;
 using DemonsGate.Network.Messages.Auth;
 using DemonsGate.Network.Messages.Pings;
-using DemonsGate.Network.Messages.System;
 using DemonsGate.Server;
 using DemonsGate.Services.Context;
 using DemonsGate.Services.Data.Config.Options;
 using DemonsGate.Services.Impl;
 using DemonsGate.Services.Interfaces;
+using DemonsGate.Server.Modules;
 using DemonsGate.Services.Modules;
 using DemonsGate.Services.Types;
 using DryIoc;
+using MemoryPack;
+using DemonsGate.Entities.Models;
+using DemonsGate.Lua.Scripting.Engine.Context;
+using DemonsGate.Lua.Scripting.Engine.Services;
 
 
 var cts = new CancellationTokenSource();
@@ -44,6 +46,14 @@ await ConsoleApp.RunAsync(
     ) =>
     {
         JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
+        JsonUtils.RegisterJsonContext(DemonsGateLuaScriptJsonContext.Default);
+
+        // Register MemoryPack formatters for AOT compatibility
+        // Warmup serializers to force NativeAOT to generate formatters for collections
+        MemoryPackFormatterProvider.Register<UserEntity>();
+        var warmupList = new List<UserEntity>();
+        var warmupBytes = MemoryPackSerializer.Serialize(warmupList);
+        _ = MemoryPackSerializer.Deserialize<List<UserEntity>>(warmupBytes);
 
         var options = new DemonsGateServerOptions()
         {
@@ -68,7 +78,7 @@ await ConsoleApp.RunAsync(
                 container
                     .AddService<IEventBusService, EventBusService>()
                     .AddService<IVersionService, VersionService>()
-                    .AddService<IScriptEngineService, JsScriptEngineService>()
+                    .AddService<IScriptEngineService, LuaScriptEngineService>()
                     .AddService<ITimerService, TimerService>()
                     .AddService<IEventLoopService, EventLoopService>()
                     .AddService<IDiagnosticService, DiagnosticService>()
@@ -89,9 +99,9 @@ await ConsoleApp.RunAsync(
 
 
                 container
-                    .AddScriptModule<ConsoleModule>()
-                    .AddScriptModule<LoggerModule>()
-                    .AddScriptModule<CommandModule>()
+                    .AddLuaScriptModule<CommandModule>()
+                    .AddLuaScriptModule<ConsoleModule>()
+                    .AddLuaScriptModule<LoggerModule>()
                     ;
 
                 container
