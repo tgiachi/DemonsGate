@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -162,7 +163,7 @@ public static class PasswordGeneratorUtils
         return charSet[index];
     }
 
-    private static void Shuffle<T>(IList<T> list)
+    private static void Shuffle<T>(List<T> list)
     {
         for (int i = list.Count - 1; i > 0; i--)
         {

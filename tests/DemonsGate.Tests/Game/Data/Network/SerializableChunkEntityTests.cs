@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Numerics;
 using DemonsGate.Game.Data.Network;
 using DemonsGate.Game.Data.Primitives;
@@ -15,7 +17,7 @@ public class SerializableChunkEntityTests
     {
         var chunk = new ChunkEntity(new Vector3(10, 20, 30));
         var block = new BlockEntity(7, BlockType.Dirt);
-        var index = chunk.GetIndex(1, 1, 1);
+        var index = ChunkEntity.GetIndex(1, 1, 1);
         chunk.SetBlock(index, block);
 
         SerializableChunkEntity serializable = chunk;
@@ -82,4 +84,6 @@ public class SerializableChunkEntityTests
 
         Assert.That(chunk.Blocks, Has.Length.EqualTo(TotalBlocks));
     }
+
+
 }

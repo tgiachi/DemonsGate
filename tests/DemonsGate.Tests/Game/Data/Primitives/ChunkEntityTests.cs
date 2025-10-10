@@ -68,7 +68,7 @@ public class ChunkEntityTests
 
         var expected = x + y * ChunkEntity.Size + z * ChunkEntity.Size * ChunkEntity.Height;
 
-        var index = chunk.GetIndex(x, y, z);
+        var index = ChunkEntity.GetIndex(x, y, z);
 
         Assert.That(index, Is.EqualTo(expected));
     }
@@ -78,7 +78,7 @@ public class ChunkEntityTests
     {
         var chunk = new ChunkEntity(Vector3.Zero);
         var block = new BlockEntity(99, BlockType.Grass);
-        var index = chunk.GetIndex(2, 3, 4);
+        var index = ChunkEntity.GetIndex(2, 3, 4);
 
         chunk.SetBlock(index, block);
         var retrieved = chunk.GetBlock(index);

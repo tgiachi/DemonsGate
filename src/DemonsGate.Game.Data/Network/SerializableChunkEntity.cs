@@ -5,13 +5,27 @@ using MemoryPack;
 
 namespace DemonsGate.Game.Data.Network;
 
+/// <summary>
+/// Serializable transport model for <see cref="ChunkEntity"/> instances.
+/// </summary>
 [MemoryPackable]
 public partial class SerializableChunkEntity
 {
+    /// <summary>
+    /// Gets or sets the chunk position in world space.
+    /// </summary>
     public Vector3 Position { get; set; }
 
+    /// <summary>
+    /// Gets or sets the serialized block buffer backing the chunk.
+    /// </summary>
     public SerializableBlockEntity?[] Blocks { get; set; } = [];
 
+    /// <summary>
+    /// Creates a serializable chunk from a runtime chunk entity.
+    /// </summary>
+    /// <param name="chunkEntity">Runtime chunk entity to convert.</param>
+    /// <returns>Serializable chunk entity.</returns>
     public static implicit operator SerializableChunkEntity(ChunkEntity chunkEntity)
     {
         ArgumentNullException.ThrowIfNull(chunkEntity);
@@ -31,6 +45,11 @@ public partial class SerializableChunkEntity
         return serializable;
     }
 
+    /// <summary>
+    /// Rehydrates a runtime chunk entity from its serializable representation.
+    /// </summary>
+    /// <param name="serializableChunk">Serializable chunk entity to convert.</param>
+    /// <returns>Runtime chunk entity.</returns>
     public static implicit operator ChunkEntity(SerializableChunkEntity serializableChunk)
     {
         ArgumentNullException.ThrowIfNull(serializableChunk);
