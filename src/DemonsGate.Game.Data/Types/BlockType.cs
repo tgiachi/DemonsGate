@@ -19,7 +19,7 @@ public enum BlockType : byte
     Grass,
 
     /// <summary>
-    ///  The end of
+    ///  The end of map
     /// </summary>
     Bedrock,
 
