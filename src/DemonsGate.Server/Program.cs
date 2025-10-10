@@ -23,6 +23,9 @@ using DemonsGate.Entities.Models;
 using DemonsGate.Entities.Models.Base;
 using DemonsGate.Lua.Scripting.Engine.Context;
 using DemonsGate.Lua.Scripting.Engine.Services;
+using DemonsGate.Services.Game.Data.Config;
+using DemonsGate.Services.Game.Impl;
+using DemonsGate.Services.Game.Interfaces;
 
 
 var cts = new CancellationTokenSource();
@@ -85,6 +88,14 @@ await ConsoleApp.RunAsync(
                     .AddService<ICommandService, CommandService>()
                     .AddService<ISeedService, SeedService>(100)
                     ;
+
+
+                // Registering game services
+
+                container
+                    .AddService<IChunkGeneratorService, ChunkGeneratorService>(101);
+
+                container.RegisterInstance(new ChunkGeneratorConfig());
 
                 container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());
 
