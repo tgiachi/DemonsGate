@@ -93,7 +93,10 @@ await ConsoleApp.RunAsync(
                 // Registering game services
 
                 container
-                    .AddService<IChunkGeneratorService, ChunkGeneratorService>(101);
+                    .AddService<IChunkGeneratorService, ChunkGeneratorService>(101)
+                    .AddService<IWorldManagerService, WorldManagerService>()
+                    .AddService<INetworkManagerService, NetworkManagerService>()
+                    ;
 
                 container.RegisterInstance(new ChunkGeneratorConfig());
 

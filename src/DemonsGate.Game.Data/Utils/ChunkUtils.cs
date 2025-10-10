@@ -73,6 +73,17 @@ public static class ChunkUtils
     }
 
     /// <summary>
+    /// Gets the integer local coordinates within a chunk from a world position.
+    /// </summary>
+    /// <param name="worldPosition">The world position.</param>
+    /// <returns>A tuple containing the local X, Y, and Z coordinates.</returns>
+    public static (int X, int Y, int Z) GetLocalIndices(Vector3 worldPosition)
+    {
+        var localPosition = GetLocalPosition(worldPosition);
+        return ((int)localPosition.X, (int)localPosition.Y, (int)localPosition.Z);
+    }
+
+    /// <summary>
     /// Checks if a world position is within chunk bounds.
     /// </summary>
     /// <param name="worldPosition">The world position to check.</param>
@@ -83,5 +94,19 @@ public static class ChunkUtils
         return worldPosition.X >= chunkPosition.X && worldPosition.X < chunkPosition.X + ChunkEntity.Size &&
                worldPosition.Y >= chunkPosition.Y && worldPosition.Y < chunkPosition.Y + ChunkEntity.Height &&
                worldPosition.Z >= chunkPosition.Z && worldPosition.Z < chunkPosition.Z + ChunkEntity.Size;
+    }
+
+    /// <summary>
+    /// Validates if local coordinates are within chunk bounds.
+    /// </summary>
+    /// <param name="x">Local X coordinate.</param>
+    /// <param name="y">Local Y coordinate.</param>
+    /// <param name="z">Local Z coordinate.</param>
+    /// <returns>True if the local position is valid; otherwise, false.</returns>
+    public static bool IsValidLocalPosition(int x, int y, int z)
+    {
+        return x >= 0 && x < ChunkEntity.Size &&
+               y >= 0 && y < ChunkEntity.Height &&
+               z >= 0 && z < ChunkEntity.Size;
     }
 }

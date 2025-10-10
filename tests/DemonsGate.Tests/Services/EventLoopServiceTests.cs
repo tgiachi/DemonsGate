@@ -314,6 +314,7 @@ public class EventLoopServiceTests
     {
         // Arrange
         var delayMs = 100;
+        await _service.StartAsync();
         var startTime = DateTime.UtcNow;
 
         // Act
