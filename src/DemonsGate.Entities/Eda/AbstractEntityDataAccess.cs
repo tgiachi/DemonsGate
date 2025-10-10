@@ -42,9 +42,22 @@ public class AbstractEntityDataAccess<TEntity> : IEntityDataAccess<TEntity>, IDi
 
         _logger.Debug("Loading entities from {FilePath}", _filePath);
         await using var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var entities = await MemoryPackSerializer.DeserializeAsync<List<TEntity>>(stream);
-        _logger.Debug("Loaded {Count} entities from {FilePath}", entities?.Count ?? 0, _filePath);
-        return entities ?? [];
+        if (stream.Length == 0)
+        {
+            return [];
+        }
+
+        try
+        {
+            var entities = await MemoryPackSerializer.DeserializeAsync<List<TEntity>>(stream);
+            _logger.Debug("Loaded {Count} entities from {FilePath}", entities?.Count ?? 0, _filePath);
+            return entities ?? [];
+        }
+        catch (MemoryPackSerializationException ex)
+        {
+            _logger.Error(ex, "Failed to deserialize entities from {FilePath}. Returning empty list.", _filePath);
+            return [];
+        }
     }
 
     private async Task SaveEntitiesAsync(List<TEntity> entities)

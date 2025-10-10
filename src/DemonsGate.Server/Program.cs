@@ -20,6 +20,7 @@ using DemonsGate.Services.Types;
 using DryIoc;
 using MemoryPack;
 using DemonsGate.Entities.Models;
+using DemonsGate.Entities.Models.Base;
 using DemonsGate.Lua.Scripting.Engine.Context;
 using DemonsGate.Lua.Scripting.Engine.Services;
 
@@ -48,9 +49,9 @@ await ConsoleApp.RunAsync(
         JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
         JsonUtils.RegisterJsonContext(DemonsGateLuaScriptJsonContext.Default);
 
-        // Register MemoryPack formatters for AOT compatibility
-        // Warmup serializers to force NativeAOT to generate formatters for collections
-        // Ensure formatter for the collection itself is preserved under trimming/AOT
+
+        MemoryPackFormatterProvider.Register<BaseEntity>();
+        MemoryPackFormatterProvider.Register<UserEntity>();
         MemoryPackFormatterProvider.RegisterCollection<List<UserEntity>, UserEntity>();
 
         var options = new DemonsGateServerOptions()

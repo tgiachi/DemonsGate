@@ -55,17 +55,8 @@
 
     <assembly fullname="MemoryPack">
         <type fullname="MemoryPack.*" preserve="all"/>
-        <type
-            fullname="MemoryPack.Formatters.ListFormatter`1[[DemonsGate.Entities.Models.UserEntity, DemonsGate.Entities, Version=0.5.0.0, Culture=neutral, PublicKeyToken=null]]"
-            preserve="all"
-        />
+
     </assembly>
 
-    <assembly fullname="System.Private.CoreLib">
-        <type
-            fullname="System.Collections.Generic.List`1[[DemonsGate.Entities.Models.UserEntity, DemonsGate.Entities, Version=0.5.0.0, Culture=neutral, PublicKeyToken=null]]"
-            preserve="all"
-        />
-    </assembly>
 
 </linker>
