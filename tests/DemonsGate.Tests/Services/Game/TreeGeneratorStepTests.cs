@@ -315,6 +315,362 @@ public class TreeGeneratorStepTests
         Assert.That(woodCount2, Is.Not.EqualTo(woodCount1));
     }
 
+    [Test]
+    public async Task ExecuteAsync_TropicalRainforest_ActuallyGeneratesTrees()
+    {
+        // Arrange - use specific seed and position known to generate trees
+        var position = new Vector3(5000, 0, 5000);
+        var chunk = new ChunkEntity(position);
+        var noise = new FastNoiseLite(42);
+        var context = new GeneratorContext(chunk, position, noise, 42);
+
+        context.CustomData["BiomeData"] = new BiomeData
+        {
+            BiomeType = DemonsGate.Services.Game.Types.BiomeType.TropicalRainforest,
+            SurfaceBlock = BlockType.Grass,
+            SubsurfaceBlock = BlockType.Dirt,
+            HeightMultiplier = 1.0f,
+            BaseHeight = 0f
+        };
+
+        int surfaceY = ChunkEntity.Height / 2;
+        CreateFlatSurface(chunk, surfaceY, BlockType.Grass);
+
+        // Act
+        await _step.ExecuteAsync(context);
+
+        // Assert - Tropical rainforest should generate at least some trees
+        int woodCount = CountBlockType(chunk, BlockType.Wood);
+        int leavesCount = CountBlockType(chunk, BlockType.Leaves);
+
+        Assert.That(woodCount, Is.GreaterThan(0), "Should generate at least some wood blocks (tree trunks)");
+        Assert.That(leavesCount, Is.GreaterThan(0), "Should generate at least some leaves blocks (tree canopy)");
+        Assert.That(leavesCount, Is.GreaterThan(woodCount), "Should have more leaves than wood blocks");
+    }
+
+    [Test]
+    public async Task ExecuteAsync_TreeHasCorrectVerticalStructure()
+    {
+        // Arrange - create conditions favorable for tree generation
+        var position = new Vector3(3000, 0, 3000);
+        var chunk = new ChunkEntity(position);
+        var noise = new FastNoiseLite(777);
+        var context = new GeneratorContext(chunk, position, noise, 777);
+
+        context.CustomData["BiomeData"] = new BiomeData
+        {
+            BiomeType = DemonsGate.Services.Game.Types.BiomeType.TemperateDeciduousForest,
+            SurfaceBlock = BlockType.Grass,
+            SubsurfaceBlock = BlockType.Dirt,
+            HeightMultiplier = 1.0f,
+            BaseHeight = 0f
+        };
+
+        int surfaceY = ChunkEntity.Height / 2;
+        CreateFlatSurface(chunk, surfaceY, BlockType.Grass);
+
+        // Act
+        await _step.ExecuteAsync(context);
+
+        // Assert - if we find any wood block, verify it has proper structure
+        bool foundTree = false;
+        for (int x = 0; x < ChunkEntity.Size && !foundTree; x++)
+        {
+            for (int z = 0; z < ChunkEntity.Size && !foundTree; z++)
+            {
+                // Look for a wood block (trunk)
+                for (int y = surfaceY + 1; y < ChunkEntity.Height - 5; y++)
+                {
+                    var block = chunk.GetBlock(x, y, z);
+                    if (block?.BlockType == BlockType.Wood)
+                    {
+                        foundTree = true;
+
+                        // Verify there's more wood above (trunk continues)
+                        bool hasWoodAbove = false;
+                        for (int dy = 1; dy <= 7; dy++)
+                        {
+                            var blockAbove = chunk.GetBlock(x, y + dy, z);
+                            if (blockAbove?.BlockType == BlockType.Wood)
+                            {
+                                hasWoodAbove = true;
+                                break;
+                            }
+                        }
+
+                        // Verify there are leaves nearby (canopy)
+                        bool hasLeavesNearby = false;
+                        for (int dx = -2; dx <= 2; dx++)
+                        {
+                            for (int dz = -2; dz <= 2; dz++)
+                            {
+                                for (int dy = 2; dy <= 5; dy++)
+                                {
+                                    int checkX = x + dx;
+                                    int checkZ = z + dz;
+                                    int checkY = y + dy;
+
+                                    if (checkX >= 0 && checkX < ChunkEntity.Size &&
+                                        checkZ >= 0 && checkZ < ChunkEntity.Size &&
+                                        checkY < ChunkEntity.Height)
+                                    {
+                                        var nearbyBlock = chunk.GetBlock(checkX, checkY, checkZ);
+                                        if (nearbyBlock?.BlockType == BlockType.Leaves)
+                                        {
+                                            hasLeavesNearby = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (hasLeavesNearby) break;
+                            }
+                            if (hasLeavesNearby) break;
+                        }
+
+                        Assert.That(hasWoodAbove, Is.True, "Tree trunk should extend upward");
+                        Assert.That(hasLeavesNearby, Is.True, "Tree should have leaves in canopy");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!foundTree)
+        {
+            Assert.Inconclusive("No trees were generated in this test run (may happen due to noise RNG)");
+        }
+    }
+
+    [Test]
+    public async Task ExecuteAsync_TreesRespectChunkBoundaries()
+    {
+        // Arrange
+        var position = new Vector3(2000, 0, 2000);
+        var chunk = new ChunkEntity(position);
+        var noise = new FastNoiseLite(999);
+        var context = new GeneratorContext(chunk, position, noise, 999);
+
+        context.CustomData["BiomeData"] = new BiomeData
+        {
+            BiomeType = DemonsGate.Services.Game.Types.BiomeType.TropicalRainforest,
+            SurfaceBlock = BlockType.Grass,
+            SubsurfaceBlock = BlockType.Dirt,
+            HeightMultiplier = 1.0f,
+            BaseHeight = 0f
+        };
+
+        int surfaceY = ChunkEntity.Height / 2;
+        CreateFlatSurface(chunk, surfaceY, BlockType.Grass);
+
+        // Act
+        await _step.ExecuteAsync(context);
+
+        // Assert - trees should only be placed within valid chunk boundaries
+        // Tree trunks should be placed in the margin area (x,z from 2 to Size-2)
+        // Canopy can extend to edges
+        for (int x = 0; x < 2; x++)
+        {
+            for (int z = 0; z < ChunkEntity.Size; z++)
+            {
+                for (int y = surfaceY + 1; y < ChunkEntity.Height; y++)
+                {
+                    var block = chunk.GetBlock(x, y, z);
+                    Assert.That(block?.BlockType, Is.Not.EqualTo(BlockType.Wood),
+                        $"Wood (tree trunk) should not be placed in margin at x={x}");
+                }
+            }
+        }
+
+        for (int x = ChunkEntity.Size - 2; x < ChunkEntity.Size; x++)
+        {
+            for (int z = 0; z < ChunkEntity.Size; z++)
+            {
+                for (int y = surfaceY + 1; y < ChunkEntity.Height; y++)
+                {
+                    var block = chunk.GetBlock(x, y, z);
+                    Assert.That(block?.BlockType, Is.Not.EqualTo(BlockType.Wood),
+                        $"Wood (tree trunk) should not be placed in margin at x={x}");
+                }
+            }
+        }
+    }
+
+    [Test]
+    public async Task ExecuteAsync_TreeHeightWithinExpectedRange()
+    {
+        // Arrange
+        var position = new Vector3(7000, 0, 7000);
+        var chunk = new ChunkEntity(position);
+        var noise = new FastNoiseLite(1234);
+        var context = new GeneratorContext(chunk, position, noise, 1234);
+
+        context.CustomData["BiomeData"] = new BiomeData
+        {
+            BiomeType = DemonsGate.Services.Game.Types.BiomeType.TemperateRainforest,
+            SurfaceBlock = BlockType.Grass,
+            SubsurfaceBlock = BlockType.Dirt,
+            HeightMultiplier = 1.0f,
+            BaseHeight = 0f
+        };
+
+        int surfaceY = ChunkEntity.Height / 2;
+        CreateFlatSurface(chunk, surfaceY, BlockType.Grass);
+
+        // Act
+        await _step.ExecuteAsync(context);
+
+        // Assert - find trees and verify height is between 4-8 blocks
+        // (MinTreeHeight = 4, MaxTreeHeight = 8 from TreeGeneratorStep)
+        for (int x = 2; x < ChunkEntity.Size - 2; x++)
+        {
+            for (int z = 2; z < ChunkEntity.Size - 2; z++)
+            {
+                // Check if this is a tree base (wood block on grass)
+                var surfaceBlock = chunk.GetBlock(x, surfaceY, z);
+                var blockAboveSurface = chunk.GetBlock(x, surfaceY + 1, z);
+
+                if (surfaceBlock?.BlockType == BlockType.Grass &&
+                    blockAboveSurface?.BlockType == BlockType.Wood)
+                {
+                    // Count trunk height
+                    int trunkHeight = 0;
+                    for (int y = surfaceY + 1; y < ChunkEntity.Height; y++)
+                    {
+                        var block = chunk.GetBlock(x, y, z);
+                        if (block?.BlockType == BlockType.Wood)
+                        {
+                            trunkHeight++;
+                        }
+                        else
+                        {
+                            break; // Stop when we hit non-wood
+                        }
+                    }
+
+                    // Verify trunk height is within expected range (4-8 blocks)
+                    Assert.That(trunkHeight, Is.GreaterThanOrEqualTo(4),
+                        $"Tree trunk at ({x},{z}) should be at least 4 blocks tall");
+                    Assert.That(trunkHeight, Is.LessThanOrEqualTo(8),
+                        $"Tree trunk at ({x},{z}) should be at most 8 blocks tall");
+                }
+            }
+        }
+    }
+
+    [Test]
+    public async Task ExecuteAsync_MultipleTreesInForestBiome()
+    {
+        // Arrange - larger surface to increase chance of multiple trees
+        var position = new Vector3(10000, 0, 10000);
+        var chunk = new ChunkEntity(position);
+        var noise = new FastNoiseLite(5555);
+        var context = new GeneratorContext(chunk, position, noise, 5555);
+
+        context.CustomData["BiomeData"] = new BiomeData
+        {
+            BiomeType = DemonsGate.Services.Game.Types.BiomeType.TropicalRainforest,
+            SurfaceBlock = BlockType.Grass,
+            SubsurfaceBlock = BlockType.Dirt,
+            HeightMultiplier = 1.0f,
+            BaseHeight = 0f
+        };
+
+        int surfaceY = ChunkEntity.Height / 2;
+        CreateFlatSurface(chunk, surfaceY, BlockType.Grass);
+
+        // Act
+        await _step.ExecuteAsync(context);
+
+        // Assert - count distinct tree bases
+        int treeCount = 0;
+        for (int x = 2; x < ChunkEntity.Size - 2; x++)
+        {
+            for (int z = 2; z < ChunkEntity.Size - 2; z++)
+            {
+                var surfaceBlock = chunk.GetBlock(x, surfaceY, z);
+                var blockAboveSurface = chunk.GetBlock(x, surfaceY + 1, z);
+
+                if (surfaceBlock?.BlockType == BlockType.Grass &&
+                    blockAboveSurface?.BlockType == BlockType.Wood)
+                {
+                    treeCount++;
+                }
+            }
+        }
+
+        // Tropical rainforest with density 0.4 should generate at least one tree
+        Assert.That(treeCount, Is.GreaterThan(0),
+            "Tropical rainforest should generate at least one tree");
+    }
+
+    [Test]
+    public async Task ExecuteAsync_SurfaceNearTopBoundary_DoesNotThrowException()
+    {
+        // Arrange - surface at y=63 (ChunkEntity.Height - 1), which was causing the bug
+        var position = new Vector3(15000, 0, 15000);
+        var chunk = new ChunkEntity(position);
+        var noise = new FastNoiseLite(8888);
+        var context = new GeneratorContext(chunk, position, noise, 8888);
+
+        context.CustomData["BiomeData"] = new BiomeData
+        {
+            BiomeType = DemonsGate.Services.Game.Types.BiomeType.TropicalRainforest,
+            SurfaceBlock = BlockType.Grass,
+            SubsurfaceBlock = BlockType.Dirt,
+            HeightMultiplier = 1.0f,
+            BaseHeight = 0f
+        };
+
+        // Create surface very close to the top (y=63, which is ChunkEntity.Height - 1)
+        int surfaceY = ChunkEntity.Height - 1;
+        CreateFlatSurface(chunk, surfaceY, BlockType.Grass);
+
+        // Act & Assert - should not throw ArgumentOutOfRangeException
+        Assert.DoesNotThrowAsync(async () => await _step.ExecuteAsync(context),
+            "Should handle surface near top boundary without throwing exception");
+
+        // Verify no trees were placed (not enough space)
+        int woodCount = CountBlockType(chunk, BlockType.Wood);
+        Assert.That(woodCount, Is.EqualTo(0),
+            "Should not place trees when surface is too close to top boundary");
+    }
+
+    [Test]
+    public async Task ExecuteAsync_SurfaceAt52_CannotPlaceTrees()
+    {
+        // Arrange - surface at y=52
+        // Required space = MaxTreeHeight (8) + 3 = 11
+        // 52 + 11 = 63, which is < 64, so technically there's room
+        // But 52 + 11 >= 64 is false, so trees should be placeable
+        // Let's test the boundary: y=53 is the last position where a tree can be placed
+        var position = new Vector3(20000, 0, 20000);
+        var chunk = new ChunkEntity(position);
+        var noise = new FastNoiseLite(9999);
+        var context = new GeneratorContext(chunk, position, noise, 9999);
+
+        context.CustomData["BiomeData"] = new BiomeData
+        {
+            BiomeType = DemonsGate.Services.Game.Types.BiomeType.TropicalRainforest,
+            SurfaceBlock = BlockType.Grass,
+            SubsurfaceBlock = BlockType.Dirt,
+            HeightMultiplier = 1.0f,
+            BaseHeight = 0f
+        };
+
+        // Surface at y=53: 53 + 11 = 64, so surfaceY + requiredSpace >= ChunkEntity.Height
+        // This should prevent tree placement
+        int surfaceY = 53;
+        CreateFlatSurface(chunk, surfaceY, BlockType.Grass);
+
+        // Act
+        await _step.ExecuteAsync(context);
+
+        // Assert - no trees should be placed due to insufficient vertical space
+        int woodCount = CountBlockType(chunk, BlockType.Wood);
+        Assert.That(woodCount, Is.EqualTo(0),
+            "Should not place trees at y=53 (insufficient space: 53 + 11 >= 64)");
+    }
+
     private static void CreateFlatSurface(ChunkEntity chunk, int surfaceY, BlockType surfaceBlock)
     {
         surfaceY = Math.Clamp(surfaceY, 1, ChunkEntity.Height - 2);

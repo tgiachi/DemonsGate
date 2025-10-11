@@ -203,19 +203,20 @@ public class TreeGeneratorStep : IGeneratorStep
             return false;
         }
 
-        // Check if underwater (block above surface is water)
-        var blockAbove = chunk.GetBlock(x, surfaceY + 1, z);
-        if (blockAbove != null && blockAbove.BlockType == BlockType.Water)
-        {
-            failReason = "Underwater (block above is water)";
-            return false;
-        }
-
         // Check if there's enough space above for the tree
         int requiredSpace = MaxTreeHeight + 3; // Tree height + canopy space
         if (surfaceY + requiredSpace >= ChunkEntity.Height)
         {
             failReason = $"Not enough vertical space (surfaceY={surfaceY}, required={requiredSpace}, height={ChunkEntity.Height})";
+            return false;
+        }
+
+        // Check if underwater (block above surface is water)
+        // We already checked that surfaceY + 1 is within bounds above
+        var blockAbove = chunk.GetBlock(x, surfaceY + 1, z);
+        if (blockAbove != null && blockAbove.BlockType == BlockType.Water)
+        {
+            failReason = "Underwater (block above is water)";
             return false;
         }
 

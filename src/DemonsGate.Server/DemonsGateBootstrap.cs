@@ -25,7 +25,7 @@ public class DemonsGateBootstrap : IDisposable
 {
     private readonly DemonsGateServerOptions _options;
 
-    private readonly IContainer _container;
+    private readonly Container _container;
 
     private Func<IContainer, IContainer> _registerServicesCallback;
 

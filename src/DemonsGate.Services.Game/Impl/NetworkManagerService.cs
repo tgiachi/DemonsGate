@@ -146,6 +146,17 @@ public class NetworkManagerService : INetworkManagerService
         return _sessions[id];
     }
 
+    public async Task SendMessages(PlayerNetworkSession session, params IDemonsGateMessage[] messages)
+    {
+        foreach (var message in messages)
+        {
+            _eventLoopService.EnqueueTask(
+                $"network_send_message_{message.MessageType}_{session.SessionId}",
+                () => _networkService.SendMessageAsync(session.SessionId, message)
+            );
+        }
+    }
+
     private PlayerNetworkSession GetOrCreateSession(int clientId)
     {
         return _sessions.GetOrAdd(
@@ -155,6 +166,8 @@ public class NetworkManagerService : INetworkManagerService
                 var session = _playerNetworkSessionPool.Get();
                 session.SessionId = id;
                 session.LastPing = DateTime.UtcNow;
+
+                session.NetworkManagerService = this;
 
                 _logger.Debug("Created session for client {ClientId}", id);
                 return session;

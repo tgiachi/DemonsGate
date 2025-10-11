@@ -16,4 +16,10 @@ public enum NetworkMessageType : byte
 
     /// <summary>Login response message indicating success or failure</summary>
     LoginResponse,
+
+    SystemChat,
+
+
+    VersionRequest,
+    VersionResponse,
 }

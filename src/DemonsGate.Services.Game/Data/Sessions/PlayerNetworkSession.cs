@@ -1,4 +1,5 @@
 using System.Numerics;
+using DemonsGate.Services.Game.Interfaces;
 
 namespace DemonsGate.Services.Game.Data.Sessions;
 
@@ -9,6 +10,9 @@ public class PlayerNetworkSession : IDisposable
 
     public event PositionChangedHandler OnPositionChanged;
     public event FacingChangedHandler OnFacingChanged;
+
+
+    public INetworkManagerService NetworkManagerService { get; set; }
 
     public int SessionId { get; set; }
 

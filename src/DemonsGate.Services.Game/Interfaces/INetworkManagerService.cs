@@ -10,5 +10,7 @@ public interface INetworkManagerService : IDemonsGateStartableService
 
     PlayerNetworkSession? GetSessionById(int id);
 
+    Task SendMessages(PlayerNetworkSession session, params IDemonsGateMessage[] messages);
+
 
 }
