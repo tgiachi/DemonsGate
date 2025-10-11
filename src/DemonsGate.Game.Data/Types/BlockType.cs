@@ -1,4 +1,4 @@
-namespace DemonsGate.Services.Game.Types;
+namespace DemonsGate.Game.Data.Types;
 
 /// <summary>
 /// Enumerates the available block types that can populate world chunks.
@@ -22,5 +22,20 @@ public enum BlockType : byte
     ///  The end of map
     /// </summary>
     Bedrock,
+
+    /// <summary>
+    /// Snow block for cold biomes.
+    /// </summary>
+    Snow,
+
+    /// <summary>
+    /// Ice block, frozen water.
+    /// </summary>
+    Ice,
+
+    /// <summary>
+    /// Moss block for decoration.
+    /// </summary>
+    Moss,
 
 }

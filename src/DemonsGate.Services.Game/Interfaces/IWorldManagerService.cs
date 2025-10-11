@@ -1,6 +1,6 @@
 using System.Numerics;
 using DemonsGate.Game.Data.Primitives;
-using DemonsGate.Services.Game.Types;
+using DemonsGate.Game.Data.Types;
 
 namespace DemonsGate.Services.Game.Interfaces;
 

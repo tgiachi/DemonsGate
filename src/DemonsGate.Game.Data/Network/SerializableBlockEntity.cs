@@ -1,5 +1,5 @@
 using DemonsGate.Game.Data.Primitives;
-using DemonsGate.Services.Game.Types;
+using DemonsGate.Game.Data.Types;
 using MemoryPack;
 
 namespace DemonsGate.Game.Data.Network;

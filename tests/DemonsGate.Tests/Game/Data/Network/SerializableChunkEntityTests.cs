@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using DemonsGate.Game.Data.Network;
 using DemonsGate.Game.Data.Primitives;
-using DemonsGate.Services.Game.Types;
+using DemonsGate.Game.Data.Types;
 
 namespace DemonsGate.Tests.Game.Data.Network;
 

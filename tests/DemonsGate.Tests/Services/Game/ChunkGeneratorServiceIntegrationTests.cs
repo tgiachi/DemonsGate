@@ -1,12 +1,12 @@
 using System.Numerics;
 using DemonsGate.Core.Interfaces.Metrics;
 using DemonsGate.Game.Data.Primitives;
+using DemonsGate.Game.Data.Types;
 using DemonsGate.Game.Data.Utils;
 using DemonsGate.Services.Game.Data.Config;
 using DemonsGate.Services.Game.Impl;
 using DemonsGate.Services.Game.Impl.Pipeline.Steps;
 using DemonsGate.Services.Game.Metrics;
-using DemonsGate.Services.Game.Types;
 using DemonsGate.Services.Interfaces;
 using NSubstitute;
 

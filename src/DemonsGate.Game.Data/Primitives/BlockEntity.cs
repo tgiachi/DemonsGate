@@ -1,4 +1,4 @@
-using DemonsGate.Services.Game.Types;
+using DemonsGate.Game.Data.Types;
 
 namespace DemonsGate.Game.Data.Primitives;
 

@@ -1,8 +1,8 @@
 using System.Numerics;
 using DemonsGate.Core.Attributes.Scripts;
 using DemonsGate.Game.Data.Primitives;
+using DemonsGate.Game.Data.Types;
 using DemonsGate.Services.Game.Interfaces.Pipeline;
-using DemonsGate.Services.Game.Types;
 using Serilog;
 
 namespace DemonsGate.Services.Game.ScriptModules;

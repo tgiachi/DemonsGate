@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 using DemonsGate.Game.Data.Primitives;
-using DemonsGate.Services.Game.Types;
+using DemonsGate.Game.Data.Types;
 
 namespace DemonsGate.Tests.Game.Data.Primitives;
 
