@@ -17,6 +17,16 @@ public class TerrainGeneratorStep : IGeneratorStep
     /// </summary>
     private const int BedrockWorldY = -1024;
 
+    /// <summary>
+    /// The sea level Y coordinate. Water will be generated up to this level.
+    /// </summary>
+    private const int SeaLevel = 64;
+
+    /// <summary>
+    /// Depth at which stone starts to replace dirt.
+    /// </summary>
+    private const int StoneDepth = 5;
+
     /// <inheritdoc/>
     public string Name => "TerrainGenerator";
 
@@ -63,10 +73,10 @@ public class TerrainGeneratorStep : IGeneratorStep
                         // Bedrock at the bottom of the chunk
                         blockType = BlockType.Bedrock;
                     }
-                    else if (y < terrainHeight - 3)
+                    else if (y < terrainHeight - StoneDepth)
                     {
-                        // Deep underground is dirt
-                        blockType = BlockType.Dirt;
+                        // Deep underground is stone
+                        blockType = BlockType.Stone;
                     }
                     else if (y < terrainHeight)
                     {
@@ -75,12 +85,17 @@ public class TerrainGeneratorStep : IGeneratorStep
                     }
                     else if (y == terrainHeight)
                     {
-                        // Surface is grass
-                        blockType = BlockType.Grass;
+                        // Surface is grass (if above sea level) or dirt (if underwater)
+                        blockType = y >= SeaLevel ? BlockType.Grass : BlockType.Dirt;
+                    }
+                    else if (y < SeaLevel)
+                    {
+                        // Below sea level but above terrain is water
+                        blockType = BlockType.Water;
                     }
                     else
                     {
-                        // Above terrain is air
+                        // Above terrain and above sea level is air
                         blockType = BlockType.Air;
                     }
 

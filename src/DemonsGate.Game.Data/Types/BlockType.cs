@@ -38,4 +38,19 @@ public enum BlockType : byte
     /// </summary>
     Moss,
 
+    /// <summary>
+    /// Stone block - basic rock material.
+    /// </summary>
+    Stone,
+
+    /// <summary>
+    /// Wood log block - tree trunk.
+    /// </summary>
+    Wood,
+
+    /// <summary>
+    /// Water block - liquid.
+    /// </summary>
+    Water,
+
 }
