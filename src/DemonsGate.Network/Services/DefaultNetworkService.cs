@@ -266,6 +266,12 @@ public class DefaultNetworkService : INetworkService
         AddMessageListener(messageData.MessageType, listener);
     }
 
+    public void AddMessageListener<TMessage>(Func<int, IDemonsGateMessage, Task> handler) where TMessage : IDemonsGateMessage
+    {
+        var listener = new FunctionalNetworkMessageListener(handler);
+        AddMessageListener<TMessage>(listener);
+    }
+
     public async Task SendMessageAsync<TMessage>(
         int clientId, TMessage message, CancellationToken cancellationToken = default
     )

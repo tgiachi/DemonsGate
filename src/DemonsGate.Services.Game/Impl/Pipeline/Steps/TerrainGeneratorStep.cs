@@ -12,6 +12,11 @@ public class TerrainGeneratorStep : IGeneratorStep
 {
     private readonly ILogger _logger = Log.ForContext<TerrainGeneratorStep>();
 
+    /// <summary>
+    /// The world Y coordinate where bedrock layer is placed.
+    /// </summary>
+    private const int BedrockWorldY = -1024;
+
     /// <inheritdoc/>
     public string Name => "TerrainGenerator";
 
@@ -43,11 +48,19 @@ public class TerrainGeneratorStep : IGeneratorStep
                 // Fill blocks from bottom to terrain height
                 for (int y = 0; y < ChunkEntity.Height; y++)
                 {
+                    // Calculate world Y coordinate
+                    int worldY = (int)worldPos.Y + y;
+
                     BlockType blockType;
 
-                    if (y == 0)
+                    if (worldY == BedrockWorldY)
                     {
-                        // Bedrock at the bottom
+                        // Bedrock at the configured world Y level
+                        blockType = BlockType.Bedrock;
+                    }
+                    else if (y == 0)
+                    {
+                        // Bedrock at the bottom of the chunk
                         blockType = BlockType.Bedrock;
                     }
                     else if (y < terrainHeight - 3)

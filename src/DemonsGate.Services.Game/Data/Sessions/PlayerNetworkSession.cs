@@ -12,6 +12,7 @@ public class PlayerNetworkSession : IDisposable
 
     public int SessionId { get; set; }
 
+    public DateTime LastPing { get; set; }
 
     private Vector3 _position;
 
@@ -51,6 +52,7 @@ public class PlayerNetworkSession : IDisposable
         OnFacingChanged = null;
         Position = default;
         Facing = default;
+        LastPing = default;
         GC.SuppressFinalize(this);
     }
 }

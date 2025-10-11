@@ -46,6 +46,16 @@ public class TimerDataObject
     public Action Callback { get; set; } = () => { };
 
     /// <summary>
+    ///     Async callback task to execute when timer fires
+    /// </summary>
+    public Func<Task>? AsyncCallback { get; set; }
+
+    /// <summary>
+    ///     Whether this timer uses async callback
+    /// </summary>
+    public bool IsAsync { get; set; }
+
+    /// <summary>
     ///     Whether this timer is currently active (not yet fired for one-shot timers)
     /// </summary>
     public bool IsActive { get; set; } = true;
@@ -80,6 +90,8 @@ public class TimerDataObject
         Repeat = false;
         DieOnException = true;
         Callback = () => { };
+        AsyncCallback = null;
+        IsAsync = false;
         IsActive = true;
     }
 }

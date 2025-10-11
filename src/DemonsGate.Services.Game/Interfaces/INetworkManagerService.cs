@@ -8,5 +8,7 @@ public interface INetworkManagerService : IDemonsGateStartableService
 {
     void AddListener(Func<PlayerNetworkSession, IDemonsGateMessage, Task> listener);
 
+    PlayerNetworkSession? GetSessionById(int id);
+
 
 }

@@ -35,7 +35,8 @@ public interface INetworkService : IDemonsGateStartableService
     void AddMessageListener<TMessage>(INetworkMessageListener listener)
         where TMessage : IDemonsGateMessage;
 
-
+    void AddMessageListener<TMessage>(Func<int, IDemonsGateMessage, Task> handler)
+        where TMessage : IDemonsGateMessage;
 
     Task SendMessageAsync<TMessage>(int clientId, TMessage message, CancellationToken cancellationToken = default)
         where TMessage : IDemonsGateMessage;
@@ -44,9 +45,6 @@ public interface INetworkService : IDemonsGateStartableService
         where TMessage : IDemonsGateMessage;
 
     Task DisconnectClientAsync(int clientId, CancellationToken cancellationToken = default);
-
-
-
 
 
 }

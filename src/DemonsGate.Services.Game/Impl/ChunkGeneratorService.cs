@@ -60,7 +60,11 @@ public class ChunkGeneratorService : IChunkGeneratorService, IDisposable
         _logger.Information("Chunk cache initialized with {Minutes} minute expiration", config.CacheExpirationMinutes);
 
         // Initialize generation pipeline
-        _pipeline = [new TerrainGeneratorStep()];
+        _pipeline =
+        [
+            new TerrainGeneratorStep(),
+            new CaveGeneratorStep()
+        ];
 
         _logger.Information(
             "Generation pipeline initialized with {StepCount} steps: {Steps}",

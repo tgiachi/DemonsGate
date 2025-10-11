@@ -65,7 +65,15 @@ public class TimerService : ITimerService
     {
         try
         {
-            timerDataObject.Callback();
+            if (timerDataObject.IsAsync)
+            {
+                // Execute async callback synchronously within the event loop
+                timerDataObject.AsyncCallback?.Invoke().GetAwaiter().GetResult();
+            }
+            else
+            {
+                timerDataObject.Callback();
+            }
         }
         catch (Exception ex)
         {
@@ -110,6 +118,7 @@ public class TimerService : ITimerService
         timer.Repeat = repeat;
         timer.RemainingTimeInMs = intervalInMs;
         timer.DelayInMs = delayInMs;
+        timer.IsAsync = false;
 
 
         _timers.Add(timer);
@@ -124,6 +133,55 @@ public class TimerService : ITimerService
         );
 
         return timerId;
+    }
+
+    public string RegisterTimer(string name, TimeSpan interval, Action callback, TimeSpan delay = default, bool repeat = false)
+    {
+        return RegisterTimer(name, interval.TotalMilliseconds, callback, delay.TotalMilliseconds, repeat);
+    }
+
+    public string RegisterTimerAsync(string name, double intervalInMs, Func<Task> callback, double delayInMs = 0, bool repeat = false)
+    {
+        var existingTimer = _timers.FirstOrDefault(t => t.Name == name);
+
+        if (existingTimer != null)
+        {
+            _logger.Warning("Timer with name {Name} already exists. Unregistering it.", name);
+            UnregisterTimer(existingTimer.Id);
+        }
+
+        _timerSemaphore.Wait();
+
+        var timerId = Guid.NewGuid().ToString();
+        var timer = _timerDataPool.Get();
+
+        timer.Name = name;
+        timer.Id = timerId;
+        timer.IntervalInMs = intervalInMs;
+        timer.AsyncCallback = callback;
+        timer.Repeat = repeat;
+        timer.RemainingTimeInMs = intervalInMs;
+        timer.DelayInMs = delayInMs;
+        timer.IsAsync = true;
+
+
+        _timers.Add(timer);
+
+        _timerSemaphore.Release();
+
+        _logger.Debug(
+            "Registering async timer: {TimerId}, Interval: {IntervalInSeconds} ms, Repeat: {Repeat}",
+            timerId,
+            intervalInMs,
+            repeat
+        );
+
+        return timerId;
+    }
+
+    public string RegisterTimerAsync(string name, TimeSpan interval, Func<Task> callback, TimeSpan delay = default, bool repeat = false)
+    {
+        return RegisterTimerAsync(name, interval.TotalMilliseconds, callback, delay.TotalMilliseconds, repeat);
     }
 
     public void UnregisterTimer(string timerId)

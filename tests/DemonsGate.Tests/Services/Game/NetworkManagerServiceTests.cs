@@ -14,6 +14,7 @@ public class NetworkManagerServiceTests
 {
     private INetworkService _networkService = null!;
     private IEventLoopService _eventLoopService = null!;
+    private ITimerService _timerService = null!;
     private NetworkManagerService _service = null!;
 
     [SetUp]
@@ -21,6 +22,7 @@ public class NetworkManagerServiceTests
     {
         _networkService = Substitute.For<INetworkService>();
         _eventLoopService = Substitute.For<IEventLoopService>();
+        _timerService = Substitute.For<ITimerService>();
 
         _eventLoopService.EnqueueTask(Arg.Any<string>(), Arg.Any<Func<Task>>())
             .Returns(callInfo =>
@@ -30,7 +32,7 @@ public class NetworkManagerServiceTests
                 return Guid.NewGuid().ToString();
             });
 
-        _service = new NetworkManagerService(_networkService, _eventLoopService);
+        _service = new NetworkManagerService(_networkService, _eventLoopService, _timerService);
     }
 
     [TearDown]

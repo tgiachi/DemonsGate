@@ -43,7 +43,7 @@ await ConsoleApp.RunAsync(
         ConsoleAppContext context,
         bool showHeader = true,
         string pidFileName = "demonsgame.pid",
-        LogLevelType logLevel = LogLevelType.Information,
+        LogLevelType logLevel = LogLevelType.Debug,
         string? rootDirectory = null,
         bool isShellEnabled = true,
         string configFileName = "demonsgate_server.json"

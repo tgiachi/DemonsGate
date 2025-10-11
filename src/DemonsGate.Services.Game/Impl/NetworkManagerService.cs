@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using DemonsGate.Network.Args;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Services;
+using DemonsGate.Network.Messages.Pings;
 using DemonsGate.Services.Game.Data.Sessions;
 using DemonsGate.Services.Game.Interfaces;
 using DemonsGate.Services.Interfaces;
@@ -16,21 +17,67 @@ public class NetworkManagerService : INetworkManagerService
 
     private readonly INetworkService _networkService;
 
+
     private readonly IEventLoopService _eventLoopService;
 
     private readonly ObjectPool<PlayerNetworkSession> _playerNetworkSessionPool =
         new DefaultObjectPool<PlayerNetworkSession>(new DefaultPooledObjectPolicy<PlayerNetworkSession>());
 
-
     private ConcurrentDictionary<int, PlayerNetworkSession> _sessions = new();
-    private readonly ConcurrentBag<Func<PlayerNetworkSession, IDemonsGateMessage, Task>> _listeners = new();
+    private readonly ConcurrentBag<Func<PlayerNetworkSession, IDemonsGateMessage, Task>> _listeners = [];
     private bool _isRunning;
 
 
-    public NetworkManagerService(INetworkService networkService, IEventLoopService eventLoopService)
+    public NetworkManagerService(
+        INetworkService networkService, IEventLoopService eventLoopService, ITimerService timerService
+    )
     {
-        _networkService = networkService ?? throw new ArgumentNullException(nameof(networkService));
-        _eventLoopService = eventLoopService ?? throw new ArgumentNullException(nameof(eventLoopService));
+        _networkService = networkService;
+        _eventLoopService = eventLoopService;
+        timerService.RegisterTimerAsync("pingClient", 10 * 1000, OnPingClients, 0, true);
+        timerService.RegisterTimerAsync("disconnectDeadClients", 15 * 1000, DisconnectDeadClients, 0, true);
+        _networkService.AddMessageListener<PongMessage>(OnPongMessage);
+    }
+
+    private Task OnPongMessage(int sessionId, IDemonsGateMessage message)
+    {
+        if (_sessions.TryGetValue(sessionId, out var player))
+        {
+            _logger.Debug("Updating ping to {Player}", player.SessionId);
+            player.LastPing = DateTime.UtcNow;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task DisconnectDeadClients()
+    {
+        var now = DateTime.UtcNow;
+        var timeoutThreshold = now.AddSeconds(-60);
+
+        foreach (var (clientId, session) in _sessions)
+        {
+            if (session.LastPing <= timeoutThreshold)
+            {
+                await _networkService.DisconnectClientAsync(clientId);
+            }
+        }
+    }
+
+    private async Task OnPingClients()
+    {
+        _logger.Information("Pinging clients");
+        var now = DateTime.UtcNow;
+        var timeoutThreshold = now.AddSeconds(-30);
+        var pingMessage = new PingMessage();
+
+        foreach (var (clientId, session) in _sessions)
+        {
+            if (session.LastPing <= timeoutThreshold)
+            {
+                await _networkService.SendMessageAsync(clientId, pingMessage);
+            }
+        }
     }
 
     private void OnNetworkMessageReceived(object sender, NetworkClientMessageEventArgs e)
@@ -94,6 +141,11 @@ public class NetworkManagerService : INetworkManagerService
         _logger.Debug("Added listener to NetworkManagerService. Total listeners: {ListenerCount}", _listeners.Count);
     }
 
+    public PlayerNetworkSession? GetSessionById(int id)
+    {
+        return _sessions[id];
+    }
+
     private PlayerNetworkSession GetOrCreateSession(int clientId)
     {
         return _sessions.GetOrAdd(
@@ -102,6 +154,7 @@ public class NetworkManagerService : INetworkManagerService
             {
                 var session = _playerNetworkSessionPool.Get();
                 session.SessionId = id;
+                session.LastPing = DateTime.UtcNow;
 
                 _logger.Debug("Created session for client {ClientId}", id);
                 return session;
