@@ -106,17 +106,16 @@ public interface INetworkClientService : IDemonsGateStartableService
 
     /// <summary>
     /// Sends a request message and waits for the corresponding response.
+    /// A unique RequestId is automatically generated and assigned to the request.
     /// </summary>
     /// <typeparam name="TRequest">The type of request message</typeparam>
     /// <typeparam name="TResponse">The type of response message</typeparam>
     /// <param name="request">The request message to send</param>
-    /// <param name="expectedResponseType">The expected response message type</param>
     /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The response message</returns>
     Task<TResponse> SendRequestAsync<TRequest, TResponse>(
         TRequest request,
-        NetworkMessageType expectedResponseType,
         int timeoutMs = 5000,
         CancellationToken cancellationToken = default)
         where TRequest : IDemonsGateMessage

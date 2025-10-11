@@ -7,6 +7,10 @@ public abstract class BaseDemonsGameMessage : IDemonsGateMessage
 {
     public NetworkMessageType MessageType { get; }
 
+    /// <summary>
+    /// Gets or sets the unique identifier for request/response tracking.
+    /// </summary>
+    public Guid? RequestId { get; set; }
 
     protected BaseDemonsGameMessage(NetworkMessageType type)
     {

@@ -32,7 +32,7 @@ public class DefaultNetworkClientService : INetworkClientService
     private readonly IEventLoopService _eventLoopService;
     private readonly ILogger _logger = Log.ForContext<DefaultNetworkClientService>();
     private readonly Dictionary<NetworkMessageType, List<INetworkMessageListener>> _messageListeners = new();
-    private readonly Dictionary<NetworkMessageType, TaskCompletionSource<IDemonsGateMessage>> _pendingRequests = new();
+    private readonly Dictionary<Guid, TaskCompletionSource<IDemonsGateMessage>> _pendingRequests = new();
     private readonly Lock _requestLock = new();
     private readonly IPacketSerializer _packetSerializer;
     private readonly IPacketDeserializer _packetDeserializer;
@@ -138,12 +138,18 @@ public class DefaultNetworkClientService : INetworkClientService
 
     private async Task DispatchMessageToListenersAsync(IDemonsGateMessage message)
     {
-        // Complete pending requests first
-        lock (_requestLock)
+        // Complete pending requests first if message has a RequestId
+        if (message.RequestId.HasValue)
         {
-            if (_pendingRequests.TryGetValue(message.MessageType, out var tcs))
+            lock (_requestLock)
             {
-                tcs.TrySetResult(message);
+                if (_pendingRequests.TryGetValue(message.RequestId.Value, out var tcs))
+                {
+                    _logger.Debug("Completing pending request with RequestId {RequestId} for message type {MessageType}",
+                        message.RequestId, message.MessageType);
+                    tcs.TrySetResult(message);
+                    _pendingRequests.Remove(message.RequestId.Value);
+                }
             }
         }
 
@@ -303,15 +309,13 @@ public class DefaultNetworkClientService : INetworkClientService
     /// <typeparam name="TRequest">The type of request message</typeparam>
     /// <typeparam name="TResponse">The type of response message</typeparam>
     /// <param name="request">The request message to send</param>
-    /// <param name="expectedResponseType">The expected response message type</param>
     /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The response message</returns>
-    /// <exception cref="InvalidOperationException">Thrown when a request of this type is already pending</exception>
+    /// <exception cref="InvalidOperationException">Thrown when not connected to server</exception>
     /// <exception cref="TimeoutException">Thrown when the request times out</exception>
     public async Task<TResponse> SendRequestAsync<TRequest, TResponse>(
         TRequest request,
-        NetworkMessageType expectedResponseType,
         int timeoutMs = 5000,
         CancellationToken cancellationToken = default)
         where TRequest : IDemonsGateMessage
@@ -322,17 +326,19 @@ public class DefaultNetworkClientService : INetworkClientService
             throw new InvalidOperationException("Cannot send request: not connected to server");
         }
 
+        // Generate unique RequestId for this request
+        var requestId = Guid.NewGuid();
+        request.RequestId = requestId;
+
         var tcs = new TaskCompletionSource<IDemonsGateMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         lock (_requestLock)
         {
-            if (_pendingRequests.ContainsKey(expectedResponseType))
-            {
-                throw new InvalidOperationException(
-                    $"A request for {expectedResponseType} is already pending");
-            }
-            _pendingRequests[expectedResponseType] = tcs;
+            _pendingRequests[requestId] = tcs;
         }
+
+        _logger.Debug("Sending request with RequestId {RequestId} for message type {MessageType}",
+            requestId, request.MessageType);
 
         try
         {
@@ -350,18 +356,22 @@ public class DefaultNetworkClientService : INetworkClientService
 
             if (completedTask != tcs.Task)
             {
+                _logger.Warning("Request timeout for RequestId {RequestId}, message type {MessageType} after {TimeoutMs}ms",
+                    requestId, request.MessageType, timeoutMs);
                 throw new TimeoutException(
-                    $"Request timeout for {expectedResponseType} after {timeoutMs}ms");
+                    $"Request timeout for RequestId {requestId} ({request.MessageType}) after {timeoutMs}ms");
             }
 
             var result = await tcs.Task;
+            _logger.Debug("Received response for RequestId {RequestId}, message type {MessageType}",
+                requestId, result.MessageType);
             return (TResponse)result;
         }
         finally
         {
             lock (_requestLock)
             {
-                _pendingRequests.Remove(expectedResponseType);
+                _pendingRequests.Remove(requestId);
             }
         }
     }
@@ -407,7 +417,6 @@ public class DefaultNetworkClientService : INetworkClientService
         var request = new PingMessage { Timestamp = DateTime.UtcNow };
         return await SendRequestAsync<PingMessage, PongMessage>(
             request,
-            NetworkMessageType.Pong,
             timeoutMs,
             cancellationToken);
     }
@@ -433,7 +442,6 @@ public class DefaultNetworkClientService : INetworkClientService
         };
         return await SendRequestAsync<LoginRequestMessage, LoginResponseMessage>(
             request,
-            NetworkMessageType.LoginResponse,
             timeoutMs,
             cancellationToken);
     }
@@ -451,7 +459,6 @@ public class DefaultNetworkClientService : INetworkClientService
         var request = new VersionRequest();
         return await SendRequestAsync<VersionRequest, VersionResponse>(
             request,
-            NetworkMessageType.VersionResponse,
             timeoutMs,
             cancellationToken);
     }
@@ -474,7 +481,6 @@ public class DefaultNetworkClientService : INetworkClientService
         };
         return await SendRequestAsync<AssetRequestMessage, AssetResponseMessage>(
             request,
-            NetworkMessageType.AssetResponse,
             timeoutMs,
             cancellationToken);
     }
