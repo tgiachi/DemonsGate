@@ -129,6 +129,7 @@ public class DefaultNetworkClientService : INetworkClientService
             await DispatchMessageToListenersAsync(message);
 
             _logger.Debug("Deserialized message of type {MessageType}", message.MessageType);
+            MessageReceived?.Invoke(this, new NetworkClientMessageEventArgs(peer.Id, message, message.MessageType));
         }
         catch (Exception ex)
         {

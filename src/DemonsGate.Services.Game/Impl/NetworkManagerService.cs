@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using DemonsGate.Network.Args;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Services;
+using DemonsGate.Network.Messages.Handshake;
 using DemonsGate.Network.Messages.Pings;
 using DemonsGate.Services.Game.Data.Sessions;
 using DemonsGate.Services.Game.Interfaces;
@@ -179,6 +180,10 @@ public class NetworkManagerService : INetworkManagerService
     {
         var session = GetOrCreateSession(e.ClientId);
         _logger.Information("Client connected with ID {ClientId}", session.SessionId);
+        SendMessages(session, new VersionResponse()
+        {
+            Version = "0.1.0"
+        });
     }
 
     private void OnClientDisconnected(object sender, NetworkClientConnectedEventArgs e)
