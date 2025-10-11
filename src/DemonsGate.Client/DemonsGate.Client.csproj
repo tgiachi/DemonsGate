@@ -32,6 +32,7 @@
         <PackageReference Include="System.ValueTuple" Version="4.6.1" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\DemonsGate.Game.Data\DemonsGate.Game.Data.csproj" />
       <ProjectReference Include="..\DemonsGate.Network\DemonsGate.Network.csproj" />
     </ItemGroup>
     <Target Name="RestoreDotnetTools" BeforeTargets="CollectPackageReferences">

@@ -103,4 +103,68 @@ public interface INetworkClientService : IDemonsGateStartableService
     /// <param name="listener">The listener to add.</param>
     void AddMessageListener<TMessage>(INetworkMessageListener listener)
         where TMessage : IDemonsGateMessage;
+
+    /// <summary>
+    /// Sends a request message and waits for the corresponding response.
+    /// </summary>
+    /// <typeparam name="TRequest">The type of request message</typeparam>
+    /// <typeparam name="TResponse">The type of response message</typeparam>
+    /// <param name="request">The request message to send</param>
+    /// <param name="expectedResponseType">The expected response message type</param>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The response message</returns>
+    Task<TResponse> SendRequestAsync<TRequest, TResponse>(
+        TRequest request,
+        NetworkMessageType expectedResponseType,
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default)
+        where TRequest : IDemonsGateMessage
+        where TResponse : IDemonsGateMessage;
+
+    /// <summary>
+    /// Sends a ping request and waits for a pong response.
+    /// </summary>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The pong response with latency information</returns>
+    Task<DemonsGate.Network.Messages.Pings.PongMessage> PingAsync(
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a login request and waits for a login response.
+    /// </summary>
+    /// <param name="email">User email</param>
+    /// <param name="password">User password</param>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The login response indicating success or failure</returns>
+    Task<DemonsGate.Network.Messages.Auth.LoginResponseMessage> LoginAsync(
+        string email,
+        string password,
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Requests the server version information.
+    /// </summary>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The version response from the server</returns>
+    Task<DemonsGate.Network.Messages.Handshake.VersionResponse> GetVersionAsync(
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Requests a specific asset from the server.
+    /// </summary>
+    /// <param name="fileName">The name of the asset file to request</param>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 10000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The asset response containing the requested asset data</returns>
+    Task<DemonsGate.Network.Messages.Assets.AssetResponseMessage> RequestAssetAsync(
+        string fileName,
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default);
 }

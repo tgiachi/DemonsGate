@@ -4,6 +4,10 @@ using DemonsGate.Network.Interfaces.Listeners;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Processors;
 using DemonsGate.Network.Interfaces.Services;
+using DemonsGate.Network.Messages.Assets;
+using DemonsGate.Network.Messages.Auth;
+using DemonsGate.Network.Messages.Handshake;
+using DemonsGate.Network.Messages.Pings;
 using DemonsGate.Network.Types;
 using DemonsGate.Services.Data.Config.Sections;
 using DemonsGate.Services.Interfaces;
@@ -28,6 +32,8 @@ public class DefaultNetworkClientService : INetworkClientService
     private readonly IEventLoopService _eventLoopService;
     private readonly ILogger _logger = Log.ForContext<DefaultNetworkClientService>();
     private readonly Dictionary<NetworkMessageType, List<INetworkMessageListener>> _messageListeners = new();
+    private readonly Dictionary<NetworkMessageType, TaskCompletionSource<IDemonsGateMessage>> _pendingRequests = new();
+    private readonly Lock _requestLock = new();
     private readonly IPacketSerializer _packetSerializer;
     private readonly IPacketDeserializer _packetDeserializer;
     private readonly ObjectPool<NetDataWriter> _writerPool =
@@ -132,6 +138,16 @@ public class DefaultNetworkClientService : INetworkClientService
 
     private async Task DispatchMessageToListenersAsync(IDemonsGateMessage message)
     {
+        // Complete pending requests first
+        lock (_requestLock)
+        {
+            if (_pendingRequests.TryGetValue(message.MessageType, out var tcs))
+            {
+                tcs.TrySetResult(message);
+            }
+        }
+
+        // Then notify listeners
         if (_messageListeners.TryGetValue(message.MessageType, out var listeners))
         {
             foreach (var networkMessageListener in listeners)
@@ -281,6 +297,75 @@ public class DefaultNetworkClientService : INetworkClientService
         _logger.Debug("Sent message of type {MessageType} to server", message.MessageType);
     }
 
+    /// <summary>
+    /// Sends a request message and waits for the corresponding response.
+    /// </summary>
+    /// <typeparam name="TRequest">The type of request message</typeparam>
+    /// <typeparam name="TResponse">The type of response message</typeparam>
+    /// <param name="request">The request message to send</param>
+    /// <param name="expectedResponseType">The expected response message type</param>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The response message</returns>
+    /// <exception cref="InvalidOperationException">Thrown when a request of this type is already pending</exception>
+    /// <exception cref="TimeoutException">Thrown when the request times out</exception>
+    public async Task<TResponse> SendRequestAsync<TRequest, TResponse>(
+        TRequest request,
+        NetworkMessageType expectedResponseType,
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default)
+        where TRequest : IDemonsGateMessage
+        where TResponse : IDemonsGateMessage
+    {
+        if (_serverPeer == null || !IsConnected)
+        {
+            throw new InvalidOperationException("Cannot send request: not connected to server");
+        }
+
+        var tcs = new TaskCompletionSource<IDemonsGateMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        lock (_requestLock)
+        {
+            if (_pendingRequests.ContainsKey(expectedResponseType))
+            {
+                throw new InvalidOperationException(
+                    $"A request for {expectedResponseType} is already pending");
+            }
+            _pendingRequests[expectedResponseType] = tcs;
+        }
+
+        try
+        {
+            // Send request
+            await SendMessageAsync(request, cancellationToken);
+
+            // Wait for response with timeout
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(timeoutMs);
+
+            var completedTask = await Task.WhenAny(
+                tcs.Task,
+                Task.Delay(timeoutMs, cts.Token)
+            );
+
+            if (completedTask != tcs.Task)
+            {
+                throw new TimeoutException(
+                    $"Request timeout for {expectedResponseType} after {timeoutMs}ms");
+            }
+
+            var result = await tcs.Task;
+            return (TResponse)result;
+        }
+        finally
+        {
+            lock (_requestLock)
+            {
+                _pendingRequests.Remove(expectedResponseType);
+            }
+        }
+    }
+
     public void AddMessageListener(NetworkMessageType messageType, INetworkMessageListener listener)
     {
         if (!_messageListeners.TryGetValue(messageType, out List<INetworkMessageListener>? value))
@@ -306,4 +391,93 @@ public class DefaultNetworkClientService : INetworkClientService
 
         AddMessageListener(messageData.MessageType, listener);
     }
+
+    #region Request/Response Helper Methods
+
+    /// <summary>
+    /// Sends a ping request and waits for a pong response.
+    /// </summary>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The pong response with latency information</returns>
+    public async Task<PongMessage> PingAsync(
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new PingMessage { Timestamp = DateTime.UtcNow };
+        return await SendRequestAsync<PingMessage, PongMessage>(
+            request,
+            NetworkMessageType.Pong,
+            timeoutMs,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a login request and waits for a login response.
+    /// </summary>
+    /// <param name="email">User email</param>
+    /// <param name="password">User password</param>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The login response indicating success or failure</returns>
+    public async Task<LoginResponseMessage> LoginAsync(
+        string email,
+        string password,
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new LoginRequestMessage
+        {
+            Email = email,
+            Password = password
+        };
+        return await SendRequestAsync<LoginRequestMessage, LoginResponseMessage>(
+            request,
+            NetworkMessageType.LoginResponse,
+            timeoutMs,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Requests the server version information.
+    /// </summary>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 5000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The version response from the server</returns>
+    public async Task<VersionResponse> GetVersionAsync(
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new VersionRequest();
+        return await SendRequestAsync<VersionRequest, VersionResponse>(
+            request,
+            NetworkMessageType.VersionResponse,
+            timeoutMs,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Requests a specific asset from the server.
+    /// </summary>
+    /// <param name="fileName">The name of the asset file to request</param>
+    /// <param name="timeoutMs">Timeout in milliseconds (default: 10000)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The asset response containing the requested asset data</returns>
+    public async Task<AssetResponseMessage> RequestAssetAsync(
+        string fileName,
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new AssetRequestMessage
+        {
+            FileName = fileName
+        };
+        return await SendRequestAsync<AssetRequestMessage, AssetResponseMessage>(
+            request,
+            NetworkMessageType.AssetResponse,
+            timeoutMs,
+            cancellationToken);
+    }
+
+    #endregion
 }

@@ -21,6 +21,7 @@ using DryIoc;
 using MemoryPack;
 using DemonsGate.Entities.Models;
 using DemonsGate.Entities.Models.Base;
+using DemonsGate.Game.Data.Context;
 using DemonsGate.Lua.Scripting.Engine.Context;
 using DemonsGate.Lua.Scripting.Engine.Services;
 using DemonsGate.Services.Game.Data.Config;
@@ -51,7 +52,7 @@ await ConsoleApp.RunAsync(
     {
         JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
         JsonUtils.RegisterJsonContext(DemonsGateLuaScriptJsonContext.Default);
-
+        JsonUtils.RegisterJsonContext(DemonsGateGameJsonContext.Default);
 
         MemoryPackFormatterProvider.Register<BaseEntity>();
         MemoryPackFormatterProvider.Register<UserEntity>();
