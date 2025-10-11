@@ -17,7 +17,7 @@ public class CaveGeneratorStep : IGeneratorStep
     /// Higher values create smaller caves, lower values create larger caves.
     /// Typical range: 0.5 to 0.7
     /// </summary>
-    private const float CaveThreshold = 0.6f;
+    private const float CaveThreshold = 0.55f;
 
     /// <summary>
     /// Minimum Y level where caves can generate.
@@ -45,7 +45,9 @@ public class CaveGeneratorStep : IGeneratorStep
 
         var chunk = context.Chunk;
         var worldPos = context.WorldPosition;
-        var noise = context.NoiseGenerator;
+
+        // Create a configured noise generator for 3D cave generation
+        var noise = CreateCaveNoiseGenerator(context.Seed);
 
         // Iterate through all blocks in the chunk
         for (int x = 0; x < ChunkEntity.Size; x++)
@@ -55,9 +57,9 @@ public class CaveGeneratorStep : IGeneratorStep
                 for (int y = MinCaveY; y < ChunkEntity.Height && y < MaxCaveY; y++)
                 {
                     // Calculate world coordinates
-                    float worldX = (worldPos.X + x) * NoiseScale;
-                    float worldY = (worldPos.Y + y) * NoiseScale;
-                    float worldZ = (worldPos.Z + z) * NoiseScale;
+                    float worldX = worldPos.X + x;
+                    float worldY = worldPos.Y + y;
+                    float worldZ = worldPos.Z + z;
 
                     // Get 3D noise value
                     float noiseValue = noise.GetNoise(worldX, worldY, worldZ);
@@ -70,9 +72,10 @@ public class CaveGeneratorStep : IGeneratorStep
                     {
                         var currentBlock = chunk.GetBlock(x, y, z);
 
-                        // Only carve out solid blocks (don't affect air or bedrock)
+                        // Only carve out solid blocks (don't affect air, water, or bedrock)
                         if (currentBlock != null &&
                             currentBlock.BlockType != BlockType.Air &&
+                            currentBlock.BlockType != BlockType.Water &&
                             currentBlock.BlockType != BlockType.Bedrock)
                         {
                             // Replace with air to create cave
@@ -85,5 +88,18 @@ public class CaveGeneratorStep : IGeneratorStep
 
         _logger.Debug("Cave generation completed for chunk at {Position}", context.WorldPosition);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Creates a properly configured noise generator for cave generation.
+    /// </summary>
+    private static Generation.Noise.FastNoiseLite CreateCaveNoiseGenerator(int seed)
+    {
+        var noise = new Generation.Noise.FastNoiseLite(seed);
+        noise.SetNoiseType(Generation.Noise.NoiseType.OpenSimplex2);
+        noise.SetFrequency(NoiseScale);
+        noise.SetFractalType(Generation.Noise.FractalType.FBm);
+        noise.SetFractalOctaves(2);
+        return noise;
     }
 }

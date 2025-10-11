@@ -149,7 +149,7 @@ public class ChunkGeneratorServiceIntegrationTests
         var steps = _chunkGeneratorService.GetGeneratorSteps();
 
         // Assert
-        Assert.That(steps.Count, Is.EqualTo(2), "Should have 2 steps (1 default + 1 added)");
+        Assert.That(steps.Count, Is.EqualTo(5), "Should have 5 steps (4 default + 1 added)");
     }
 
     [Test]
@@ -164,7 +164,7 @@ public class ChunkGeneratorServiceIntegrationTests
 
         // Assert
         Assert.That(removed, Is.True, "Should successfully remove the step");
-        Assert.That(steps.Count, Is.EqualTo(0), "Pipeline should be empty after removing step");
+        Assert.That(steps.Count, Is.EqualTo(3), "Pipeline should have the remaining default steps");
     }
 
     [Test]
