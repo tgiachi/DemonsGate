@@ -8,6 +8,7 @@ using DemonsGate.Network.Interfaces.Services;
 using DemonsGate.Network.Types;
 using DemonsGate.Services.Data.Config.Sections;
 using DemonsGate.Services.Interfaces;
+using Humanizer;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Microsoft.Extensions.ObjectPool;
@@ -295,7 +296,12 @@ public class DefaultNetworkService : INetworkService
 
         _writerPool.Return(writer);
 
-        _logger.Debug("Sent message of type {MessageType} to client {ClientId}", message.MessageType, clientId);
+        _logger.Debug(
+            "Sent message of type {MessageType} to client {ClientId} with size: {PacketLength}",
+            message.MessageType,
+            clientId,
+            packet.Length.Bytes()
+        );
     }
 
     public Task BroadcastMessageAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default)
