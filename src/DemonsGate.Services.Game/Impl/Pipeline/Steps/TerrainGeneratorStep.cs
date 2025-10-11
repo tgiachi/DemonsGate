@@ -39,6 +39,17 @@ public class TerrainGeneratorStep : IGeneratorStep
         var worldPos = context.WorldPosition;
         var noise = context.NoiseGenerator;
 
+        // Get biome data if available (from BiomeGeneratorStep)
+        var biomeData = context.CustomData.TryGetValue("BiomeData", out var biomeObj)
+            ? biomeObj as Data.BiomeData
+            : null;
+
+        // Use biome configuration or defaults
+        var surfaceBlock = biomeData?.SurfaceBlock ?? BlockType.Grass;
+        var subsurfaceBlock = biomeData?.SubsurfaceBlock ?? BlockType.Dirt;
+        var heightMultiplier = biomeData?.HeightMultiplier ?? 1.0f;
+        var baseHeight = biomeData?.BaseHeight ?? 0f;
+
         // Generate terrain using 2D noise for height mapping
         for (int x = 0; x < ChunkEntity.Size; x++)
         {
@@ -50,7 +61,9 @@ public class TerrainGeneratorStep : IGeneratorStep
 
                 // Get noise value (-1 to 1) and convert to height (0 to ChunkEntity.Height)
                 float noiseValue = noise.GetNoise(worldX, worldZ);
-                int terrainHeight = (int)((noiseValue + 1f) * 0.5f * ChunkEntity.Height * 0.6f);
+
+                // Apply biome-specific height modifications
+                int terrainHeight = (int)((noiseValue + 1f) * 0.5f * ChunkEntity.Height * 0.6f * heightMultiplier + baseHeight);
 
                 // Clamp height to valid range
                 terrainHeight = Math.Clamp(terrainHeight, 1, ChunkEntity.Height - 1);
@@ -80,13 +93,13 @@ public class TerrainGeneratorStep : IGeneratorStep
                     }
                     else if (y < terrainHeight)
                     {
-                        // Near surface is dirt
-                        blockType = BlockType.Dirt;
+                        // Near surface uses biome-specific subsurface block
+                        blockType = subsurfaceBlock;
                     }
                     else if (y == terrainHeight)
                     {
-                        // Surface is grass (if above sea level) or dirt (if underwater)
-                        blockType = y >= SeaLevel ? BlockType.Grass : BlockType.Dirt;
+                        // Surface uses biome-specific surface block (if above sea level) or subsurface (if underwater)
+                        blockType = y >= SeaLevel ? surfaceBlock : subsurfaceBlock;
                     }
                     else if (y < SeaLevel)
                     {

@@ -49,8 +49,13 @@ public enum BlockType : byte
     Wood,
 
     /// <summary>
+    ///  Leaves of tree
+    /// </summary>
+    Leaves,
+    /// <summary>
     /// Water block - liquid.
     /// </summary>
     Water,
+
 
 }

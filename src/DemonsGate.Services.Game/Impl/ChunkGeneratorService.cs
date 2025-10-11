@@ -62,8 +62,10 @@ public class ChunkGeneratorService : IChunkGeneratorService, IDisposable
         // Initialize generation pipeline
         _pipeline =
         [
-            new TerrainGeneratorStep(),
-            new CaveGeneratorStep()
+            new BiomeGeneratorStep(),    // Generate biome data first
+            new TerrainGeneratorStep(),  // Then generate terrain based on biome
+            new CaveGeneratorStep(),     // Carve out caves
+            new TreeGeneratorStep()      // Finally place trees on the surface
         ];
 
         _logger.Information(
