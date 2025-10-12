@@ -31,4 +31,10 @@ public enum NetworkMessageType : byte
 
     /// <summary>Response containing the requested asset data</summary>
     AssetResponse,
+
+    /// <summary>Request for the list of available assets on the server</summary>
+    AssetListRequest,
+
+    /// <summary>Response containing the list of available assets</summary>
+    AssetListResponse,
 }

@@ -32,8 +32,18 @@ public class DefaultNetworkClientService : INetworkClientService
     private readonly IEventLoopService _eventLoopService;
     private readonly ILogger _logger = Log.ForContext<DefaultNetworkClientService>();
     private readonly Dictionary<NetworkMessageType, List<INetworkMessageListener>> _messageListeners = new();
+
+    /// <summary>
+    /// Dictionary tracking pending request/response operations by their unique RequestId.
+    /// Each entry maps a RequestId to a TaskCompletionSource that will be completed when the response arrives.
+    /// </summary>
     private readonly Dictionary<Guid, TaskCompletionSource<IDemonsGateMessage>> _pendingRequests = new();
+
+    /// <summary>
+    /// Lock for thread-safe access to the pending requests dictionary.
+    /// </summary>
     private readonly Lock _requestLock = new();
+
     private readonly IPacketSerializer _packetSerializer;
     private readonly IPacketDeserializer _packetDeserializer;
     private readonly ObjectPool<NetDataWriter> _writerPool =
@@ -137,6 +147,13 @@ public class DefaultNetworkClientService : INetworkClientService
         }
     }
 
+    /// <summary>
+    /// Dispatches a received message to registered listeners and completes pending requests.
+    /// If the message contains a RequestId, it will first try to complete any matching pending request
+    /// before notifying the registered listeners.
+    /// </summary>
+    /// <param name="message">The message to dispatch</param>
+    /// <returns>A task representing the asynchronous operation</returns>
     private async Task DispatchMessageToListenersAsync(IDemonsGateMessage message)
     {
         // Complete pending requests first if message has a RequestId
