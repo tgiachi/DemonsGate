@@ -1,8 +1,11 @@
+﻿using System.Numerics;
+using System.Reactive.Linq;
 using SquidCraft.Network.Processors;
 using SquidCraft.Network.Services;
 using SquidCraft.Services.Data.Config.Sections;
 using SquidCraft.Services.Impl;
 using Serilog;
+using SquidCraft.Network.Messages.Players;
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console(formatProvider: Thread.CurrentThread.CurrentCulture).CreateLogger();
 
@@ -28,10 +31,30 @@ var client = new DefaultNetworkClientService(
 await eventLoopService.StartAsync();
 await client.StartAsync();
 
-client.Connected += (sender, eventArgs) => { Log.Information("Connected"); };
+var position = Vector3.Zero;
+
+client.Connected += (sender, eventArgs) =>
+{
+    Observable.Interval(TimeSpan.FromSeconds(1))
+        .Subscribe(async l =>
+            {
+                await client.SendMessageAsync(
+                    new PlayerPositionRequest()
+                    {
+                        Rotation = Vector3.Zero,
+                        Position = position
+                    }
+                );
+
+                position.X += l;
+            }
+        );
+    Log.Information("Connected");
+};
 client.MessageReceived += (sender, eventArgs) =>
 {
     Log.Information("Message received {Type} {Message}", eventArgs.MessageType, eventArgs.Message);
+
 };
 
 await client.ConnectAsync("127.0.0.1", config.Port);

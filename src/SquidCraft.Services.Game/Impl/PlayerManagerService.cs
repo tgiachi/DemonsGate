@@ -10,7 +10,7 @@ namespace SquidCraft.Services.Game.Impl;
 
 public class PlayerManagerService : IPlayerManagerService
 {
-    private readonly ILogger logger = Log.ForContext<PlayerManagerService>();
+    private readonly ILogger _logger = Log.ForContext<PlayerManagerService>();
 
     private readonly INetworkManagerService _networkManagerService;
 
@@ -41,8 +41,11 @@ public class PlayerManagerService : IPlayerManagerService
         session.OnPositionChanged += SessionOnOnPositionChanged;
     }
 
-    private void SessionOnOnPositionChanged(Vector3 position)
+    private async void SessionOnOnPositionChanged(Vector3 position)
     {
+        var chunks = await _worldManagerService.GetChunksInRadius(position, Vector3.One);
+
+        _logger.Information("Received player position update for chunk {Chunk}", chunks);
 
     }
 }
