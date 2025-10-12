@@ -1,3 +1,4 @@
+using DemonsGate.Network.Attributes;
 using DemonsGate.Network.Messages.Base;
 using DemonsGate.Network.Types;
 using MemoryPack;
@@ -5,6 +6,7 @@ using MemoryPack;
 namespace DemonsGate.Network.Messages.Pings;
 
 [MemoryPackable]
+[NetworkMessage(NetworkMessageType.Pong)]
 public partial class PongMessage : BaseDemonsGameMessage
 {
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;

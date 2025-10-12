@@ -1,3 +1,4 @@
+using DemonsGate.Network.Attributes;
 using DemonsGate.Network.Messages.Base;
 using DemonsGate.Network.Types;
 using MemoryPack;
@@ -8,6 +9,7 @@ namespace DemonsGate.Network.Messages.Pings;
 ///     Represents a ping message used to check connection status and measure latency
 /// </summary>
 [MemoryPackable]
+[NetworkMessage(NetworkMessageType.Ping)]
 public partial class PingMessage : BaseDemonsGameMessage
 {
     /// <summary>

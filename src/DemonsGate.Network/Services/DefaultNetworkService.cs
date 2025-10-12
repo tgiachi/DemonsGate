@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using DemonsGate.Network.Args;
 using DemonsGate.Network.Data.Services;
+using DemonsGate.Network.Generated;
 using DemonsGate.Network.Interfaces.Listeners;
 using DemonsGate.Network.Interfaces.Messages;
 using DemonsGate.Network.Interfaces.Processors;
@@ -56,13 +57,13 @@ public class DefaultNetworkService : INetworkService
 
     public DefaultNetworkService(
         IPacketSerializer packetSerializer, IPacketDeserializer packetDeserializer,
-        List<NetworkMessageData> registeredMessages, GameNetworkConfig networkConfig,
+        List<NetworkMessageData>? registeredMessages, GameNetworkConfig networkConfig,
         IEventLoopService eventLoopService
     )
     {
         _packetSerializer = packetSerializer;
         _packetDeserializer = packetDeserializer;
-        _registeredMessages = registeredMessages;
+        _registeredMessages = registeredMessages ?? NetworkMessagesUtils.Messages.ToList();
         _networkConfig = networkConfig;
         _eventLoopService = eventLoopService;
 
