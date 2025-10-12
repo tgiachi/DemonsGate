@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemonsGate.Client", "src\De
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemonsGate.Console.Client", "src\DemonsGate.Console.Client\DemonsGate.Console.Client.csproj", "{B7CB3CA5-F328-4BE8-BFE1-F04DB6CF1C14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemonsGate.Network.Generator", "src\DemonsGate.Network.Generator\DemonsGate.Network.Generator.csproj", "{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,18 @@ Global
 		{B7CB3CA5-F328-4BE8-BFE1-F04DB6CF1C14}.Release|x64.Build.0 = Release|Any CPU
 		{B7CB3CA5-F328-4BE8-BFE1-F04DB6CF1C14}.Release|x86.ActiveCfg = Release|Any CPU
 		{B7CB3CA5-F328-4BE8-BFE1-F04DB6CF1C14}.Release|x86.Build.0 = Release|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Debug|x64.Build.0 = Debug|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Debug|x86.Build.0 = Debug|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Release|x64.ActiveCfg = Release|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Release|x64.Build.0 = Release|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Release|x86.ActiveCfg = Release|Any CPU
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -187,5 +201,6 @@ Global
 		{765CCFCC-1CFE-4B9A-9DB8-E14BC24D7CE9} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{92AC1953-D601-447A-AA35-793C537F9C37} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B7CB3CA5-F328-4BE8-BFE1-F04DB6CF1C14} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{16889601-5067-41C0-A7AD-C2DEA1F7BCBC} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
