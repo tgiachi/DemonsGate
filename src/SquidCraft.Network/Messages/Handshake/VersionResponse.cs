@@ -7,7 +7,7 @@ namespace SquidCraft.Network.Messages.Handshake;
 
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.VersionResponse)]
-public partial class VersionResponse : BaseDemonsGameMessage
+public partial class VersionResponse : BaseSquidCraftGameMessage
 {
     public string Version { get; set; }
 

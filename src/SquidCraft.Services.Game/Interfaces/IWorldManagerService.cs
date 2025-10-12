@@ -28,4 +28,12 @@ public interface IWorldManagerService
     Task RemoveBlock(Vector3 position);
 
     Task<ChunkEntity> GetChunkByWorldPosition(Vector3 position);
+
+    /// <summary>
+    /// Gets all chunks within a specified radius from the given world position.
+    /// </summary>
+    /// <param name="worldPosition">The center world position.</param>
+    /// <param name="radius">The radius in chunks for each axis (e.g., Vector3(1, 0, 1) returns 3x1x3 chunks, Vector3(2, 1, 2) returns 5x3x5 chunks).</param>
+    /// <returns>A collection of chunks within the specified radius.</returns>
+    Task<IEnumerable<ChunkEntity>> GetChunksInRadius(Vector3 worldPosition, Vector3 radius);
 }

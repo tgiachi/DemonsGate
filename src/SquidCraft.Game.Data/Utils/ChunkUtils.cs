@@ -109,4 +109,35 @@ public static class ChunkUtils
                y >= 0 && y < ChunkEntity.Height &&
                z >= 0 && z < ChunkEntity.Size;
     }
+
+    /// <summary>
+    /// Calculates chunk coordinates at a given offset from base chunk coordinates.
+    /// </summary>
+    /// <param name="chunkCoords">The base chunk coordinates.</param>
+    /// <param name="offsetX">Offset along the X axis.</param>
+    /// <param name="offsetY">Offset along the Y axis.</param>
+    /// <param name="offsetZ">Offset along the Z axis.</param>
+    /// <returns>The offset chunk coordinates.</returns>
+    public static Vector3 GetOffsetChunkCoordinates(Vector3 chunkCoords, int offsetX, int offsetY, int offsetZ)
+    {
+        return new Vector3(
+            (int)chunkCoords.X + offsetX,
+            (int)chunkCoords.Y + offsetY,
+            (int)chunkCoords.Z + offsetZ
+        );
+    }
+
+    /// <summary>
+    /// Gets the world position for a chunk at a given offset from base chunk coordinates.
+    /// </summary>
+    /// <param name="chunkCoords">The base chunk coordinates.</param>
+    /// <param name="offsetX">Offset along the X axis.</param>
+    /// <param name="offsetY">Offset along the Y axis.</param>
+    /// <param name="offsetZ">Offset along the Z axis.</param>
+    /// <returns>The world position of the offset chunk.</returns>
+    public static Vector3 GetOffsetChunkWorldPosition(Vector3 chunkCoords, int offsetX, int offsetY, int offsetZ)
+    {
+        var offsetCoords = GetOffsetChunkCoordinates(chunkCoords, offsetX, offsetY, offsetZ);
+        return ChunkCoordinatesToWorldPosition((int)offsetCoords.X, (int)offsetCoords.Y, (int)offsetCoords.Z);
+    }
 }

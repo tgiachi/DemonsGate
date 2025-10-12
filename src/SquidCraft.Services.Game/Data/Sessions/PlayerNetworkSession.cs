@@ -20,7 +20,7 @@ public class PlayerNetworkSession : IDisposable
 
     private Vector3 _position;
 
-    private Vector3 _facing;
+    private Vector3 _rotation;
 
     public Vector3 Position
     {
@@ -32,7 +32,7 @@ public class PlayerNetworkSession : IDisposable
         }
     }
 
-    public Vector3 Facing
+    public Vector3 Rotation
     {
         set
         {
@@ -42,10 +42,10 @@ public class PlayerNetworkSession : IDisposable
                 normalizedFacing = Vector3.Normalize(normalizedFacing);
             }
 
-            if (_facing == normalizedFacing) return;
-            OnFacingChanged?.Invoke(_facing = normalizedFacing);
+            if (_rotation == normalizedFacing) return;
+            OnFacingChanged?.Invoke(_rotation = normalizedFacing);
         }
-        get => _facing;
+        get => _rotation;
     }
 
 
@@ -55,7 +55,7 @@ public class PlayerNetworkSession : IDisposable
         OnPositionChanged = null;
         OnFacingChanged = null;
         Position = default;
-        Facing = default;
+        Rotation = default;
         LastPing = default;
         GC.SuppressFinalize(this);
     }

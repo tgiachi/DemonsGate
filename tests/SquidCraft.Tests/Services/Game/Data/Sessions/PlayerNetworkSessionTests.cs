@@ -44,12 +44,12 @@ public class PlayerNetworkSessionTests
         Vector3? raisedFacing = null;
         session.OnFacingChanged += facing => raisedFacing = facing;
 
-        session.Facing = new Vector3(0f, 0f, 5f);
+        session.Rotation = new Vector3(0f, 0f, 5f);
 
         var expected = new Vector3(0f, 0f, 1f);
 
         Assert.That(raisedFacing, Is.EqualTo(expected));
-        Assert.That(session.Facing, Is.EqualTo(expected));
+        Assert.That(session.Rotation, Is.EqualTo(expected));
     }
 
     [Test]
@@ -59,8 +59,8 @@ public class PlayerNetworkSessionTests
         var raisedCount = 0;
         session.OnFacingChanged += _ => raisedCount++;
 
-        session.Facing = new Vector3(1f, 0f, 0f);
-        session.Facing = new Vector3(2f, 0f, 0f);
+        session.Rotation = new Vector3(1f, 0f, 0f);
+        session.Rotation = new Vector3(2f, 0f, 0f);
 
         Assert.That(raisedCount, Is.EqualTo(1));
     }

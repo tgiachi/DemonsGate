@@ -7,7 +7,7 @@ namespace SquidCraft.Network.Messages.Assets;
 
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.AssetResponse)]
-public partial class AssetResponseMessage : BaseDemonsGameMessage
+public partial class AssetResponseMessage : BaseSquidCraftGameMessage
 {
     public AssetResponseMessage() : base(NetworkMessageType.AssetResponse)
     {

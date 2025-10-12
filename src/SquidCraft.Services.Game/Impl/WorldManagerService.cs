@@ -151,4 +151,69 @@ public class WorldManagerService : IWorldManagerService
             throw;
         }
     }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<ChunkEntity>> GetChunksInRadius(Vector3 worldPosition, Vector3 radius)
+    {
+        _logger.Debug("Getting chunks in radius {Radius} around world position {Position}", radius, worldPosition);
+
+        // Validate that all radius components are non-negative
+        if (radius.X < 0 || radius.Y < 0 || radius.Z < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(radius), "All radius components must be non-negative");
+        }
+
+        try
+        {
+            // Get the center chunk coordinates
+            var centerChunkCoords = ChunkUtils.GetChunkCoordinates(worldPosition);
+            var chunks = new List<ChunkEntity>();
+
+            // Convert radius to integers
+            int radiusX = (int)radius.X;
+            int radiusY = (int)radius.Y;
+            int radiusZ = (int)radius.Z;
+
+            // Iterate through all chunks in the radius
+            // For radius (1, 0, 1): 3x1x3 chunks
+            // For radius (2, 1, 2): 5x3x5 chunks
+            for (int dx = -radiusX; dx <= radiusX; dx++)
+            {
+                for (int dy = -radiusY; dy <= radiusY; dy++)
+                {
+                    for (int dz = -radiusZ; dz <= radiusZ; dz++)
+                    {
+                        // Get chunk world position at offset using utility method
+                        var chunkWorldPosition = ChunkUtils.GetOffsetChunkWorldPosition(centerChunkCoords, dx, dy, dz);
+
+                        // Get the chunk at this position
+                        var chunk = await _chunkGeneratorService.GetChunkByWorldPosition(chunkWorldPosition);
+                        chunks.Add(chunk);
+
+                        _logger.Debug(
+                            "Retrieved chunk at offset ({OffsetX}, {OffsetY}, {OffsetZ}) - World position {WorldPos}",
+                            dx,
+                            dy,
+                            dz,
+                            chunkWorldPosition
+                        );
+                    }
+                }
+            }
+
+            _logger.Information(
+                "Successfully retrieved {ChunkCount} chunks in radius {Radius} around world position {Position}",
+                chunks.Count,
+                radius,
+                worldPosition
+            );
+
+            return chunks;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to get chunks in radius {Radius} around position {Position}", radius, worldPosition);
+            throw;
+        }
+    }
 }

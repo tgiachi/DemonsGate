@@ -7,7 +7,7 @@ namespace SquidCraft.Network.Messages.Auth;
 
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.LoginResponse)]
-public partial class LoginResponseMessage : BaseDemonsGameMessage
+public partial class LoginResponseMessage : BaseSquidCraftGameMessage
 {
     public bool Success { get; set; }
 

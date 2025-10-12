@@ -4,6 +4,7 @@ using SquidCraft.Network.Interfaces.Messages;
 using SquidCraft.Network.Interfaces.Services;
 using SquidCraft.Network.Messages.Handshake;
 using SquidCraft.Network.Messages.Pings;
+using SquidCraft.Network.Types;
 using SquidCraft.Services.Game.Data.Sessions;
 using SquidCraft.Services.Game.Interfaces;
 using SquidCraft.Services.Interfaces;
@@ -14,6 +15,10 @@ namespace SquidCraft.Services.Game.Impl;
 
 public class NetworkManagerService : INetworkManagerService
 {
+
+    public event INetworkManagerService.PlayerSessionAddedHandler? PlayerSessionAdded;
+    public event INetworkManagerService.PlayerSessionRemovedHandler? PlayerSessionRemoved;
+
     private readonly ILogger _logger = Log.ForContext<NetworkManagerService>();
 
     private readonly INetworkService _networkService;
@@ -26,6 +31,7 @@ public class NetworkManagerService : INetworkManagerService
 
     private ConcurrentDictionary<int, PlayerNetworkSession> _sessions = new();
     private readonly ConcurrentBag<Func<PlayerNetworkSession, ISquidCraftMessage, Task>> _listeners = [];
+    private readonly ConcurrentDictionary<NetworkMessageType, ConcurrentBag<Func<PlayerNetworkSession, ISquidCraftMessage, Task>>> _typedListeners = new();
     private bool _isRunning;
 
 
@@ -135,11 +141,29 @@ public class NetworkManagerService : INetworkManagerService
         return Task.CompletedTask;
     }
 
+
+
+    /// <inheritdoc/>
     public void AddListener(Func<PlayerNetworkSession, ISquidCraftMessage, Task> listener)
     {
         ArgumentNullException.ThrowIfNull(listener);
         _listeners.Add(listener);
-        _logger.Debug("Added listener to NetworkManagerService. Total listeners: {ListenerCount}", _listeners.Count);
+        _logger.Debug("Added global listener to NetworkManagerService. Total global listeners: {ListenerCount}", _listeners.Count);
+    }
+
+    /// <inheritdoc/>
+    public void AddListener(NetworkMessageType messageType, Func<PlayerNetworkSession, ISquidCraftMessage, Task> listener)
+    {
+        ArgumentNullException.ThrowIfNull(listener);
+
+        var listeners = _typedListeners.GetOrAdd(messageType, _ => new ConcurrentBag<Func<PlayerNetworkSession, ISquidCraftMessage, Task>>());
+        listeners.Add(listener);
+
+        _logger.Debug(
+            "Added typed listener for message type {MessageType} to NetworkManagerService. Total listeners for this type: {ListenerCount}",
+            messageType,
+            listeners.Count
+        );
     }
 
     public PlayerNetworkSession? GetSessionById(int id)
@@ -171,6 +195,7 @@ public class NetworkManagerService : INetworkManagerService
                 session.NetworkManagerService = this;
 
                 _logger.Debug("Created session for client {ClientId}", id);
+                PlayerSessionAdded?.Invoke(session);
                 return session;
             }
         );
@@ -190,9 +215,11 @@ public class NetworkManagerService : INetworkManagerService
     {
         if (_sessions.TryRemove(e.ClientId, out var session))
         {
+            PlayerSessionRemoved?.Invoke(session);
             session.Dispose();
             session.SessionId = 0;
             _playerNetworkSessionPool.Return(session);
+
 
             _logger.Information("Client disconnected with ID {ClientId}", e.ClientId);
         }
@@ -204,7 +231,10 @@ public class NetworkManagerService : INetworkManagerService
 
     private async Task DispatchMessageAsync(PlayerNetworkSession session, ISquidCraftMessage message)
     {
-        if (_listeners.IsEmpty)
+        var hasGlobalListeners = !_listeners.IsEmpty;
+        var hasTypedListeners = _typedListeners.TryGetValue(message.MessageType, out var typedListeners) && !typedListeners.IsEmpty;
+
+        if (!hasGlobalListeners && !hasTypedListeners)
         {
             _logger.Warning(
                 "Received message of type {MessageType} for client {ClientId} but no listeners are registered",
@@ -214,6 +244,7 @@ public class NetworkManagerService : INetworkManagerService
             return;
         }
 
+        // Invoke global listeners (those registered without a specific message type)
         foreach (var listener in _listeners)
         {
             try
@@ -224,11 +255,33 @@ public class NetworkManagerService : INetworkManagerService
             {
                 _logger.Error(
                     ex,
-                    "Listener {Listener} threw an exception while handling message type {MessageType} for client {ClientId}",
+                    "Global listener {Listener} threw an exception while handling message type {MessageType} for client {ClientId}",
                     listener.Method.Name,
                     message.MessageType,
                     session.SessionId
                 );
+            }
+        }
+
+        // Invoke typed listeners (those registered for this specific message type)
+        if (hasTypedListeners)
+        {
+            foreach (var listener in typedListeners!)
+            {
+                try
+                {
+                    await listener(session, message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(
+                        ex,
+                        "Typed listener {Listener} threw an exception while handling message type {MessageType} for client {ClientId}",
+                        listener.Method.Name,
+                        message.MessageType,
+                        session.SessionId
+                    );
+                }
             }
         }
     }

@@ -7,7 +7,7 @@ namespace SquidCraft.Network.Messages.Handshake;
 
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.VersionRequest)]
-public partial class VersionRequest : BaseDemonsGameMessage
+public partial class VersionRequest : BaseSquidCraftGameMessage
 {
     public VersionRequest() : base(NetworkMessageType.VersionRequest)
     {

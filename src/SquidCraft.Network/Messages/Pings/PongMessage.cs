@@ -7,7 +7,7 @@ namespace SquidCraft.Network.Messages.Pings;
 
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.Pong)]
-public partial class PongMessage : BaseDemonsGameMessage
+public partial class PongMessage : BaseSquidCraftGameMessage
 {
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 

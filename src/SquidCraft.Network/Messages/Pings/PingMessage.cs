@@ -10,7 +10,7 @@ namespace SquidCraft.Network.Messages.Pings;
 /// </summary>
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.Ping)]
-public partial class PingMessage : BaseDemonsGameMessage
+public partial class PingMessage : BaseSquidCraftGameMessage
 {
     /// <summary>
     ///     Gets or sets the timestamp when the ping was sent

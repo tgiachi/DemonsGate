@@ -97,6 +97,7 @@ await ConsoleApp.RunAsync(
                     .AddService<IChunkGeneratorService, ChunkGeneratorService>(101)
                     .AddService<IWorldManagerService, WorldManagerService>()
                     .AddService<INetworkManagerService, NetworkManagerService>()
+                    .AddService<IPlayerManagerService, PlayerManagerService>()
                     ;
 
                 container.RegisterInstance(new ChunkGeneratorConfig());

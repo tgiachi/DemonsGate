@@ -6,7 +6,7 @@ namespace SquidCraft.Network.Messages.Base;
 /// <summary>
 /// Base class for all Demons Gate network messages providing common functionality.
 /// </summary>
-public abstract class BaseDemonsGameMessage : ISquidCraftMessage
+public abstract class BaseSquidCraftGameMessage : ISquidCraftMessage
 {
     /// <summary>
     /// Gets the type of this network message.
@@ -21,10 +21,10 @@ public abstract class BaseDemonsGameMessage : ISquidCraftMessage
     public Guid? RequestId { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BaseDemonsGameMessage"/> class.
+    /// Initializes a new instance of the <see cref="BaseSquidCraftGameMessage"/> class.
     /// </summary>
     /// <param name="type">The type of network message</param>
-    protected BaseDemonsGameMessage(NetworkMessageType type)
+    protected BaseSquidCraftGameMessage(NetworkMessageType type)
     {
         MessageType = type;
     }

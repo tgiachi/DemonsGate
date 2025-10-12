@@ -7,7 +7,7 @@ namespace SquidCraft.Network.Messages.Assets;
 
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.AssetListResponse)]
-public partial class AssetListResponseMessage : BaseDemonsGameMessage
+public partial class AssetListResponseMessage : BaseSquidCraftGameMessage
 {
     public List<AssetEntry> NameList { get; set; }
 

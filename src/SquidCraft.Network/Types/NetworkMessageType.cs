@@ -37,4 +37,7 @@ public enum NetworkMessageType : byte
 
     /// <summary>Response containing the list of available assets</summary>
     AssetListResponse,
+
+    PlayerPositionRequest,
+    PlayerPositionResponse,
 }

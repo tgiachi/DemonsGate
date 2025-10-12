@@ -7,7 +7,7 @@ namespace SquidCraft.Network.Messages.Messages;
 
 [MemoryPackable]
 [NetworkMessage(NetworkMessageType.SystemChat)]
-public partial class SystemChatMessage : BaseDemonsGameMessage
+public partial class SystemChatMessage : BaseSquidCraftGameMessage
 {
     public string Message { get; set; }
     public SystemChatType Type { get; set; } = SystemChatType.Normal;
