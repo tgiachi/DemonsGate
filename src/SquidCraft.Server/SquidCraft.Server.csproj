@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <Version>0.5.0</Version>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <NoWarn>$(NoWarn);IL3050</NoWarn>
+        <NoWarn>$(NoWarn);IL2026</NoWarn>
+        <NoWarn>$(NoWarn);IL2062</NoWarn>
+        <NoWarn>$(NoWarn);IL2072</NoWarn>
+        <NoWarn>$(NoWarn);IL2070</NoWarn>
+        <NoWarn>$(NoWarn);IL2075</NoWarn>
+        <PublishAot>true</PublishAot>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+
+
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ConsoleAppFramework" Version="5.6.1">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Serilog" Version="4.3.0" />
+      <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+      <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SquidCraft.Core\SquidCraft.Core.csproj" />
+      <ProjectReference Include="..\SquidCraft.Entities\SquidCraft.Entities.csproj" />
+      <ProjectReference Include="..\SquidCraft.Lua.Scripting.Engine\SquidCraft.Lua.Scripting.Engine.csproj" />
+      <ProjectReference Include="..\SquidCraft.Network\SquidCraft.Network.csproj" />
+      <ProjectReference Include="..\SquidCraft.Services.Game\SquidCraft.Services.Game.csproj" />
+      <ProjectReference Include="..\SquidCraft.Services\SquidCraft.Services.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Assets\**\*" />
+      <EmbeddedResource Include="Assets\**\*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
+    </ItemGroup>
+
+</Project>

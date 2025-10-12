@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>0.5.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SquidCraft.Core\SquidCraft.Core.csproj" />
+      <ProjectReference Include="..\SquidCraft.Game.Data\SquidCraft.Game.Data.csproj" />
+      <ProjectReference Include="..\SquidCraft.Lua.Scripting.Engine\SquidCraft.Lua.Scripting.Engine.csproj" />
+      <ProjectReference Include="..\SquidCraft.Network\SquidCraft.Network.csproj" />
+      <ProjectReference Include="..\SquidCraft.Services\SquidCraft.Services.csproj" />
+    </ItemGroup>
+
+</Project>
