@@ -1,35 +1,35 @@
 <linker>
-    <assembly fullname="DemonsGate.Core">
-        <type fullname="DemonsGate.Core.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Core">
+        <type fullname="SquidCraft.Core.*" preserve="all"/>
     </assembly>
 
-    <assembly fullname="DemonsGate.Js.Scripting.Engine">
-        <type fullname="DemonsGate.Js.Scripting.Engine.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Js.Scripting.Engine">
+        <type fullname="SquidCraft.Js.Scripting.Engine.*" preserve="all"/>
     </assembly>
 
-    <assembly fullname="DemonsGate.Network">
-        <type fullname="DemonsGate.Network.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Network">
+        <type fullname="SquidCraft.Network.*" preserve="all"/>
     </assembly>
 
-    <assembly fullname="DemonsGate.Services">
-        <type fullname="DemonsGate.Services.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Services">
+        <type fullname="SquidCraft.Services.*" preserve="all"/>
     </assembly>
 
-    <assembly fullname="DemonsGate.Services.Game">
-        <type fullname="DemonsGate.Services.Game.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Services.Game">
+        <type fullname="SquidCraft.Services.Game.*" preserve="all"/>
     </assembly>
 
     <assembly fullname="MoonSharp.Interpreter">
         <type fullname="MoonSharp.Interpreter.*" preserve="all"/>
     </assembly>
 
-    <assembly fullname="DemonsGate.Server">
-        <type fullname="DemonsGate.Server.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Server">
+        <type fullname="SquidCraft.Server.*" preserve="all"/>
     </assembly>
 
 
-    <assembly fullname="DemonsGate.Entities">
-        <type fullname="DemonsGate.Entities.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Entities">
+        <type fullname="SquidCraft.Entities.*" preserve="all"/>
     </assembly>
 
 
@@ -49,8 +49,8 @@
         </type>
     </assembly>
 
-    <assembly fullname="DemonsGate.Lua.Scripting.Engine">
-        <type fullname="DemonsGate.Lua.Scripting.Engine.*" preserve="all"/>
+    <assembly fullname="SquidCraft.Lua.Scripting.Engine">
+        <type fullname="SquidCraft.Lua.Scripting.Engine.*" preserve="all"/>
     </assembly>
 
     <assembly fullname="MemoryPack">

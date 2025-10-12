@@ -19,11 +19,11 @@ namespace SquidCraft.Server;
 
 // ##REFORMAT##
 /// <summary>
-/// Handles the initialization and lifecycle of the DemonsGate server.
+/// Handles the initialization and lifecycle of the SquidCraft server.
 /// </summary>
-public class DemonsGateBootstrap : IDisposable
+public class SquidCraftBootstrap : IDisposable
 {
-    private readonly DemonsGateServerOptions _options;
+    private readonly SquidCraftServerOptions _options;
 
     private readonly Container _container;
 
@@ -32,7 +32,7 @@ public class DemonsGateBootstrap : IDisposable
     private DirectoriesConfig _directoriesConfig;
 
 
-    public DemonsGateBootstrap(DemonsGateServerOptions options)
+    public SquidCraftBootstrap(SquidCraftServerOptions options)
     {
         _options = options;
 
@@ -46,7 +46,7 @@ public class DemonsGateBootstrap : IDisposable
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        Log.Information("Starting DemonsGate Server...");
+        Log.Information("Starting Squid Craft Server...");
 
         _registerServicesCallback?.Invoke(_container);
 
@@ -82,7 +82,7 @@ public class DemonsGateBootstrap : IDisposable
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    Console.Write("DEMONS> ");
+                    Console.Write("SQUIDC> ");
                     var input = Console.ReadLine();
                     if (input == null)
                     {
@@ -124,22 +124,22 @@ public class DemonsGateBootstrap : IDisposable
 
     private async Task StopAsync(CancellationToken cancellationToken)
     {
-        Log.Information("Stopping DemonsGate Server...");
+        Log.Information("Stopping SquidCraft Server...");
         await StopServicesAsync(cancellationToken);
-        Log.Information("DemonsGate Server stopped.");
+        Log.Information("SquidCraft Server stopped.");
         await Log.CloseAndFlushAsync();
     }
 
     private void InitializeDirectories()
     {
-        if (Environment.GetEnvironmentVariable("DEMONSGATE_SERVER_ROOT") != null)
+        if (Environment.GetEnvironmentVariable("SQUIDCRAFT_SERVER_ROOT") != null)
         {
-            _options.RootDirectory = Environment.GetEnvironmentVariable("DEMONSGATE_SERVER_ROOT");
+            _options.RootDirectory = Environment.GetEnvironmentVariable("SQUIDCRAFT_SERVER_ROOT");
         }
 
         if (string.IsNullOrEmpty(_options.RootDirectory))
         {
-            _options.RootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "demonsgate_root");
+            _options.RootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "squidcraft_root");
         }
 
         _options.RootDirectory = _options.RootDirectory.ResolvePathAndEnvs();
@@ -157,7 +157,7 @@ public class DemonsGateBootstrap : IDisposable
             .WriteTo.Console(formatProvider: CultureInfo.CurrentCulture)
             .WriteTo.File(
                 formatter: new CompactJsonFormatter(),
-                path: Path.Combine(_directoriesConfig[DirectoryType.Logs], "demonsgate-.log"),
+                path: Path.Combine(_directoriesConfig[DirectoryType.Logs], "squidcraft-.log"),
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 7
             );
@@ -216,11 +216,11 @@ public class DemonsGateBootstrap : IDisposable
         {
             File.WriteAllText(
                 configFileName,
-                JsonUtils.Serialize(new DemonsGateServerConfig())
+                JsonUtils.Serialize(new SquidCraftServerConfig())
             );
         }
 
-        var config = JsonUtils.Deserialize<DemonsGateServerConfig>(
+        var config = JsonUtils.Deserialize<SquidCraftServerConfig>(
             File.ReadAllText(configFileName)
         );
 

@@ -31,7 +31,7 @@ using Serilog;
 namespace SquidCraft.Lua.Scripting.Engine.Services;
 
 /// <summary>
-///     Lua engine service that integrates MoonSharp with the DemonsGate game engine
+///     Lua engine service that integrates MoonSharp with the SquidCraft game engine
 ///     Provides script execution, module loading, and Lua meta file generation
 /// </summary>
 public class LuaScriptEngineService : IScriptEngineService, IDisposable
@@ -324,7 +324,7 @@ public class LuaScriptEngineService : IScriptEngineService, IDisposable
             await RegisterScriptModulesAsync(CancellationToken.None);
 
             AddConstant("version", _versionService.GetVersionInfo().Version);
-            AddConstant("engine", "DemonsGate");
+            AddConstant("engine", "SquidCraft");
             AddConstant("platform", Environment.OSVersion.Platform.ToString());
 
             _ = Task.Run(() => GenerateLuaMetaFileAsync(CancellationToken.None), CancellationToken.None);
@@ -624,7 +624,7 @@ public class LuaScriptEngineService : IScriptEngineService, IDisposable
 
             // Generate meta.lua
             var documentation = LuaDocumentationGenerator.GenerateDocumentation(
-                "DemonsGate",
+                "SquidCraft",
                 _versionService.GetVersionInfo().Version,
                 _scriptModules,
                 new Dictionary<string, object>(_constants),

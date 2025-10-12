@@ -17,13 +17,13 @@ RUN apk add --no-cache clang lld build-base icu-dev
 WORKDIR /src
 COPY . .
 
-WORKDIR /src/src/DemonsGate.Server
-RUN dotnet restore "DemonsGate.Server.csproj" -r $TARGETRID
+WORKDIR /src/src/SquidCraft.Server
+RUN dotnet restore "SquidCraft.Server.csproj" -r $TARGETRID
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 ARG TARGETRID=linux-musl-x64
-RUN dotnet publish "DemonsGate.Server.csproj" \
+RUN dotnet publish "SquidCraft.Server.csproj" \
     -c $BUILD_CONFIGURATION \
     -r $TARGETRID \
     --self-contained true \
@@ -40,14 +40,14 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-RUN mv DemonsGate.Server demosGate.server
+RUN mv SquidCraft.Server squidcraft.server
 
-ENV DEMONSGATE_SERVER_ROOT=/app
+ENV SQUIDCRAFT_SERVER_ROOT=/app
 
 # Non-root execution & writable directories
-RUN adduser -D -h /app demonsgate && \
+RUN adduser -D -h /app squidcraft && \
     mkdir -p /app/data /app/logs /app/scripts && \
-    chown -R demonsgate:demonsgate /app
+    chown -R squidcraft:squidcraft /app
 
-USER demonsgate
-ENTRYPOINT ["./demosGate.server"]
+USER squidcraft
+ENTRYPOINT ["./squidcraft.server"]

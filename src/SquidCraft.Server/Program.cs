@@ -43,23 +43,23 @@ await ConsoleApp.RunAsync(
     async (
         ConsoleAppContext context,
         bool showHeader = true,
-        string pidFileName = "demonsgame.pid",
+        string pidFileName = "squidcraft.pid",
         LogLevelType logLevel = LogLevelType.Debug,
         string? rootDirectory = null,
         bool isShellEnabled = true,
-        string configFileName = "demonsgate_server.json"
+        string configFileName = "squidcraft_server.json"
     ) =>
     {
-        JsonUtils.RegisterJsonContext(DemonsGateJsonContext.Default);
-        JsonUtils.RegisterJsonContext(DemonsGateLuaScriptJsonContext.Default);
-        JsonUtils.RegisterJsonContext(DemonsGateGameJsonContext.Default);
+        JsonUtils.RegisterJsonContext(SquidCraftJsonContext.Default);
+        JsonUtils.RegisterJsonContext(SquidCraftLuaScriptJsonContext.Default);
+        JsonUtils.RegisterJsonContext(SquidCraftGameJsonContext.Default);
 
         MemoryPackFormatterProvider.Register<BaseEntity>();
         MemoryPackFormatterProvider.Register<UserEntity>();
         MemoryPackFormatterProvider.RegisterCollection<List<UserEntity>, UserEntity>();
 
 
-        var options = new DemonsGateServerOptions()
+        var options = new SquidCraftServerOptions()
         {
             LogLevel = logLevel,
             PidFileName = pidFileName,
@@ -75,7 +75,7 @@ await ConsoleApp.RunAsync(
             Console.WriteLine(Encoding.UTF8.GetString(headerContext));
         }
 
-        var bootstrap = new DemonsGateBootstrap(options);
+        var bootstrap = new SquidCraftBootstrap(options);
 
         bootstrap.RegisterServices(container =>
             {

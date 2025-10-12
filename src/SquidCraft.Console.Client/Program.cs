@@ -1,4 +1,4 @@
-﻿using SquidCraft.Network.Processors;
+using SquidCraft.Network.Processors;
 using SquidCraft.Network.Services;
 using SquidCraft.Services.Data.Config.Sections;
 using SquidCraft.Services.Impl;
@@ -12,7 +12,7 @@ var cancellationToken = new CancellationTokenSource();
 Console.CancelKeyPress += (sender, eventArgs) => { cancellationToken.Cancel(); };
 
 
-Log.Information("Starting DemonsGate console client");
+Log.Information("Starting SquidCraft console client");
 
 var eventLoopService = new EventLoopService(new EventBusService(), new EventLoopConfig());
 var config = new GameNetworkConfig();

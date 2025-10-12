@@ -34,10 +34,10 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
     {
         _logger.Debug("Deserializing data of length {DataLength}", data.Length);
 
-        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(data);
+        var packet = MemoryPackSerializer.Deserialize<SquidCraftPacket>(data);
         if (packet == null)
         {
-            throw new InvalidOperationException("Failed to deserialize DemonsGatePacket");
+            throw new InvalidOperationException("Failed to deserialize SquidCraftPacket");
         }
 
         _logger.Debug(
@@ -138,7 +138,7 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
     {
         _logger.Debug("Serializing message of type {MessageType}", message.MessageType);
 
-        var packet = new DemonsGatePacket
+        var packet = new SquidCraftPacket
         {
             MessageType = message.MessageType,
             Payload = MemoryPackSerializer.Serialize(message.GetType(), message)

@@ -4,9 +4,9 @@ using SquidCraft.Services.Data.Internal.Diagnostic;
 namespace SquidCraft.Services.Data.Config;
 
 /// <summary>
-/// public class DemonsGateServerConfig.
+/// public class SquidCraftServerConfig.
 /// </summary>
-public class DemonsGateServerConfig
+public class SquidCraftServerConfig
 {
 
     public GameNetworkConfig Network { get; set; } = new();

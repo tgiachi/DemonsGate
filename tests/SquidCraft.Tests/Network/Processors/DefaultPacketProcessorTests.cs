@@ -243,7 +243,7 @@ public class DefaultPacketProcessorTests
 
         // Act
         var packetBytes = await _processor.SerializeAsync(message);
-        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+        var packet = MemoryPackSerializer.Deserialize<SquidCraftPacket>(packetBytes);
 
         // Assert
         Assert.That(packet.FlagType.HasFlag(NetworkMessageFlagType.Compressed), Is.True);
@@ -260,7 +260,7 @@ public class DefaultPacketProcessorTests
 
         // Act
         var packetBytes = await _processor.SerializeAsync(message);
-        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+        var packet = MemoryPackSerializer.Deserialize<SquidCraftPacket>(packetBytes);
 
         // Assert
         Assert.That(packet.FlagType.HasFlag(NetworkMessageFlagType.Encrypted), Is.True);
@@ -278,7 +278,7 @@ public class DefaultPacketProcessorTests
 
         // Act
         var packetBytes = await _processor.SerializeAsync(message);
-        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+        var packet = MemoryPackSerializer.Deserialize<SquidCraftPacket>(packetBytes);
 
         // Assert
         Assert.That(packet.FlagType.HasFlag(NetworkMessageFlagType.Compressed), Is.True);
@@ -293,7 +293,7 @@ public class DefaultPacketProcessorTests
 
         // Act
         var packetBytes = await _processor.SerializeAsync(message);
-        var packet = MemoryPackSerializer.Deserialize<DemonsGatePacket>(packetBytes);
+        var packet = MemoryPackSerializer.Deserialize<SquidCraftPacket>(packetBytes);
 
         // Assert
         Assert.That(packet.FlagType, Is.EqualTo(NetworkMessageFlagType.None));

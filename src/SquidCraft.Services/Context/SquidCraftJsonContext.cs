@@ -7,15 +7,15 @@ using SquidCraft.Services.Data.Internal.Diagnostic;
 namespace SquidCraft.Services.Context;
 
 /// <summary>
-/// Provides JSON serialization context for DemonsGate configuration types.
+/// Provides JSON serialization context for SquidCraft configuration types.
 /// </summary>
-[JsonSerializable(typeof(DemonsGateServerConfig))]
-[JsonSerializable(typeof(DemonsGateServerOptions))]
+[JsonSerializable(typeof(SquidCraftServerConfig))]
+[JsonSerializable(typeof(SquidCraftServerOptions))]
 [JsonSerializable(typeof(GameNetworkConfig))]
 [JsonSerializable(typeof(ScriptEngineConfig))]
 [JsonSerializable(typeof(EventLoopConfig))]
 [JsonSerializable(typeof(DiagnosticServiceConfig))]
-public partial class DemonsGateJsonContext : JsonSerializerContext
+public partial class SquidCraftJsonContext : JsonSerializerContext
 {
 
 }

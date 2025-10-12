@@ -4,10 +4,10 @@ using MemoryPack;
 namespace SquidCraft.Network.Packet;
 
 /// <summary>
-///     Represents a network packet in the DemonsGate protocol
+///     Represents a network packet in the SquidCraft protocol
 /// </summary>
 [MemoryPackable]
-public partial class DemonsGatePacket
+public partial class SquidCraftPacket
 {
     /// <summary>
     ///     Gets or sets the message payload (serialized, potentially encrypted and/or compressed)
@@ -30,6 +30,6 @@ public partial class DemonsGatePacket
     /// <returns>A string containing the message type and payload length</returns>
     public override string ToString()
     {
-        return $"[DemonsGatePacket: MessageType={MessageType}, PayloadLength={Payload?.Length ?? 0}]";
+        return $"[SquidCraftPacket: MessageType={MessageType}, PayloadLength={Payload?.Length ?? 0}]";
     }
 }

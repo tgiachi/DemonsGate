@@ -1,7 +1,7 @@
 namespace SquidCraft.Network.Types;
 
 /// <summary>
-///     Defines the types of network messages supported by the DemonsGate protocol
+///     Defines the types of network messages supported by the SquidCraft protocol
 /// </summary>
 public enum NetworkMessageType : byte
 {

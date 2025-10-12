@@ -14,7 +14,7 @@ public class AbstractEntityDataAccessTests
     public void SetUp()
     {
         // Create a temporary directory for tests
-        _testDirectory = Path.Combine(Path.GetTempPath(), "DemonsGateTests", Guid.NewGuid().ToString());
+        _testDirectory = Path.Combine(Path.GetTempPath(), "SquidCraftTests", Guid.NewGuid().ToString());
         Directory.CreateDirectory(_testDirectory);
 
         // Initialize DirectoriesConfig with test directory

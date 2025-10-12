@@ -9,6 +9,6 @@ namespace SquidCraft.Lua.Scripting.Engine.Context;
 [JsonSerializable(typeof(LuarcDiagnosticsConfig))]
 [JsonSerializable(typeof(LuarcCompletionConfig))]
 [JsonSerializable(typeof(LuarcFormatConfig))]
-public partial class DemonsGateLuaScriptJsonContext : JsonSerializerContext
+public partial class SquidCraftLuaScriptJsonContext : JsonSerializerContext
 {
 }

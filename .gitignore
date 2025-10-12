@@ -579,6 +579,6 @@ docs/log.txt
 **/.manifest
 docs/**/*
 
-# DemonsGate runtime directories
+# SquidCraft runtime directories
 dist/
-demonsgate_root/
+squidcraft_root/
