@@ -9,6 +9,7 @@ using SquidCraft.Lua.Scripting.Engine.Extensions.Scripts;
 using SquidCraft.Network.Extensions;
 using SquidCraft.Network.Messages.Auth;
 using SquidCraft.Network.Messages.Pings;
+using SquidCraft.Network.Generated;
 using SquidCraft.Server;
 using SquidCraft.Services.Context;
 using SquidCraft.Services.Data.Config.Options;
@@ -19,6 +20,7 @@ using SquidCraft.Services.Modules;
 using SquidCraft.Services.Types;
 using DryIoc;
 using MemoryPack;
+using SquidCraft.Core.Extensions.Container;
 using SquidCraft.Entities.Models;
 using SquidCraft.Entities.Models.Base;
 using SquidCraft.Game.Data.Context;
@@ -104,12 +106,8 @@ await ConsoleApp.RunAsync(
 
                 container.RegisterDelegate<IEventLoopTickDispatcher>(r => r.Resolve<IEventLoopService>());
 
-                container
-                    .RegisterNetworkMessage<PingMessage>()
-                    .RegisterNetworkMessage<PongMessage>()
-                    .RegisterNetworkMessage<LoginRequestMessage>()
-                    .RegisterNetworkMessage<LoginResponseMessage>()
-                    ;
+                container.RegisterInstance(NetworkMessagesUtils.Messages.ToList());
+
 
                 container.RegisterEntityServices();
 

@@ -48,9 +48,6 @@ public class DefaultNetworkService : INetworkService
     private readonly EventBasedNetListener _netListener = new();
     private readonly NetManager? _netManager;
 
-    private CancellationTokenSource? _pollCts;
-    private Task? _pollTask;
-
     private readonly GameNetworkConfig _networkConfig;
 
     private readonly List<NetworkMessageData> _registeredMessages;
@@ -102,6 +99,8 @@ public class DefaultNetworkService : INetworkService
         {
             var messageData = reader.GetBytesWithLength();
 
+            ClientRawMessageReceived?.Invoke(this, new NetworkClientRawMessageArgs(peer.Id, messageData));
+
             var message = await _packetDeserializer.DeserializeAsync<ISquidCraftMessage>(messageData);
 
             await DispatchMessageToListenersAsync(peer.Id, message);
@@ -111,6 +110,8 @@ public class DefaultNetworkService : INetworkService
                 message.MessageType,
                 peer.Id
             );
+
+            ClientMessageReceived?.Invoke(this, new NetworkClientMessageEventArgs(peer.Id, message, message.MessageType));
         }
         catch (Exception ex)
         {
@@ -145,8 +146,10 @@ public class DefaultNetworkService : INetworkService
                 );
             }
         }
-
-        _logger.Warning("No listeners registered for message type {MessageType}", message.MessageType);
+        else
+        {
+            _logger.Warning("No listeners registered for message type {MessageType}", message.MessageType);
+        }
     }
 
     private void OnPeerEvent(NetPeer peer)
@@ -192,54 +195,15 @@ public class DefaultNetworkService : INetworkService
         _netManager?.Start(_networkConfig.Port);
         _logger.Information("Network service started on port {Port}", _networkConfig.Port);
 
-        _pollCts = new CancellationTokenSource();
-        _pollTask = Task.Run(
-            async () =>
-            {
-                try
-                {
-                    while (!_pollCts.Token.IsCancellationRequested)
-                    {
-                        _netManager?.PollEvents();
-                        await Task.Delay(15, _pollCts.Token);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    // Expected when stopping
-                }
-            },
-            _pollCts.Token
-        );
+        // Polling is handled by the event loop via OnEventLoopTick
+        await Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        if (_pollCts != null)
-        {
-            await _pollCts.CancelAsync();
-        }
-
-        if (_pollTask != null)
-        {
-            try
-            {
-                await _pollTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when cancelling
-            }
-
-            _pollTask = null;
-        }
-
-        _pollCts?.Dispose();
-        _pollCts = null;
-
         _netManager?.Stop();
-
         _logger.Information("Network service stopped");
+        await Task.CompletedTask;
     }
 
 

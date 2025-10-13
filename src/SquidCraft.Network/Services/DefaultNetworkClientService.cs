@@ -56,8 +56,6 @@ public class DefaultNetworkClientService : INetworkClientService
     private readonly List<NetworkMessageData> _registeredMessages;
 
     private NetPeer? _serverPeer;
-    private CancellationTokenSource? _pollCts;
-    private Task? _pollTask;
 
     public bool IsConnected => _serverPeer?.ConnectionState == ConnectionState.Connected;
 
@@ -210,56 +208,15 @@ public class DefaultNetworkClientService : INetworkClientService
         _netManager.Start();
         _logger.Information("Network client service started");
 
-        _pollCts = new CancellationTokenSource();
-        _pollTask = Task.Run(
-            async () =>
-            {
-                try
-                {
-                    while (!_pollCts.Token.IsCancellationRequested)
-                    {
-                        _netManager.PollEvents();
-                        await Task.Delay(15, _pollCts.Token);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    // Expected when stopping
-                }
-            },
-            _pollCts.Token
-        );
-
+        // Polling is handled by the event loop via OnEventLoopTick
         await Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        if (_pollCts != null)
-        {
-            await _pollCts.CancelAsync();
-        }
-
-        if (_pollTask != null)
-        {
-            try
-            {
-                await _pollTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when cancelling
-            }
-
-            _pollTask = null;
-        }
-
-        _pollCts?.Dispose();
-        _pollCts = null;
-
         _netManager.Stop();
-
         _logger.Information("Network client service stopped");
+        await Task.CompletedTask;
     }
 
     public async Task<bool> ConnectAsync(string host, int port, CancellationToken cancellationToken = default)

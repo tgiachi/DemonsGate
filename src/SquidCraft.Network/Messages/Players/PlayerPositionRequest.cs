@@ -6,8 +6,6 @@ using SquidCraft.Network.Types;
 
 namespace SquidCraft.Network.Messages.Players;
 
-
-
 [NetworkMessage(NetworkMessageType.PlayerPositionRequest)]
 [MemoryPackable]
 public partial class PlayerPositionRequest : BaseSquidCraftGameMessage

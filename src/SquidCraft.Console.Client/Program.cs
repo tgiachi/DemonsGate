@@ -7,7 +7,7 @@ using SquidCraft.Services.Impl;
 using Serilog;
 using SquidCraft.Network.Messages.Players;
 
-Log.Logger = new LoggerConfiguration().WriteTo.Console(formatProvider: Thread.CurrentThread.CurrentCulture).CreateLogger();
+Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Console(formatProvider: Thread.CurrentThread.CurrentCulture).CreateLogger();
 
 var cancellationToken = new CancellationTokenSource();
 
