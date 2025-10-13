@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -12,26 +13,63 @@ namespace SquidCraft.Network.Generator;
 /// and generates a NetworkMessagesUtils class with a pre-populated Messages list.
 /// </summary>
 [Generator]
-public class NetworkMessagesSourceGenerator : ISourceGenerator
+public class NetworkMessagesSourceGenerator : IIncrementalGenerator
 {
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Register a syntax receiver that will be created for each generation pass
-        context.RegisterForSyntaxNotifications(() => new NetworkMessageSyntaxReceiver());
+        // Create a pipeline that finds all classes with attributes
+        var classDeclarations = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => IsCandidateClass(node),
+                transform: static (ctx, _) => GetSemanticTarget(ctx))
+            .Where(static m => m is not null);
+
+        // Collect all results and generate source
+        var compilation = context.CompilationProvider.Combine(classDeclarations.Collect());
+
+        context.RegisterSourceOutput(compilation,
+            static (spc, source) => Execute(spc, source.Left, source.Right!));
     }
 
-    public void Execute(GeneratorExecutionContext context)
+    private static bool IsCandidateClass(SyntaxNode node)
     {
-        // Retrieve the populated receiver
-        if (context.SyntaxContextReceiver is not NetworkMessageSyntaxReceiver receiver)
+        // Look for class declarations with attributes
+        return node is ClassDeclarationSyntax { AttributeLists.Count: > 0 };
+    }
+
+    private static ClassDeclarationSyntax? GetSemanticTarget(GeneratorSyntaxContext context)
+    {
+        var classDeclaration = (ClassDeclarationSyntax)context.Node;
+
+        // Get the semantic model
+        var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclaration);
+        if (classSymbol == null)
+            return null;
+
+        // Check if it has NetworkMessageAttribute
+        var hasNetworkMessageAttribute = classSymbol.GetAttributes()
+            .Any(ad => ad.AttributeClass?.Name == "NetworkMessageAttribute");
+
+        return hasNetworkMessageAttribute ? classDeclaration : null;
+    }
+
+    private static void Execute(
+        SourceProductionContext context,
+        Compilation compilation,
+        ImmutableArray<ClassDeclarationSyntax?> classDeclarations)
+    {
+        if (classDeclarations.IsDefaultOrEmpty)
             return;
 
-        // Get all candidate classes
+        // Get all candidate classes and extract their message types
         var messageClasses = new List<(string FullTypeName, string MessageType)>();
 
-        foreach (var classDeclaration in receiver.CandidateClasses)
+        foreach (var classDeclaration in classDeclarations)
         {
-            var model = context.Compilation.GetSemanticModel(classDeclaration.SyntaxTree);
+            if (classDeclaration == null)
+                continue;
+
+            var model = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
             var classSymbol = model.GetDeclaredSymbol(classDeclaration);
 
             if (classSymbol == null)
@@ -108,30 +146,13 @@ public class NetworkMessagesSourceGenerator : ISourceGenerator
 
         foreach (var (fullTypeName, messageType) in messageClasses)
         {
-            sb.AppendLine($"        new(typeof({fullTypeName}), NetworkMessageType.{messageType}),");
+            sb.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                "        new(typeof({0}), NetworkMessageType.{1}),", fullTypeName, messageType));
         }
 
         sb.AppendLine("    };");
         sb.AppendLine("}");
 
         return sb.ToString();
-    }
-}
-
-/// <summary>
-/// Syntax receiver that collects all class declarations for analysis.
-/// </summary>
-internal class NetworkMessageSyntaxReceiver : ISyntaxContextReceiver
-{
-    public List<ClassDeclarationSyntax> CandidateClasses { get; } = new List<ClassDeclarationSyntax>();
-
-    public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
-    {
-        // Look for class declarations with attributes
-        if (context.Node is ClassDeclarationSyntax classDeclaration &&
-            classDeclaration.AttributeLists.Count > 0)
-        {
-            CandidateClasses.Add(classDeclaration);
-        }
     }
 }

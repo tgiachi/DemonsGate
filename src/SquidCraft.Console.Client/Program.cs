@@ -35,7 +35,7 @@ var position = Vector3.Zero;
 
 client.Connected += (sender, eventArgs) =>
 {
-    Observable.Interval(TimeSpan.FromSeconds(0.2))
+    Observable.Interval(TimeSpan.FromSeconds(1))
         .Subscribe(async l =>
             {
                 await client.SendMessageAsync(

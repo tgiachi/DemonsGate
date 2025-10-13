@@ -48,23 +48,7 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
 
         byte[] payload = packet.Payload;
 
-        if (_networkConfig.CompressionType != CompressionType.None)
-        {
-            var originalLength = payload.Length;
-
-            payload = CompressionUtils.Decompress(
-                new ReadOnlySpan<byte>(payload),
-                _networkConfig.CompressionType
-            );
-
-            _logger.Debug(
-                "Decompressed packet with {CompressionType}, original length {OriginalLength}, new length {NewLength}",
-                _networkConfig.CompressionType,
-                originalLength,
-                payload.Length
-            );
-        }
-
+        // STEP 1: Decrypt first (if enabled)
         if (_networkConfig.EncryptionType != EncryptionType.None)
         {
             var originalLength = payload.Length;
@@ -78,6 +62,24 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
             _logger.Debug(
                 "Decrypted packet with {EncryptionType}, original length {OriginalLength}, new length {NewLength}",
                 _networkConfig.EncryptionType,
+                originalLength,
+                payload.Length
+            );
+        }
+
+        // STEP 2: Decompress second (if packet is compressed)
+        if (packet.FlagType.HasFlag(NetworkMessageFlagType.Compressed))
+        {
+            var originalLength = payload.Length;
+
+            payload = CompressionUtils.Decompress(
+                new ReadOnlySpan<byte>(payload),
+                _networkConfig.CompressionType
+            );
+
+            _logger.Debug(
+                "Decompressed packet with {CompressionType}, compressed length {CompressedLength}, decompressed length {DecompressedLength}",
+                _networkConfig.CompressionType,
                 originalLength,
                 payload.Length
             );
@@ -144,6 +146,43 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
             Payload = MemoryPackSerializer.Serialize(message.GetType(), message)
         };
 
+        // STEP 1: Compress first (if enabled)
+        if (_networkConfig.CompressionType != CompressionType.None)
+        {
+            var originalPayload = packet.Payload;
+            var originalLength = originalPayload.Length;
+
+            var compressedPayload = CompressionUtils.Compress(
+                new ReadOnlySpan<byte>(originalPayload),
+                _networkConfig.CompressionType
+            );
+
+            // Only use compression if it actually reduces size
+            if (compressedPayload.Length < originalLength)
+            {
+                packet.Payload = compressedPayload;
+                packet.FlagType |= NetworkMessageFlagType.Compressed;
+
+                _logger.Debug(
+                    "Compressed packet with {CompressionType}, original length {OriginalLength}, new length {NewLength}, saved {SavedBytes} bytes",
+                    _networkConfig.CompressionType,
+                    originalLength,
+                    packet.Payload.Length,
+                    originalLength - packet.Payload.Length
+                );
+            }
+            else
+            {
+                _logger.Debug(
+                    "Compression with {CompressionType} did not reduce size (original: {OriginalLength}, compressed: {CompressedLength}), keeping uncompressed",
+                    _networkConfig.CompressionType,
+                    originalLength,
+                    compressedPayload.Length
+                );
+            }
+        }
+
+        // STEP 2: Encrypt second (if enabled)
         if (_networkConfig.EncryptionType != EncryptionType.None)
         {
             var originalLength = packet.Payload.Length;
@@ -161,25 +200,6 @@ public class DefaultPacketProcessor : IPacketDeserializer, IPacketSerializer
                 packet.Payload.Length
             );
             packet.FlagType |= NetworkMessageFlagType.Encrypted;
-        }
-
-        if (_networkConfig.CompressionType != CompressionType.None)
-        {
-            var originalLength = packet.Payload.Length;
-
-            packet.Payload = CompressionUtils.Compress(
-                new ReadOnlySpan<byte>(packet.Payload),
-                _networkConfig.CompressionType
-            );
-
-            _logger.Debug(
-                "Compressed packet with {CompressionType}, original length {OriginalLength}, new length {NewLength}",
-                _networkConfig.CompressionType,
-                originalLength,
-                packet.Payload.Length
-            );
-
-            packet.FlagType |= NetworkMessageFlagType.Compressed;
         }
 
         return MemoryPackSerializer.Serialize(packet);

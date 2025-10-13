@@ -5,6 +5,7 @@ using SquidCraft.Network.Interfaces.Messages;
 using SquidCraft.Network.Messages.Players;
 using SquidCraft.Network.Types;
 using SquidCraft.Services.Game.Data.Sessions;
+using SquidCraft.Services.Game.Extensions;
 using SquidCraft.Services.Game.Interfaces;
 
 namespace SquidCraft.Services.Game.Impl;
@@ -33,8 +34,6 @@ public class PlayerManagerService : IPlayerManagerService
 
         session.Position = positionRequest.Position;
         session.Rotation = positionRequest.Rotation;
-
-
     }
 
     private void OnPlayerSessionAdded(PlayerNetworkSession session)
@@ -72,6 +71,17 @@ public class PlayerManagerService : IPlayerManagerService
 
         // Mark these chunks as sent
         session.MarkChunksAsSent(unsentChunks);
+
+        if (chunks.ToList().Count > 0)
+        {
+            foreach (var chunk in chunks)
+            {
+                var chunkResponseMessage = new ChunkResponse();
+                chunkResponseMessage.Chunks.Add(chunk);
+                await session.SendMessages(chunkResponseMessage);
+            }
+        }
+
 
         _logger.Information(
             "Retrieved and sent {Count} chunks to player. Total sent chunks: {TotalSent}",

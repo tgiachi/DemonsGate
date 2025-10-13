@@ -40,4 +40,8 @@ public enum NetworkMessageType : byte
 
     PlayerPositionRequest,
     PlayerPositionResponse,
+
+
+    ChunkRequest,
+    ChunkResponse,
 }
