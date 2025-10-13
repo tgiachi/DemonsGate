@@ -27,7 +27,7 @@ internal sealed class TextureAtlasWrapper
 
     public Texture2DRegion? GetRegion(string regionName)
     {
-        return _regions.TryGetValue(regionName, out var region) ? region : null;
+        return _regions.GetValueOrDefault(regionName);
     }
 
     public IEnumerable<string> GetRegionNames() => _regions.Keys;

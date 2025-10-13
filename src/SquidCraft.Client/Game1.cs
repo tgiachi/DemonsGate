@@ -1,6 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Serilog;
+using SquidCraft.Client.Context;
+using SquidCraft.Client.Services;
 
 namespace SquidCraft.Client;
 
@@ -11,9 +14,19 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
     public Game1()
     {
+        Log.Logger = new LoggerConfiguration().MinimumLevel.Debug()
+            .WriteTo.Console(formatProvider: Thread.CurrentThread.CurrentCulture)
+            .CreateLogger();
+
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+        SquidCraftClientContext.AssetManagerService = new AssetManagerService(
+            Directory.GetCurrentDirectory(),
+            _graphics.GraphicsDevice
+        );
+
+        SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
     }
 
     protected override void Initialize()

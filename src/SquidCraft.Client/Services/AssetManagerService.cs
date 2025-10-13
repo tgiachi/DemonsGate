@@ -10,7 +10,6 @@ using Serilog;
 using SquidCraft.Client.Data;
 using SquidCraft.Client.Interfaces;
 using SquidCraft.Client.Types;
-using SquidCraft.Core.Directories;
 
 namespace SquidCraft.Client.Services;
 
@@ -30,10 +29,6 @@ public class AssetManagerService : IAssetManagerService
     /// </summary>
     private readonly Dictionary<AssetType, List<AssetObject>> _assets = new();
 
-    /// <summary>
-    /// Directory configuration for resolving asset file paths
-    /// </summary>
-    private readonly DirectoriesConfig _directoriesConfig;
 
     /// <summary>
     /// Font systems for TrueType fonts, enabling dynamic size generation
@@ -80,16 +75,19 @@ public class AssetManagerService : IAssetManagerService
     /// </summary>
     private readonly ILogger _logger = Log.ForContext<AssetManagerService>();
 
+
+    private readonly string _rootDirectory;
+
     /// <summary>
     /// Initializes a new instance of the AssetManagerService with the specified dependencies
     /// </summary>
     /// <param name="directoriesConfig">Directory configuration for asset path resolution</param>
     /// <param name="graphicsDevice">Graphics device for loading GPU resources</param>
-    public AssetManagerService(DirectoriesConfig directoriesConfig, GraphicsDevice graphicsDevice)
+    public AssetManagerService(string rootDirectory, GraphicsDevice graphicsDevice)
     {
         _logger.Information("Initializing AssetManagerService");
-        _directoriesConfig = directoriesConfig;
         _graphicsDevice = graphicsDevice;
+        _rootDirectory = Path.Combine(rootDirectory, "Assets");
     }
 
     /// <summary>
@@ -102,7 +100,7 @@ public class AssetManagerService : IAssetManagerService
     public void LoadFontTtf(string path, string fontName)
     {
         _logger.Debug("Loading font: {Path} - {FontName}", path, fontName);
-        var fontPath = Path.Combine(_directoriesConfig.Root, path);
+        var fontPath = Path.Combine(_rootDirectory, path);
 
         if (!File.Exists(fontPath))
         {
@@ -198,7 +196,7 @@ public class AssetManagerService : IAssetManagerService
     public void LoadTexture(string path, string textureName)
     {
         _logger.Debug("Loading texture: {Path} - {TextureName}", path, textureName);
-        var texturePath = Path.Combine(_directoriesConfig.Root, path);
+        var texturePath = Path.Combine(_rootDirectory, path);
 
         if (!File.Exists(texturePath))
         {
@@ -318,11 +316,15 @@ public class AssetManagerService : IAssetManagerService
     /// <exception cref="FileNotFoundException">Thrown when files are not found</exception>
     public void LoadAtlas(string texturePath, string atlasDataPath, string atlasName)
     {
-        _logger.Debug("Loading atlas: {AtlasName} from {TexturePath} and {AtlasDataPath}",
-            atlasName, texturePath, atlasDataPath);
+        _logger.Debug(
+            "Loading atlas: {AtlasName} from {TexturePath} and {AtlasDataPath}",
+            atlasName,
+            texturePath,
+            atlasDataPath
+        );
 
-        var fullTexturePath = Path.Combine(_directoriesConfig.Root, texturePath);
-        var fullAtlasDataPath = Path.Combine(_directoriesConfig.Root, atlasDataPath);
+        var fullTexturePath = Path.Combine(_rootDirectory, texturePath);
+        var fullAtlasDataPath = Path.Combine(_rootDirectory, atlasDataPath);
 
         if (!File.Exists(fullTexturePath))
         {
@@ -377,8 +379,11 @@ public class AssetManagerService : IAssetManagerService
         _assets.TryAdd(AssetType.Atlas, new List<AssetObject>());
         _assets[AssetType.Atlas].Add(new AssetObject(atlasName, "Stream"));
 
-        _logger.Information("Atlas loaded from stream: {AtlasName} with {RegionCount} regions",
-            atlasName, regions.Count);
+        _logger.Information(
+            "Atlas loaded from stream: {AtlasName} with {RegionCount} regions",
+            atlasName,
+            regions.Count
+        );
     }
 
     /// <summary>
@@ -412,7 +417,7 @@ public class AssetManagerService : IAssetManagerService
         }
 
         return wrapper.GetRegion(regionName)
-            ?? throw new KeyNotFoundException($"Region '{regionName}' not found in atlas '{atlasName}'");
+               ?? throw new KeyNotFoundException($"Region '{regionName}' not found in atlas '{atlasName}'");
     }
 
     /// <summary>
@@ -425,12 +430,12 @@ public class AssetManagerService : IAssetManagerService
     {
         return extension switch
         {
-            ".ttf" or ".otf" => AssetType.FontTtf,
+            ".ttf" or ".otf"                                => AssetType.FontTtf,
             ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" => AssetType.Image,
-            ".atlas" => AssetType.Atlas,
-            ".wav" or ".mp3" or ".ogg" => AssetType.Sound,
-            ".wma" or ".m4a" => AssetType.Music,
-            _ => AssetType.Unknown
+            ".atlas"                                        => AssetType.Atlas,
+            ".wav" or ".mp3" or ".ogg"                      => AssetType.Sound,
+            ".wma" or ".m4a"                                => AssetType.Music,
+            _                                               => AssetType.Unknown
         };
     }
 
@@ -610,7 +615,7 @@ public class AssetManagerService : IAssetManagerService
     public void LoadSound(string path, string soundName)
     {
         _logger.Debug("Loading sound: {Path} - {SoundName}", path, soundName);
-        var soundPath = Path.Combine(_directoriesConfig.Root, path);
+        var soundPath = Path.Combine(_rootDirectory, path);
 
         if (!File.Exists(soundPath))
         {
@@ -650,7 +655,7 @@ public class AssetManagerService : IAssetManagerService
     public void LoadMusic(string path, string musicName)
     {
         _logger.Debug("Loading music: {Path} - {MusicName}", path, musicName);
-        var musicPath = Path.Combine(_directoriesConfig.Root, path);
+        var musicPath = Path.Combine(_rootDirectory, path);
 
         if (!File.Exists(musicPath))
         {
