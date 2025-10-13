@@ -2,7 +2,7 @@ using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SquidCraft.Client.Components.Base;
-using SquidCraft.Client.Interfaces;
+using SquidCraft.Client.Context;
 
 namespace SquidCraft.Client.Components;
 
@@ -11,31 +11,23 @@ namespace SquidCraft.Client.Components;
 /// </summary>
 public class TextComponent : BaseComponent
 {
-    private readonly GraphicsDevice _graphicsDevice;
-    private readonly IAssetManagerService _assetManagerService;
     private SpriteFontBase? _font;
 
     /// <summary>
     /// Initializes a new instance of the TextComponent class
     /// </summary>
-    /// <param name="graphicsDevice">The graphics device</param>
-    /// <param name="assetManagerService">The asset manager service</param>
     /// <param name="text">The text to display</param>
     /// <param name="fontName">The name of the font to use</param>
     /// <param name="fontSize">The font size</param>
     /// <param name="position">The relative position of the text</param>
     /// <param name="color">The color of the text</param>
     public TextComponent(
-        GraphicsDevice graphicsDevice,
-        IAssetManagerService assetManagerService,
         string text = "Text",
         string fontName = "DefaultFont",
         int fontSize = 14,
         Vector2? position = null,
         Color? color = null)
     {
-        _graphicsDevice = graphicsDevice;
-        _assetManagerService = assetManagerService;
         _text = text ?? string.Empty;
         FontName = fontName;
         FontSize = fontSize;
@@ -118,7 +110,7 @@ public class TextComponent : BaseComponent
         }
 
         var textSize = base.Size;
-        var centerX = (_graphicsDevice.Viewport.Width - textSize.X) / 2f;
+        var centerX = (SquidCraftClientContext.GraphicsDevice.Viewport.Width - textSize.X) / 2f;
         Position = new Vector2(centerX, Position.Y);
     }
 
@@ -133,7 +125,7 @@ public class TextComponent : BaseComponent
         }
 
         var textSize = base.Size;
-        var centerY = (_graphicsDevice.Viewport.Height - textSize.Y) / 2f;
+        var centerY = (SquidCraftClientContext.GraphicsDevice.Viewport.Height - textSize.Y) / 2f;
         Position = new Vector2(Position.X, centerY);
     }
 
@@ -151,7 +143,7 @@ public class TextComponent : BaseComponent
     /// </summary>
     private void LoadFont()
     {
-        _font = _assetManagerService.GetFontTtf(FontName, FontSize);
+        _font = SquidCraftClientContext.AssetManagerService.GetFontTtf(FontName, FontSize);
     }
 
     /// <summary>
