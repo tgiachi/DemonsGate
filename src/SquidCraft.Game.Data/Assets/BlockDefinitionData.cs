@@ -5,9 +5,9 @@ namespace SquidCraft.Game.Data.Assets;
 public class BlockDefinitionData
 {
     public BlockType BlockType { get; set; }
-    public Dictionary<BlockSideType, string> Sides { get; set; } = new();
+    public Dictionary<SideType, string> Sides { get; set; } = new();
 
-    public void AddSide(BlockSideType type, string side)
+    public void AddSide(SideType type, string side)
     {
         Sides.Add(type, side);
     }

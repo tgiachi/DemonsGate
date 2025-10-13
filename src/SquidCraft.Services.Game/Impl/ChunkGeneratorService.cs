@@ -104,6 +104,19 @@ public class ChunkGeneratorService : IChunkGeneratorService, IDisposable
         return chunk;
     }
 
+    /// <inheritdoc/>
+    public async Task<IEnumerable<ChunkEntity>> GetChunksByPositions(IEnumerable<Vector3> positions)
+    {
+        _logger.Debug("Requested chunks for {Count} positions", positions.Count());
+
+        // Get all chunks in parallel
+        var tasks = positions.Select(GetChunkByWorldPosition);
+        var chunks = await Task.WhenAll(tasks);
+
+        _logger.Debug("Returned {Count} chunks", chunks.Length);
+        return chunks;
+    }
+
     public async Task GenerateInitialChunksAsync()
     {
         var startTime = Stopwatch.GetTimestamp();

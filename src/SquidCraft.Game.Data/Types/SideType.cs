@@ -3,7 +3,7 @@ namespace SquidCraft.Game.Data.Types;
 /// <summary>
 /// Enumerates the six faces of a block in 3D space.
 /// </summary>
-public enum BlockSideType : byte
+public enum SideType : byte
 {
     /// <summary>
     /// Top face of the block (Y+).

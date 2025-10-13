@@ -35,7 +35,7 @@ var position = Vector3.Zero;
 
 client.Connected += (sender, eventArgs) =>
 {
-    Observable.Interval(TimeSpan.FromSeconds(1))
+    Observable.Interval(TimeSpan.FromSeconds(0.2))
         .Subscribe(async l =>
             {
                 await client.SendMessageAsync(
@@ -46,7 +46,8 @@ client.Connected += (sender, eventArgs) =>
                     }
                 );
 
-                position.X += l;
+                position.X += .2f;
+                position.Y += Random.Shared.NextSingle(); // random
             }
         );
     Log.Information("Connected");

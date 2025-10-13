@@ -171,6 +171,11 @@ public class ChunkEntity
         }
     }
 
+    public override string ToString()
+    {
+        return  $"{Position} ({Size})";
+    }
+
     /// <summary>
     /// Validates that the provided index falls within the bounds of the chunk.
     /// </summary>

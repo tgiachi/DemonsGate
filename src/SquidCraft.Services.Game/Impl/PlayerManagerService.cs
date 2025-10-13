@@ -1,5 +1,6 @@
 using System.Numerics;
 using Serilog;
+using SquidCraft.Game.Data.Utils;
 using SquidCraft.Network.Interfaces.Messages;
 using SquidCraft.Network.Messages.Players;
 using SquidCraft.Network.Types;
@@ -41,11 +42,41 @@ public class PlayerManagerService : IPlayerManagerService
         session.OnPositionChanged += SessionOnOnPositionChanged;
     }
 
-    private async void SessionOnOnPositionChanged(Vector3 position)
+    private async void SessionOnOnPositionChanged(PlayerNetworkSession session, Vector3 position)
     {
-        var chunks = await _worldManagerService.GetChunksInRadius(position, Vector3.One);
+        _logger.Debug("Player position changed to {Position}, facing {SideView}", position, session.SideView);
 
-        _logger.Information("Received player position update for chunk {Chunk}", chunks);
+        // Get chunk positions in the direction the player is facing
+        const int chunksAhead = 3; // Number of chunks to load ahead
+        var chunkPositions = ChunkUtils.GetChunksInDirection(position, session.SideView, chunksAhead);
 
+        // Filter out chunks that have already been sent
+        var unsentChunks = session.FilterUnsentChunks(chunkPositions).ToList();
+
+        if (unsentChunks.Count == 0)
+        {
+            _logger.Debug("All chunks in direction {Direction} have already been sent", session.SideView);
+            return;
+        }
+
+        _logger.Information(
+            "Requesting {Count} new chunks (out of {Total}) ahead in direction {Direction} from position {Position}",
+            unsentChunks.Count,
+            chunkPositions.Count,
+            session.SideView,
+            position
+        );
+
+        // Request the chunks from the world manager
+        var chunks = await _worldManagerService.GetChunksByPositions(unsentChunks);
+
+        // Mark these chunks as sent
+        session.MarkChunksAsSent(unsentChunks);
+
+        _logger.Information(
+            "Retrieved and sent {Count} chunks to player. Total sent chunks: {TotalSent}",
+            chunks.Count(),
+            session.SentChunkCount
+        );
     }
 }

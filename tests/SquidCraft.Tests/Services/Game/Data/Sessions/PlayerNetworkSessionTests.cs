@@ -12,7 +12,7 @@ public class PlayerNetworkSessionTests
     {
         var session = new PlayerNetworkSession();
         var receivedPositions = new List<Vector3>();
-        session.OnPositionChanged += receivedPositions.Add;
+        session.OnPositionChanged += (s, position) => receivedPositions.Add(position);
 
         var expected = new Vector3(1f, 2f, 3f);
 
@@ -27,7 +27,7 @@ public class PlayerNetworkSessionTests
     {
         var session = new PlayerNetworkSession();
         var receivedPositions = new List<Vector3>();
-        session.OnPositionChanged += receivedPositions.Add;
+        session.OnPositionChanged += (s, position) => receivedPositions.Add(position);
 
         var original = new Vector3(4f, 5f, 6f);
 
@@ -42,7 +42,7 @@ public class PlayerNetworkSessionTests
     {
         var session = new PlayerNetworkSession();
         Vector3? raisedFacing = null;
-        session.OnFacingChanged += facing => raisedFacing = facing;
+        session.OnFacingChanged += (s, facing) => raisedFacing = facing;
 
         session.Rotation = new Vector3(0f, 0f, 5f);
 
@@ -57,7 +57,7 @@ public class PlayerNetworkSessionTests
     {
         var session = new PlayerNetworkSession();
         var raisedCount = 0;
-        session.OnFacingChanged += _ => raisedCount++;
+        session.OnFacingChanged += (s, _) => raisedCount++;
 
         session.Rotation = new Vector3(1f, 0f, 0f);
         session.Rotation = new Vector3(2f, 0f, 0f);

@@ -1,5 +1,6 @@
 using System.Numerics;
 using SquidCraft.Game.Data.Primitives;
+using SquidCraft.Game.Data.Types;
 
 namespace SquidCraft.Game.Data.Utils;
 
@@ -139,5 +140,53 @@ public static class ChunkUtils
     {
         var offsetCoords = GetOffsetChunkCoordinates(chunkCoords, offsetX, offsetY, offsetZ);
         return ChunkCoordinatesToWorldPosition((int)offsetCoords.X, (int)offsetCoords.Y, (int)offsetCoords.Z);
+    }
+
+    /// <summary>
+    /// Gets chunk positions in front of the player based on their facing direction.
+    /// </summary>
+    /// <param name="playerPosition">The player's current world position.</param>
+    /// <param name="facingDirection">The direction the player is facing.</param>
+    /// <param name="numberOfChunks">Number of chunks to retrieve in that direction.</param>
+    /// <returns>A list of world positions for chunks in front of the player.</returns>
+    public static List<Vector3> GetChunksInDirection(Vector3 playerPosition, SideType facingDirection, int numberOfChunks)
+    {
+        var chunks = new List<Vector3>(numberOfChunks);
+
+        // Get the current chunk coordinates of the player
+        var currentChunkCoords = GetChunkCoordinates(playerPosition);
+
+        // Determine the direction offset based on SideType
+        (int offsetX, int offsetY, int offsetZ) = facingDirection switch
+        {
+            SideType.North => (0, 0, -1),  // Z-
+            SideType.South => (0, 0, 1),   // Z+
+            SideType.East => (1, 0, 0),    // X+
+            SideType.West => (-1, 0, 0),   // X-
+            SideType.Top => (0, 1, 0),     // Y+
+            SideType.Bottom => (0, -1, 0), // Y-
+            _ => (0, 0, 0)
+        };
+
+        // Generate chunk positions in the specified direction
+        for (int i = 1; i <= numberOfChunks; i++)
+        {
+            var chunkCoords = GetOffsetChunkCoordinates(
+                currentChunkCoords,
+                offsetX * i,
+                offsetY * i,
+                offsetZ * i
+            );
+
+            var worldPosition = ChunkCoordinatesToWorldPosition(
+                (int)chunkCoords.X,
+                (int)chunkCoords.Y,
+                (int)chunkCoords.Z
+            );
+
+            chunks.Add(worldPosition);
+        }
+
+        return chunks;
     }
 }

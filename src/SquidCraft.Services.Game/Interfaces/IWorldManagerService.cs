@@ -30,6 +30,13 @@ public interface IWorldManagerService
     Task<ChunkEntity> GetChunkByWorldPosition(Vector3 position);
 
     /// <summary>
+    /// Gets chunks at the specified world positions.
+    /// </summary>
+    /// <param name="positions">The world positions of the chunks to retrieve.</param>
+    /// <returns>A collection of chunks at the specified positions.</returns>
+    Task<IEnumerable<ChunkEntity>> GetChunksByPositions(IEnumerable<Vector3> positions);
+
+    /// <summary>
     /// Gets all chunks within a specified radius from the given world position.
     /// </summary>
     /// <param name="worldPosition">The center world position.</param>

@@ -153,6 +153,24 @@ public class WorldManagerService : IWorldManagerService
     }
 
     /// <inheritdoc/>
+    public async Task<IEnumerable<ChunkEntity>> GetChunksByPositions(IEnumerable<Vector3> positions)
+    {
+        _logger.Debug("Getting chunks for {Count} positions", positions.Count());
+
+        try
+        {
+            var chunks = await _chunkGeneratorService.GetChunksByPositions(positions);
+            _logger.Information("Retrieved {Count} chunks", chunks.Count());
+            return chunks;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to get chunks for multiple positions");
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task<IEnumerable<ChunkEntity>> GetChunksInRadius(Vector3 worldPosition, Vector3 radius)
     {
         _logger.Debug("Getting chunks in radius {Radius} around world position {Position}", radius, worldPosition);

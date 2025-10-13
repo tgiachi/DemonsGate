@@ -11,6 +11,8 @@ public interface IChunkGeneratorService : ISquidCraftStartableService, IMetricsP
 
     Task<ChunkEntity> GetChunkByWorldPosition(Vector3 position);
 
+    Task<IEnumerable<ChunkEntity>> GetChunksByPositions(IEnumerable<Vector3> positions);
+
     Task GenerateInitialChunksAsync();
 
     void AddGeneratorStep(IGeneratorStep step);
