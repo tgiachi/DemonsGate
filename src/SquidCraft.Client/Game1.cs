@@ -21,9 +21,12 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+
+        SquidCraftClientContext.GraphicsDevice = GraphicsDevice;
+
         SquidCraftClientContext.AssetManagerService = new AssetManagerService(
             Directory.GetCurrentDirectory(),
-            _graphics.GraphicsDevice
+            GraphicsDevice
         );
 
         SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
