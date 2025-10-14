@@ -18,12 +18,17 @@ public sealed class WorldComponent : IDisposable
     private readonly CameraComponent _camera;
     private bool _isDisposed;
     private BoundingFrustum? _frustum;
+    private (int X, int Z)? _lastPlayerChunk;
 
     public WorldComponent(GraphicsDevice graphicsDevice, CameraComponent camera)
     {
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         _camera = camera ?? throw new ArgumentNullException(nameof(camera));
     }
+
+    public delegate ChunkEntity ChunkGeneratorDelegate(int chunkX, int chunkZ);
+    
+    public ChunkGeneratorDelegate? ChunkGenerator { get; set; }
 
     public CameraComponent Camera => _camera;
 
@@ -34,6 +39,8 @@ public sealed class WorldComponent : IDisposable
     public bool EnableFrustumCulling { get; set; } = true;
 
     public float MaxRaycastDistance { get; set; } = 10f;
+
+    public int ChunkLoadDistance { get; set; } = 2;
 
     public (ChunkComponent? Chunk, int X, int Y, int Z)? SelectedBlock { get; private set; }
 
@@ -85,11 +92,80 @@ public sealed class WorldComponent : IDisposable
 
         _camera.Update(gameTime);
 
+        UpdateChunkLoading();
+
         UpdateBlockSelection();
 
         foreach (var chunk in _chunks.Values)
         {
             chunk.Update(gameTime);
+        }
+    }
+
+    private void UpdateChunkLoading()
+    {
+        if (ChunkGenerator == null)
+        {
+            return;
+        }
+
+        var cameraPos = _camera.Position;
+        var playerChunkX = (int)MathF.Floor(cameraPos.X / ChunkEntity.Size);
+        var playerChunkZ = (int)MathF.Floor(cameraPos.Z / ChunkEntity.Size);
+
+        var currentPlayerChunk = (playerChunkX, playerChunkZ);
+
+        if (_lastPlayerChunk == currentPlayerChunk)
+        {
+            return;
+        }
+
+        _lastPlayerChunk = currentPlayerChunk;
+        _logger.Information("Player moved to chunk ({ChunkX}, {ChunkZ})", playerChunkX, playerChunkZ);
+
+        LoadChunksAroundPlayer(playerChunkX, playerChunkZ);
+        UnloadDistantChunks(playerChunkX, playerChunkZ);
+    }
+
+    private void LoadChunksAroundPlayer(int centerX, int centerZ)
+    {
+        for (int x = centerX - ChunkLoadDistance; x <= centerX + ChunkLoadDistance; x++)
+        {
+            for (int z = centerZ - ChunkLoadDistance; z <= centerZ + ChunkLoadDistance; z++)
+            {
+                var chunkPos = new SysVector3(x * ChunkEntity.Size, 0f, z * ChunkEntity.Size);
+
+                if (!_chunks.ContainsKey(chunkPos))
+                {
+                    var chunk = ChunkGenerator!(x, z);
+                    _ = AddChunkAsync(chunk);
+                }
+            }
+        }
+    }
+
+    private void UnloadDistantChunks(int centerX, int centerZ)
+    {
+        var unloadDistance = ChunkLoadDistance + 1;
+        var chunksToRemove = new List<SysVector3>();
+
+        foreach (var (pos, _) in _chunks)
+        {
+            var chunkX = (int)(pos.X / ChunkEntity.Size);
+            var chunkZ = (int)(pos.Z / ChunkEntity.Size);
+
+            var distanceX = Math.Abs(chunkX - centerX);
+            var distanceZ = Math.Abs(chunkZ - centerZ);
+
+            if (distanceX > unloadDistance || distanceZ > unloadDistance)
+            {
+                chunksToRemove.Add(pos);
+            }
+        }
+
+        foreach (var pos in chunksToRemove)
+        {
+            RemoveChunk(pos);
         }
     }
 

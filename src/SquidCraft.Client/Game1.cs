@@ -27,7 +27,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private SpriteBatch _spriteBatch;
     private ImGUIDebuggerService _imGUIDebuggerService;
     private Block3DComponent? _blockPreviewComponent;
-    private ChunkComponent? _chunkComponent;
     private WorldComponent? _worldComponent;
     private CameraComponent? _cameraComponent;
     private BlockOutlineComponent? _blockOutlineComponent;
@@ -114,8 +113,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         _cameraComponent = new CameraComponent(GraphicsDevice)
         {
-            Position = new Vector3(55f, 65f, 55f),
-            Target = new Vector3(8f, 18f, 8f),
+            Position = new Vector3(8f, ChunkEntity.Height + 2f, 8f),
+            Target = new Vector3(8f, ChunkEntity.Height + 2f, 24f),
             MoveSpeed = 25f,
             MouseSensitivity = 0.003f,
             EnableInput = true
@@ -125,7 +124,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
         {
             ViewRange = 150f,
             EnableFrustumCulling = true,
-            MaxRaycastDistance = 10f
+            MaxRaycastDistance = 10f,
+            ChunkLoadDistance = 2,
+            ChunkGenerator = CreateFlatChunk
         };
 
         _blockOutlineComponent = new BlockOutlineComponent(GraphicsDevice)
@@ -134,10 +135,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
         };
 
 
-
-
-        _ = _worldComponent.AddChunkAsync(CreateDemoChunk());
-        _ = _worldComponent.AddChunkAsync(CreateDemoChunk(new System.Numerics.Vector3(16f, -20f, -8f)));
 
 
         var viewport = GraphicsDevice.Viewport;
@@ -240,7 +237,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
             }
         }
 
-        _chunkComponent?.Update(gameTime);
         _worldComponent?.Update(gameTime);
         //_blockPreviewComponent?.Update(gameTime);
         SquidCraftClientContext.RootComponent.Update(gameTime);
@@ -256,7 +252,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
         GraphicsDevice.ScissorRectangle = viewportBounds;
 
         _worldComponent?.Draw(gameTime);
-        _chunkComponent?.Draw(gameTime);
         //_blockPreviewComponent?.Draw3D(gameTime);
 
         if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
@@ -288,38 +283,35 @@ public class Game1 : Microsoft.Xna.Framework.Game
     protected override void UnloadContent()
     {
         _worldComponent?.Dispose();
-        _chunkComponent?.Dispose();
         _blockPreviewComponent?.Dispose();
         _blockOutlineComponent?.Dispose();
         base.UnloadContent();
     }
 
-    private static ChunkEntity CreateDemoChunk(System.Numerics.Vector3? position = null)
+    private static ChunkEntity CreateFlatChunk(int chunkX, int chunkZ)
     {
-        var chunkOrigin = position ?? new System.Numerics.Vector3(-ChunkEntity.Size / 2f, -20f, -ChunkEntity.Size / 2f);
+        var chunkOrigin = new System.Numerics.Vector3(
+            chunkX * ChunkEntity.Size,
+            0f,
+            chunkZ * ChunkEntity.Size
+        );
+
         var chunk = new ChunkEntity(chunkOrigin);
-        long id = 1;
+        long id = (chunkX * 1000000L) + (chunkZ * 1000L) + 1;
 
         for (int x = 0; x < ChunkEntity.Size; x++)
         {
             for (int z = 0; z < ChunkEntity.Size; z++)
             {
-                var height = 18 + (int)(MathF.Sin(x * 0.35f) * 3f + MathF.Cos(z * 0.35f) * 3f);
-                height = Math.Clamp(height, 4, ChunkEntity.Height - 2);
-
-                for (int y = 0; y <= height; y++)
+                for (int y = 0; y < ChunkEntity.Height; y++)
                 {
-                    var blockType = BlockType.Stone;
+                    BlockType blockType;
 
                     if (y == 0)
                     {
                         blockType = BlockType.Bedrock;
                     }
-                    else if (y < height - 3)
-                    {
-                        blockType = BlockType.Stone;
-                    }
-                    else if (y < height)
+                    else if (y < ChunkEntity.Height - 1)
                     {
                         blockType = BlockType.Dirt;
                     }
