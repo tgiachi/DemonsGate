@@ -132,6 +132,18 @@ public sealed class ChunkComponent : IDisposable
     /// </summary>
     public void InvalidateGeometry() => _geometryInvalidated = true;
 
+    public bool HasMesh => _vertexBuffer != null;
+
+    public void BuildMeshImmediate()
+    {
+        if (!_geometryInvalidated)
+        {
+            return;
+        }
+
+        EnsureGeometry();
+    }
+
     /// <summary>
     /// Updates the component state (handles optional auto rotation).
     /// </summary>
@@ -171,8 +183,6 @@ public sealed class ChunkComponent : IDisposable
     /// <param name="projection">Projection matrix from camera.</param>
     public void DrawWithCamera(GameTime gameTime, Matrix view, Matrix projection)
     {
-        EnsureGeometry();
-
         if (_vertexBuffer == null || _indexBuffer == null || _texture == null || _primitiveCount == 0)
         {
             return;

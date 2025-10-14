@@ -126,6 +126,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             EnableFrustumCulling = true,
             MaxRaycastDistance = 10f,
             ChunkLoadDistance = 2,
+            MaxChunkBuildsPerFrame = 3,
             ChunkGenerator = CreateFlatChunk
         };
 

@@ -14,6 +14,7 @@ public sealed class WorldComponent : IDisposable
     private readonly GraphicsDevice _graphicsDevice;
     private readonly ConcurrentDictionary<SysVector3, ChunkComponent> _chunks = new();
     private readonly ConcurrentQueue<(SysVector3 Position, ChunkEntity Chunk)> _pendingChunks = new();
+    private readonly Queue<ChunkComponent> _meshBuildQueue = new();
 
     private readonly CameraComponent _camera;
     private bool _isDisposed;
@@ -41,6 +42,8 @@ public sealed class WorldComponent : IDisposable
     public float MaxRaycastDistance { get; set; } = 10f;
 
     public int ChunkLoadDistance { get; set; } = 2;
+
+    public int MaxChunkBuildsPerFrame { get; set; } = 2;
 
     public (ChunkComponent? Chunk, int X, int Y, int Z)? SelectedBlock { get; private set; }
 
@@ -97,6 +100,8 @@ public sealed class WorldComponent : IDisposable
     {
         ProcessPendingChunks();
 
+        ProcessMeshBuildQueue();
+
         _camera.Update(gameTime);
 
         UpdateChunkLoading();
@@ -106,6 +111,21 @@ public sealed class WorldComponent : IDisposable
         foreach (var chunk in _chunks.Values)
         {
             chunk.Update(gameTime);
+        }
+    }
+
+    private void ProcessMeshBuildQueue()
+    {
+        var built = 0;
+        while (built < MaxChunkBuildsPerFrame && _meshBuildQueue.TryDequeue(out var chunk))
+        {
+            chunk.BuildMeshImmediate();
+            built++;
+        }
+
+        if (_meshBuildQueue.Count > 0)
+        {
+            _logger.Verbose("Mesh build queue: {Remaining} chunks remaining", _meshBuildQueue.Count);
         }
     }
 
@@ -152,7 +172,11 @@ public sealed class WorldComponent : IDisposable
 
         foreach (var chunk in _chunks.Values)
         {
-            chunk.InvalidateGeometry();
+            if (chunk.HasMesh)
+            {
+                chunk.InvalidateGeometry();
+                _meshBuildQueue.Enqueue(chunk);
+            }
         }
     }
 
@@ -332,7 +356,8 @@ public sealed class WorldComponent : IDisposable
 
             if (_chunks.TryAdd(position, chunkComponent))
             {
-                _logger.Information("Chunk added at position {Position}", position);
+                _meshBuildQueue.Enqueue(chunkComponent);
+                _logger.Information("Chunk added at position {Position}, queued for mesh build", position);
             }
             else
             {
