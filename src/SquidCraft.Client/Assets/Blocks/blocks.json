@@ -5,12 +5,12 @@
     "IsLiquid": false,
     "IsSolid": false,
     "Sides": {
-      "Top": "0",
-      "Bottom": "0",
-      "North": "0",
-      "South": "0",
-      "East": "0",
-      "West": "0"
+      "Top": "576",
+      "Bottom": "576",
+      "North": "576",
+      "South": "576",
+      "East": "576",
+      "West": "576"
     }
   },
   {
@@ -19,12 +19,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "2",
-      "Bottom": "2",
-      "North": "2",
-      "South": "2",
-      "East": "2",
-      "West": "2"
+      "Top": "232",
+      "Bottom": "232",
+      "North": "232",
+      "South": "232",
+      "East": "232",
+      "West": "232"
     }
   },
   {
@@ -33,12 +33,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "0",
-      "Bottom": "2",
-      "North": "1",
-      "South": "1",
-      "East": "1",
-      "West": "1"
+      "Top": "332",
+      "Bottom": "577",
+      "North": "321",
+      "South": "321",
+      "East": "321",
+      "West": "321"
     }
   },
   {
@@ -47,12 +47,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "17",
-      "Bottom": "17",
-      "North": "17",
-      "South": "17",
-      "East": "17",
-      "West": "17"
+      "Top": "44",
+      "Bottom": "44",
+      "North": "44",
+      "South": "44",
+      "East": "44",
+      "West": "44"
     }
   },
   {
@@ -61,12 +61,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "34",
-      "Bottom": "2",
-      "North": "34",
-      "South": "34",
-      "East": "34",
-      "West": "34"
+      "Top": "272",
+      "Bottom": "272",
+      "North": "272",
+      "South": "272",
+      "East": "272",
+      "West": "272"
     }
   },
   {
@@ -75,12 +75,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "35",
-      "Bottom": "35",
-      "North": "35",
-      "South": "35",
-      "East": "35",
-      "West": "35"
+      "Top": "364",
+      "Bottom": "364",
+      "North": "364",
+      "South": "364",
+      "East": "364",
+      "West": "364"
     }
   },
   {
@@ -89,12 +89,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "20",
-      "Bottom": "2",
-      "North": "20",
-      "South": "20",
-      "East": "20",
-      "West": "20"
+      "Top": "69",
+      "Bottom": "69",
+      "North": "69",
+      "South": "69",
+      "East": "69",
+      "West": "69"
     }
   },
   {
@@ -103,12 +103,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "3",
-      "Bottom": "3",
-      "North": "3",
-      "South": "3",
-      "East": "3",
-      "West": "3"
+      "Top": "83",
+      "Bottom": "83",
+      "North": "83",
+      "South": "83",
+      "East": "83",
+      "West": "83"
     }
   },
   {
@@ -117,12 +117,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "4",
-      "Bottom": "4",
-      "North": "20",
-      "South": "20",
-      "East": "20",
-      "West": "20"
+      "Top": "45",
+      "Bottom": "45",
+      "North": "45",
+      "South": "45",
+      "East": "45",
+      "West": "45"
     }
   },
   {
@@ -131,12 +131,12 @@
     "IsLiquid": false,
     "IsSolid": true,
     "Sides": {
-      "Top": "5",
-      "Bottom": "5",
-      "North": "5",
-      "South": "5",
-      "East": "5",
-      "West": "5"
+      "Top": "405",
+      "Bottom": "405",
+      "North": "405",
+      "South": "405",
+      "East": "405",
+      "West": "405"
     }
   },
   {
@@ -145,12 +145,12 @@
     "IsLiquid": true,
     "IsSolid": false,
     "Sides": {
-      "Top": "16",
-      "Bottom": "16",
-      "North": "16",
-      "South": "16",
-      "East": "16",
-      "West": "16"
+      "Top": "2",
+      "Bottom": "2",
+      "North": "2",
+      "South": "2",
+      "East": "2",
+      "West": "2"
     }
   }
 ]

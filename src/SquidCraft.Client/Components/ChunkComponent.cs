@@ -195,7 +195,7 @@ public sealed class ChunkComponent : IDisposable
 
         _graphicsDevice.BlendState = BlendState.Opaque;
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
-        _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+        _graphicsDevice.RasterizerState = RasterizerState.CullNone;
         _graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
 
         _graphicsDevice.SetVertexBuffer(_vertexBuffer);
@@ -416,10 +416,14 @@ public sealed class ChunkComponent : IDisposable
         var texture = region.Texture;
         var bounds = region.Bounds;
 
-        var min = new Vector2(bounds.X / (float)texture.Width, bounds.Y / (float)texture.Height);
-        var max = new Vector2((bounds.X + bounds.Width) / (float)texture.Width, (bounds.Y + bounds.Height) / (float)texture.Height);
+        const float inset = 0.001f;
 
-        return (min, max);
+        var minX = (bounds.X + inset) / texture.Width;
+        var minY = (bounds.Y + inset) / texture.Height;
+        var maxX = (bounds.X + bounds.Width - inset) / texture.Width;
+        var maxY = (bounds.Y + bounds.Height - inset) / texture.Height;
+
+        return (new Vector2(minX, minY), new Vector2(maxX, maxY));
     }
 
     private void ClearGeometry()

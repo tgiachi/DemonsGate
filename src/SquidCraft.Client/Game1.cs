@@ -48,6 +48,11 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _logger = Log.ForContext<Game1>();
 
         _graphics = new GraphicsDeviceManager(this);
+
+        _graphics.PreferredBackBufferWidth = 1280;
+        _graphics.PreferredBackBufferHeight = 720;
+        _graphics.ApplyChanges();
+
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -117,15 +122,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent);
 
-        _chunkComponent = new ChunkComponent()
-        {
-            AutoRotate = false,
-            BlockScale = 1f,
-            CameraPosition = new Vector3(55f, 65f, 55f),
-            RenderTransparentBlocks = false
-        };
 
-        _chunkComponent.SetChunk(CreateDemoChunk());
+
 
         _ = _worldComponent.AddChunkAsync(CreateDemoChunk());
         _ = _worldComponent.AddChunkAsync(CreateDemoChunk(new System.Numerics.Vector3(16f, -20f, -8f)));
