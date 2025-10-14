@@ -11,10 +11,13 @@ using SquidCraft.Game.Data.Types;
 
 namespace SquidCraft.Client.Components;
 
-/// <summary>
-/// Builds and renders a chunk mesh from <see cref="ChunkEntity"/> data using block textures provided by <see cref="BlockManagerService"/>.
-/// Serves as the rendering foundation for future world streaming and chunk management.
-/// </summary>
+public sealed class MeshData
+{
+    public VertexPositionColorTexture[] Vertices { get; set; } = Array.Empty<VertexPositionColorTexture>();
+    public int[] Indices { get; set; } = Array.Empty<int>();
+    public Texture2D? Texture { get; set; }
+}
+
 public sealed class ChunkComponent : IDisposable
 {
     private static readonly Dictionary<SideType, (int X, int Y, int Z)> NeighborOffsets = new()
@@ -46,6 +49,9 @@ public sealed class ChunkComponent : IDisposable
     private float _opacity = 0f;
     private float _targetOpacity = 1f;
     private bool _isFadingIn;
+
+    private Task<MeshData>? _meshBuildTask;
+    private MeshData? _pendingMeshData;
 
     public Func<Vector3, ChunkEntity?>? GetNeighborChunk { get; set; }
 
@@ -166,12 +172,39 @@ public sealed class ChunkComponent : IDisposable
             return;
         }
 
-        EnsureGeometry();
-
-        if (EnableFadeIn && _opacity < 0.01f)
+        if (_meshBuildTask == null || _meshBuildTask.IsCompleted)
         {
-            _opacity = 0f;
-            _isFadingIn = true;
+            _meshBuildTask = Task.Run(() => BuildMeshData());
+        }
+    }
+
+    private void CheckMeshBuildCompletion()
+    {
+        if (_meshBuildTask != null && _meshBuildTask.IsCompleted)
+        {
+            if (_meshBuildTask.Exception != null)
+            {
+                _logger.Error(_meshBuildTask.Exception, "Mesh build failed");
+            }
+            else
+            {
+                _pendingMeshData = _meshBuildTask.Result;
+            }
+            
+            _meshBuildTask = null;
+        }
+
+        if (_pendingMeshData != null)
+        {
+            UploadMeshToGpu(_pendingMeshData);
+            _pendingMeshData = null;
+            _geometryInvalidated = false;
+
+            if (EnableFadeIn && _opacity < 0.01f)
+            {
+                _opacity = 0f;
+                _isFadingIn = true;
+            }
         }
     }
 
@@ -182,6 +215,8 @@ public sealed class ChunkComponent : IDisposable
     public void Update(GameTime gameTime)
     {
         var elapsedSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        CheckMeshBuildCompletion();
 
         if (_isFadingIn)
         {
@@ -280,6 +315,108 @@ public sealed class ChunkComponent : IDisposable
     {
         ClearGeometry();
         _effect.Dispose();
+    }
+
+    private MeshData BuildMeshData()
+    {
+        if (_chunk == null)
+        {
+            return new MeshData();
+        }
+
+        var vertices = new List<VertexPositionColorTexture>();
+        var indices = new List<int>();
+        Texture2D? atlasTexture = null;
+
+        for (int x = 0; x < ChunkEntity.Size; x++)
+        {
+            for (int y = 0; y < ChunkEntity.Height; y++)
+            {
+                for (int z = 0; z < ChunkEntity.Size; z++)
+                {
+                    var block = _chunk.Blocks[ChunkEntity.GetIndex(x, y, z)];
+
+                    if (block == null || block.BlockType == BlockType.Air)
+                    {
+                        continue;
+                    }
+
+                    var definition = _blockManagerService.GetBlockDefinition(block.BlockType);
+
+                    if (definition == null)
+                    {
+                        continue;
+                    }
+
+                    if (definition.IsTransparent && !RenderTransparentBlocks)
+                    {
+                        continue;
+                    }
+
+                    foreach (var side in Enum.GetValues<SideType>())
+                    {
+                        if (!ShouldRenderFace(x, y, z, side))
+                        {
+                            continue;
+                        }
+
+                        var region = _blockManagerService.GetBlockSide(block.BlockType, side);
+
+                        if (region == null)
+                        {
+                            continue;
+                        }
+
+                        atlasTexture ??= region.Texture;
+
+                        var uv = ExtractUv(region);
+                        var faceColor = CalculateFaceColor(x, y, z, side);
+                        var blockHeight = definition.Height;
+                        var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor, blockHeight);
+
+                        var baseIndex = vertices.Count;
+                        vertices.AddRange(faceVertices);
+                        indices.AddRange(new[]
+                        {
+                            baseIndex,
+                            baseIndex + 1,
+                            baseIndex + 2,
+                            baseIndex + 2,
+                            baseIndex + 3,
+                            baseIndex
+                        });
+                    }
+                }
+            }
+        }
+
+        return new MeshData
+        {
+            Vertices = vertices.ToArray(),
+            Indices = indices.ToArray(),
+            Texture = atlasTexture
+        };
+    }
+
+    private void UploadMeshToGpu(MeshData meshData)
+    {
+        ClearGeometry();
+
+        if (meshData.Vertices.Length == 0 || meshData.Indices.Length == 0 || meshData.Texture == null)
+        {
+            return;
+        }
+
+        _vertexBuffer = new VertexBuffer(_graphicsDevice, typeof(VertexPositionColorTexture), meshData.Vertices.Length, BufferUsage.WriteOnly);
+        _vertexBuffer.SetData(meshData.Vertices);
+
+        _indexBuffer = new IndexBuffer(_graphicsDevice, IndexElementSize.ThirtyTwoBits, meshData.Indices.Length, BufferUsage.WriteOnly);
+        _indexBuffer.SetData(meshData.Indices);
+
+        _texture = meshData.Texture;
+        _primitiveCount = meshData.Indices.Length / 3;
+
+        _logger.Information("Chunk mesh uploaded: {Vertices} vertices, {Faces} faces", meshData.Vertices.Length, meshData.Indices.Length / 6);
     }
 
     private void EnsureGeometry()
