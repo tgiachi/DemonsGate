@@ -43,6 +43,10 @@ public sealed class ChunkComponent : IDisposable
     private readonly Vector3 _chunkCenter = new(ChunkEntity.Size / 2f, ChunkEntity.Height / 2f, ChunkEntity.Size / 2f);
     private Vector3? _customCameraTarget;
 
+    private float _opacity = 0f;
+    private float _targetOpacity = 1f;
+    private bool _isFadingIn;
+
     public Func<Vector3, ChunkEntity?>? GetNeighborChunk { get; set; }
 
     /// <summary>
@@ -115,6 +119,16 @@ public sealed class ChunkComponent : IDisposable
     /// </summary>
     public bool RenderTransparentBlocks { get; set; } = false;
 
+    public float Opacity
+    {
+        get => _opacity;
+        set => _opacity = MathHelper.Clamp(value, 0f, 1f);
+    }
+
+    public float FadeInSpeed { get; set; } = 2f;
+
+    public bool EnableFadeIn { get; set; } = true;
+
     /// <summary>
     /// Binds a chunk to the component and schedules a geometry rebuild.
     /// </summary>
@@ -125,6 +139,17 @@ public sealed class ChunkComponent : IDisposable
         Position = new Vector3(chunk.Position.X, chunk.Position.Y, chunk.Position.Z);
         _customCameraTarget = null; // Reset to automatic center tracking
         InvalidateGeometry();
+
+        if (EnableFadeIn)
+        {
+            _opacity = 0f;
+            _isFadingIn = true;
+        }
+        else
+        {
+            _opacity = 1f;
+            _isFadingIn = false;
+        }
     }
 
     /// <summary>
@@ -142,6 +167,12 @@ public sealed class ChunkComponent : IDisposable
         }
 
         EnsureGeometry();
+
+        if (EnableFadeIn && _opacity < 0.01f)
+        {
+            _opacity = 0f;
+            _isFadingIn = true;
+        }
     }
 
     /// <summary>
@@ -150,13 +181,22 @@ public sealed class ChunkComponent : IDisposable
     /// <param name="gameTime">Elapsed time information.</param>
     public void Update(GameTime gameTime)
     {
-        if (!AutoRotate)
+        var elapsedSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        if (_isFadingIn)
         {
-            return;
+            _opacity += FadeInSpeed * elapsedSeconds;
+            if (_opacity >= _targetOpacity)
+            {
+                _opacity = _targetOpacity;
+                _isFadingIn = false;
+            }
         }
 
-        var elapsedSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        _rotationY = (_rotationY + RotationSpeed * elapsedSeconds) % MathHelper.TwoPi;
+        if (AutoRotate)
+        {
+            _rotationY = (_rotationY + RotationSpeed * elapsedSeconds) % MathHelper.TwoPi;
+        }
     }
 
     /// <summary>
@@ -188,6 +228,11 @@ public sealed class ChunkComponent : IDisposable
             return;
         }
 
+        if (_opacity <= 0f)
+        {
+            return;
+        }
+
         var rotation = Matrix.CreateFromYawPitchRoll(_rotationY + ManualRotation.Y, ManualRotation.X, ManualRotation.Z);
         var world =
             Matrix.CreateTranslation(-_chunkCenter) *
@@ -199,13 +244,15 @@ public sealed class ChunkComponent : IDisposable
         _effect.View = view;
         _effect.Projection = projection;
         _effect.Texture = _texture;
+        _effect.Alpha = _opacity;
 
         var previousBlendState = _graphicsDevice.BlendState;
         var previousDepthStencilState = _graphicsDevice.DepthStencilState;
         var previousRasterizerState = _graphicsDevice.RasterizerState;
         var previousSamplerState = _graphicsDevice.SamplerStates[0];
 
-        _graphicsDevice.BlendState = RenderTransparentBlocks ? BlendState.AlphaBlend : BlendState.Opaque;
+        var needsBlending = RenderTransparentBlocks || _opacity < 1f;
+        _graphicsDevice.BlendState = needsBlending ? BlendState.AlphaBlend : BlendState.Opaque;
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
         _graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;

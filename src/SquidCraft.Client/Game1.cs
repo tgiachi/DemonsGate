@@ -122,6 +122,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             MaxRaycastDistance = 10f,
             ChunkLoadDistance = 2,
             MaxChunkBuildsPerFrame = 3,
+            GenerationDistance = 3,
             ChunkGenerator = CreateFlatChunk
         };
 

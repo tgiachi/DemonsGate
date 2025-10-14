@@ -29,7 +29,11 @@ public sealed class WorldComponent : IDisposable
 
     public delegate ChunkEntity ChunkGeneratorDelegate(int chunkX, int chunkZ);
     
+    public delegate Task<ChunkEntity> ChunkGeneratorAsyncDelegate(int chunkX, int chunkZ);
+    
     public ChunkGeneratorDelegate? ChunkGenerator { get; set; }
+    
+    public ChunkGeneratorAsyncDelegate? ChunkGeneratorAsync { get; set; }
 
     public CameraComponent Camera => _camera;
 
@@ -37,11 +41,15 @@ public sealed class WorldComponent : IDisposable
 
     public float ViewRange { get; set; } = 200f;
 
+    public float GenerationRange { get; set; } = 250f;
+
     public bool EnableFrustumCulling { get; set; } = true;
 
     public float MaxRaycastDistance { get; set; } = 10f;
 
     public int ChunkLoadDistance { get; set; } = 2;
+
+    public int GenerationDistance { get; set; } = 3;
 
     public int MaxChunkBuildsPerFrame { get; set; } = 2;
 
@@ -156,33 +164,65 @@ public sealed class WorldComponent : IDisposable
 
     private void LoadChunksAroundPlayer(int centerX, int centerZ)
     {
-        for (int x = centerX - ChunkLoadDistance; x <= centerX + ChunkLoadDistance; x++)
+        var loadedNewChunks = false;
+
+        for (int x = centerX - GenerationDistance; x <= centerX + GenerationDistance; x++)
         {
-            for (int z = centerZ - ChunkLoadDistance; z <= centerZ + ChunkLoadDistance; z++)
+            for (int z = centerZ - GenerationDistance; z <= centerZ + GenerationDistance; z++)
             {
                 var chunkPos = new SysVector3(x * ChunkEntity.Size, 0f, z * ChunkEntity.Size);
 
                 if (!_chunks.ContainsKey(chunkPos))
                 {
-                    var chunk = ChunkGenerator!(x, z);
-                    _ = AddChunkAsync(chunk);
+                    if (ChunkGeneratorAsync != null)
+                    {
+                        _ = RequestChunkFromServerAsync(x, z);
+                    }
+                    else if (ChunkGenerator != null)
+                    {
+                        var chunk = ChunkGenerator(x, z);
+                        _ = AddChunkAsync(chunk);
+                    }
+                    
+                    loadedNewChunks = true;
                 }
             }
         }
 
-        foreach (var chunk in _chunks.Values)
+        if (loadedNewChunks)
         {
-            if (chunk.HasMesh)
+            foreach (var chunk in _chunks.Values)
             {
-                chunk.InvalidateGeometry();
-                _meshBuildQueue.Enqueue(chunk);
+                if (chunk.HasMesh)
+                {
+                    chunk.InvalidateGeometry();
+                    _meshBuildQueue.Enqueue(chunk);
+                }
             }
+        }
+    }
+
+    private async Task RequestChunkFromServerAsync(int chunkX, int chunkZ)
+    {
+        try
+        {
+            _logger.Debug("Requesting chunk ({X}, {Z}) from server", chunkX, chunkZ);
+            
+            var chunk = await ChunkGeneratorAsync!(chunkX, chunkZ);
+            
+            await AddChunkAsync(chunk);
+            
+            _logger.Debug("Chunk ({X}, {Z}) received from server", chunkX, chunkZ);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to load chunk ({X}, {Z}) from server", chunkX, chunkZ);
         }
     }
 
     private void UnloadDistantChunks(int centerX, int centerZ)
     {
-        var unloadDistance = ChunkLoadDistance + 1;
+        var unloadDistance = GenerationDistance + 1;
         var chunksToRemove = new List<SysVector3>();
 
         foreach (var (pos, _) in _chunks)
@@ -202,6 +242,11 @@ public sealed class WorldComponent : IDisposable
         foreach (var pos in chunksToRemove)
         {
             RemoveChunk(pos);
+        }
+
+        if (chunksToRemove.Count > 0)
+        {
+            _logger.Information("Unloaded {Count} distant chunks", chunksToRemove.Count);
         }
     }
 
