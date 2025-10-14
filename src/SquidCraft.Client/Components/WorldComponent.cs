@@ -33,6 +33,10 @@ public sealed class WorldComponent : IDisposable
 
     public bool EnableFrustumCulling { get; set; } = true;
 
+    public float MaxRaycastDistance { get; set; } = 10f;
+
+    public (ChunkComponent? Chunk, int X, int Y, int Z)? SelectedBlock { get; private set; }
+
     public async Task AddChunkAsync(ChunkEntity chunk)
     {
         ArgumentNullException.ThrowIfNull(chunk);
@@ -81,10 +85,60 @@ public sealed class WorldComponent : IDisposable
 
         _camera.Update(gameTime);
 
+        UpdateBlockSelection();
+
         foreach (var chunk in _chunks.Values)
         {
             chunk.Update(gameTime);
         }
+    }
+
+    private void UpdateBlockSelection()
+    {
+        var ray = _camera.GetPickRay();
+        SelectedBlock = RaycastBlock(ray);
+    }
+
+    public (ChunkComponent? Chunk, int X, int Y, int Z)? RaycastBlock(Ray ray)
+    {
+        var step = 0.1f;
+        var currentDistance = 0f;
+
+        while (currentDistance < MaxRaycastDistance)
+        {
+            var point = ray.Position + ray.Direction * currentDistance;
+
+            foreach (var chunk in _chunks.Values)
+            {
+                if (chunk.Chunk == null)
+                {
+                    continue;
+                }
+
+                var chunkPos = chunk.Position;
+                var relativePos = point - chunkPos;
+
+                var blockX = (int)MathF.Floor(relativePos.X);
+                var blockY = (int)MathF.Floor(relativePos.Y);
+                var blockZ = (int)MathF.Floor(relativePos.Z);
+
+                if (blockX >= 0 && blockX < ChunkEntity.Size &&
+                    blockY >= 0 && blockY < ChunkEntity.Height &&
+                    blockZ >= 0 && blockZ < ChunkEntity.Size)
+                {
+                    var block = chunk.Chunk.GetBlock(blockX, blockY, blockZ);
+                    
+                    if (block != null && block.BlockType != Game.Data.Types.BlockType.Air)
+                    {
+                        return (chunk, blockX, blockY, blockZ);
+                    }
+                }
+            }
+
+            currentDistance += step;
+        }
+
+        return null;
     }
 
     public void Draw(GameTime gameTime)

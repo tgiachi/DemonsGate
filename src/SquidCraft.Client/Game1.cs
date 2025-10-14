@@ -30,6 +30,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private ChunkComponent? _chunkComponent;
     private WorldComponent? _worldComponent;
     private CameraComponent? _cameraComponent;
+    private BlockOutlineComponent? _blockOutlineComponent;
     private ProgressBarComponent? _progressBarComponent;
     private float _progressTimer;
     private ScrollingTextBoxComponent? _logTextBox;
@@ -123,7 +124,13 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent)
         {
             ViewRange = 150f,
-            EnableFrustumCulling = true
+            EnableFrustumCulling = true,
+            MaxRaycastDistance = 10f
+        };
+
+        _blockOutlineComponent = new BlockOutlineComponent(GraphicsDevice)
+        {
+            OutlineColor = Color.White * 0.8f
         };
 
 
@@ -252,6 +259,13 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _chunkComponent?.Draw(gameTime);
         //_blockPreviewComponent?.Draw3D(gameTime);
 
+        if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
+        {
+            var (chunk, x, y, z) = selected.Value;
+            var blockWorldPos = chunk.Position + new Vector3(x, y, z);
+            _blockOutlineComponent?.Draw(blockWorldPos, _cameraComponent!.View, _cameraComponent.Projection);
+        }
+
         _spriteBatch.Begin(
             SpriteSortMode.Immediate,
             BlendState.AlphaBlend,
@@ -276,6 +290,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _worldComponent?.Dispose();
         _chunkComponent?.Dispose();
         _blockPreviewComponent?.Dispose();
+        _blockOutlineComponent?.Dispose();
         base.UnloadContent();
     }
 

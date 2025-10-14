@@ -179,6 +179,45 @@ public sealed class CameraComponent
         _viewDirty = true;
     }
 
+    public Vector3 Forward
+    {
+        get
+        {
+            var direction = _target - _position;
+            direction.Normalize();
+            return direction;
+        }
+    }
+
+    public Ray GetPickRay()
+    {
+        return new Ray(_position, Forward);
+    }
+
+    public Ray GetPickRay(int screenX, int screenY)
+    {
+        var viewport = _graphicsDevice.Viewport;
+        
+        var nearPoint = viewport.Unproject(
+            new Vector3(screenX, screenY, 0f),
+            Projection,
+            View,
+            Matrix.Identity
+        );
+        
+        var farPoint = viewport.Unproject(
+            new Vector3(screenX, screenY, 1f),
+            Projection,
+            View,
+            Matrix.Identity
+        );
+        
+        var direction = farPoint - nearPoint;
+        direction.Normalize();
+        
+        return new Ray(nearPoint, direction);
+    }
+
     public float MoveSpeed { get; set; } = 20f;
 
     public float MouseSensitivity { get; set; } = 0.003f;
