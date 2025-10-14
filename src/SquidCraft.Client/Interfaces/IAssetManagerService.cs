@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using MonoGame.Extended.Graphics;
+using SquidCraft.Client.Data;
 using SquidCraft.Client.Types;
 
 namespace SquidCraft.Client.Interfaces;
@@ -46,8 +47,7 @@ public interface IAssetManagerService
     Texture2D GetCursor(string cursorSetName, CursorState cursorState);
 
     // Texture Atlas loading
-    void LoadAtlas(string texturePath, string atlasDataPath, string atlasName);
-    void LoadAtlasFromStream(Stream textureStream, Stream atlasDataStream, string atlasName);
+    void LoadAtlas(string textureName, AtlasDefinition atlasDefinition, string atlasName);
     Texture2DAtlas GetAtlas(string atlasName);
     Texture2DRegion GetAtlasRegion(string atlasName, string regionName);
 

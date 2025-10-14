@@ -68,7 +68,7 @@ public class AssetManagerService : IAssetManagerService
     /// <summary>
     /// Cache of loaded texture atlases indexed by name
     /// </summary>
-    private readonly Dictionary<string, TextureAtlasWrapper> _loadedAtlases = new();
+    private readonly Dictionary<string, (Texture2DAtlas Atlas, int Rows, int Cols)> _loadedAtlases = new();
 
     /// <summary>
     /// Structured logger instance for asset management operations
@@ -306,83 +306,38 @@ public class AssetManagerService : IAssetManagerService
             : throw new KeyNotFoundException($"Texture not found: {textureName}");
     }
 
-    /// <summary>
-    /// Loads a texture atlas from separate texture and atlas data files.
-    /// The atlas data file should be in JSON format describing regions within the texture.
-    /// </summary>
-    /// <param name="texturePath">Relative path to the texture file from the content root directory</param>
-    /// <param name="atlasDataPath">Relative path to the atlas data file (JSON format)</param>
-    /// <param name="atlasName">Unique name to identify and retrieve the loaded atlas</param>
-    /// <exception cref="FileNotFoundException">Thrown when files are not found</exception>
-    public void LoadAtlas(string texturePath, string atlasDataPath, string atlasName)
+
+    public void LoadAtlas(string textureName, AtlasDefinition atlasDefinition, string atlasName)
     {
-        _logger.Debug(
-            "Loading atlas: {AtlasName} from {TexturePath} and {AtlasDataPath}",
+        _logger.Debug("Loading atlas: {AtlasName}", atlasName);
+
+        var texture = GetTexture(textureName);
+
+        int cols = (texture.Width - atlasDefinition.Margin * 2) / (atlasDefinition.TileWidth + atlasDefinition.Spacing);
+        int rows = (texture.Height - atlasDefinition.Margin * 2) / (atlasDefinition.TileHeight + atlasDefinition.Spacing);
+        int maxTiles = rows * cols;
+
+        var atlas = Texture2DAtlas.Create(
             atlasName,
-            texturePath,
-            atlasDataPath
+            texture,
+            atlasDefinition.TileWidth,
+            atlasDefinition.TileHeight,
+            maxTiles,
+            atlasDefinition.Margin,
+            atlasDefinition.Spacing
         );
 
-        var fullTexturePath = Path.Combine(_rootDirectory, texturePath);
-        var fullAtlasDataPath = Path.Combine(_rootDirectory, atlasDataPath);
+        _loadedAtlases[atlasName] = (atlas, rows, cols);
 
-        if (!File.Exists(fullTexturePath))
-        {
-            throw new FileNotFoundException($"Atlas texture not found: {fullTexturePath}");
-        }
-
-        if (!File.Exists(fullAtlasDataPath))
-        {
-            throw new FileNotFoundException($"Atlas data file not found: {fullAtlasDataPath}");
-        }
-
-        using var textureStream = File.OpenRead(fullTexturePath);
-        using var atlasDataStream = File.OpenRead(fullAtlasDataPath);
-        LoadAtlasFromStream(textureStream, atlasDataStream, atlasName);
-
-        _logger.Information("Atlas loaded: {AtlasName}", atlasName);
-    }
-
-    /// <summary>
-    /// Loads a texture atlas from streams containing texture and atlas data.
-    /// Supports JSON format for atlas data describing texture regions.
-    /// </summary>
-    /// <param name="textureStream">Stream containing the texture data</param>
-    /// <param name="atlasDataStream">Stream containing the atlas data (JSON format)</param>
-    /// <param name="atlasName">Unique name to identify and retrieve the loaded atlas</param>
-    public void LoadAtlasFromStream(Stream textureStream, Stream atlasDataStream, string atlasName)
-    {
-        _logger.Debug("Loading atlas from stream: {AtlasName}", atlasName);
-
-        var texture = Texture2D.FromStream(_graphicsDevice, textureStream);
-
-        var atlasDataJson = new StreamReader(atlasDataStream).ReadToEnd();
-        var atlasData = JsonSerializer.Deserialize<AtlasDataFormat>(atlasDataJson);
-
-        if (atlasData?.Regions == null || atlasData.Regions.Count == 0)
-        {
-            throw new InvalidDataException($"Atlas data is invalid or contains no regions: {atlasName}");
-        }
-
-        var regions = new Dictionary<string, Texture2DRegion>();
-        foreach (var region in atlasData.Regions)
-        {
-            var bounds = new Rectangle(region.X, region.Y, region.Width, region.Height);
-            var textureRegion = new Texture2DRegion(texture, bounds);
-            regions[region.Name] = textureRegion;
-            _logger.Debug("Loaded atlas region: {RegionName} at {Bounds}", region.Name, bounds);
-        }
-
-        var atlas = new TextureAtlasWrapper(atlasName, texture, regions);
-        _loadedAtlases[atlasName] = atlas;
-
-        _assets.TryAdd(AssetType.Atlas, new List<AssetObject>());
-        _assets[AssetType.Atlas].Add(new AssetObject(atlasName, "Stream"));
+        _assets.TryAdd(AssetType.Atlas, []);
+        _assets[AssetType.Atlas].Add(new AssetObject(atlasName, textureName));
 
         _logger.Information(
-            "Atlas loaded from stream: {AtlasName} with {RegionCount} regions",
+            "Atlas loaded: {AtlasName} with {RegionCount} regions ({Rows}x{Cols})",
             atlasName,
-            regions.Count
+            maxTiles,
+            rows,
+            cols
         );
     }
 
@@ -394,12 +349,7 @@ public class AssetManagerService : IAssetManagerService
     /// <exception cref="KeyNotFoundException">Thrown when the atlas name is not found</exception>
     public Texture2DAtlas GetAtlas(string atlasName)
     {
-        if (!_loadedAtlases.TryGetValue(atlasName, out var wrapper))
-        {
-            throw new KeyNotFoundException($"Atlas not found: {atlasName}");
-        }
-
-        return wrapper.Atlas;
+        return !_loadedAtlases.TryGetValue(atlasName, out var entry) ? throw new KeyNotFoundException($"Atlas not found: {atlasName}") : entry.Atlas;
     }
 
     /// <summary>
@@ -411,13 +361,19 @@ public class AssetManagerService : IAssetManagerService
     /// <exception cref="KeyNotFoundException">Thrown when the atlas or region is not found</exception>
     public Texture2DRegion GetAtlasRegion(string atlasName, string regionName)
     {
-        if (!_loadedAtlases.TryGetValue(atlasName, out var wrapper))
+        if (!_loadedAtlases.TryGetValue(atlasName, out var entry))
         {
             throw new KeyNotFoundException($"Atlas '{atlasName}' not found");
         }
 
-        return wrapper.GetRegion(regionName)
-               ?? throw new KeyNotFoundException($"Region '{regionName}' not found in atlas '{atlasName}'");
+        var parts = regionName.Split('_');
+        if (parts.Length == 2 && int.TryParse(parts[0], out int row) && int.TryParse(parts[1], out int col) && row >= 0 && row < entry.Rows && col >= 0 && col < entry.Cols)
+        {
+            int index = row * entry.Cols + col;
+            return entry.Atlas[index];
+        }
+
+        throw new KeyNotFoundException($"Region '{regionName}' not found in atlas '{atlasName}'");
     }
 
     /// <summary>

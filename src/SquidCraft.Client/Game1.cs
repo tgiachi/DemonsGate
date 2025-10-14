@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Input;
 using Serilog;
 using SquidCraft.Client.Components;
 using SquidCraft.Client.Context;
+using SquidCraft.Client.Data;
 using SquidCraft.Client.Services;
 
 namespace SquidCraft.Client;
@@ -49,6 +50,20 @@ public class Game1 : Microsoft.Xna.Framework.Game
             GraphicsDevice
         );
         SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
+
+        SquidCraftClientContext.AssetManagerService.LoadTexture("Textures/default_blocks.png", "DefaultBlocks");
+
+
+        SquidCraftClientContext.AssetManagerService.LoadAtlas(
+            "DefaultBlocks",
+            new AtlasDefinition()
+            {
+                TileWidth = 16,
+                TileHeight = 16
+            },
+            "DefaultBlocksAtlas"
+        );
+
         var viewport = GraphicsDevice.Viewport;
         SquidCraftClientContext.RootComponent.Size = new Vector2(viewport.Width, viewport.Height);
         SquidCraftClientContext.SceneManager.Size = SquidCraftClientContext.RootComponent.Size;
