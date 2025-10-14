@@ -75,6 +75,13 @@ public sealed class WorldComponent : IDisposable
         return _chunks.TryGetValue(position, out var chunk) ? chunk : null;
     }
 
+    public ChunkEntity? GetChunkEntity(XnaVector3 position)
+    {
+        var sysPos = new SysVector3(position.X, position.Y, position.Z);
+        var chunk = GetChunk(sysPos);
+        return chunk?.Chunk;
+    }
+
     public void ClearChunks()
     {
         foreach (var chunk in _chunks.Values)
@@ -141,6 +148,11 @@ public sealed class WorldComponent : IDisposable
                     _ = AddChunkAsync(chunk);
                 }
             }
+        }
+
+        foreach (var chunk in _chunks.Values)
+        {
+            chunk.InvalidateGeometry();
         }
     }
 
@@ -312,7 +324,8 @@ public sealed class WorldComponent : IDisposable
             {
                 AutoRotate = false,
                 BlockScale = 1f,
-                RenderTransparentBlocks = false
+                RenderTransparentBlocks = false,
+                GetNeighborChunk = GetChunkEntity
             };
 
             chunkComponent.SetChunk(chunk);

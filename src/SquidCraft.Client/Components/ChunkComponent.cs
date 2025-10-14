@@ -43,6 +43,8 @@ public sealed class ChunkComponent : IDisposable
     private readonly Vector3 _chunkCenter = new(ChunkEntity.Size / 2f, ChunkEntity.Height / 2f, ChunkEntity.Size / 2f);
     private Vector3? _customCameraTarget;
 
+    public Func<Vector3, ChunkEntity?>? GetNeighborChunk { get; set; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ChunkComponent"/> class.
     /// </summary>
@@ -333,7 +335,7 @@ public sealed class ChunkComponent : IDisposable
 
         if (!IsWithinChunk(neighborX, neighborY, neighborZ))
         {
-            return true;
+            return ShouldRenderCrossChunkFace(x, y, z, side);
         }
 
         var neighbor = _chunk!.Blocks[ChunkEntity.GetIndex(neighborX, neighborY, neighborZ)];
@@ -344,6 +346,49 @@ public sealed class ChunkComponent : IDisposable
         }
 
         return _blockManagerService.IsTransparent(neighbor.BlockType);
+    }
+
+    private bool ShouldRenderCrossChunkFace(int x, int y, int z, SideType side)
+    {
+        if (GetNeighborChunk == null || _chunk == null)
+        {
+            return true;
+        }
+
+        var (offsetX, offsetY, offsetZ) = NeighborOffsets[side];
+        var worldX = _chunk.Position.X + x + offsetX;
+        var worldY = _chunk.Position.Y + y + offsetY;
+        var worldZ = _chunk.Position.Z + z + offsetZ;
+
+        var neighborChunkX = MathF.Floor(worldX / ChunkEntity.Size) * ChunkEntity.Size;
+        var neighborChunkZ = MathF.Floor(worldZ / ChunkEntity.Size) * ChunkEntity.Size;
+        var neighborChunkPos = new Vector3(neighborChunkX, 0f, neighborChunkZ);
+
+        var neighborChunk = GetNeighborChunk(neighborChunkPos);
+        if (neighborChunk == null)
+        {
+            return true;
+        }
+
+        var localX = (int)(worldX - neighborChunk.Position.X);
+        var localY = (int)(worldY - neighborChunk.Position.Y);
+        var localZ = (int)(worldZ - neighborChunk.Position.Z);
+
+        if (localX < 0 || localX >= ChunkEntity.Size ||
+            localY < 0 || localY >= ChunkEntity.Height ||
+            localZ < 0 || localZ >= ChunkEntity.Size)
+        {
+            return true;
+        }
+
+        var neighborBlock = neighborChunk.GetBlock(localX, localY, localZ);
+
+        if (neighborBlock == null || neighborBlock.BlockType == BlockType.Air)
+        {
+            return true;
+        }
+
+        return _blockManagerService.IsTransparent(neighborBlock.BlockType);
     }
 
     private static bool IsWithinChunk(int x, int y, int z)
