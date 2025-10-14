@@ -120,7 +120,11 @@ public class Game1 : Microsoft.Xna.Framework.Game
             EnableInput = true
         };
 
-        _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent);
+        _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent)
+        {
+            ViewRange = 150f,
+            EnableFrustumCulling = true
+        };
 
 
 

@@ -14,9 +14,10 @@ public sealed class WorldComponent : IDisposable
     private readonly GraphicsDevice _graphicsDevice;
     private readonly ConcurrentDictionary<SysVector3, ChunkComponent> _chunks = new();
     private readonly ConcurrentQueue<(SysVector3 Position, ChunkEntity Chunk)> _pendingChunks = new();
-    
+
     private readonly CameraComponent _camera;
     private bool _isDisposed;
+    private BoundingFrustum? _frustum;
 
     public WorldComponent(GraphicsDevice graphicsDevice, CameraComponent camera)
     {
@@ -28,20 +29,22 @@ public sealed class WorldComponent : IDisposable
 
     public IReadOnlyDictionary<SysVector3, ChunkComponent> Chunks => _chunks;
 
+    public float ViewRange { get; set; } = 200f;
+
+    public bool EnableFrustumCulling { get; set; } = true;
+
     public async Task AddChunkAsync(ChunkEntity chunk)
     {
-        if (chunk == null)
-        {
-            throw new ArgumentNullException(nameof(chunk));
-        }
+        ArgumentNullException.ThrowIfNull(chunk);
 
         var chunkPosition = chunk.Position;
 
         await Task.Run(() =>
-        {
-            _pendingChunks.Enqueue((chunkPosition, chunk));
-            _logger.Debug("Chunk queued for addition at position {Position}", chunkPosition);
-        });
+            {
+                _pendingChunks.Enqueue((chunkPosition, chunk));
+                _logger.Debug("Chunk queued for addition at position {Position}", chunkPosition);
+            }
+        );
     }
 
     public bool RemoveChunk(SysVector3 position)
@@ -67,7 +70,7 @@ public sealed class WorldComponent : IDisposable
         {
             chunk.Dispose();
         }
-        
+
         _chunks.Clear();
         _logger.Information("All chunks cleared");
     }
@@ -86,10 +89,71 @@ public sealed class WorldComponent : IDisposable
 
     public void Draw(GameTime gameTime)
     {
+        if (EnableFrustumCulling)
+        {
+            _frustum = new BoundingFrustum(_camera.View * _camera.Projection);
+        }
+
+        var cameraPosition = _camera.Position;
+        var visibleChunks = 0;
+        var culledChunks = 0;
+
         foreach (var chunk in _chunks.Values)
         {
-            DrawChunk(chunk, gameTime);
+            if (ShouldRenderChunk(chunk, cameraPosition))
+            {
+                DrawChunk(chunk, gameTime);
+                visibleChunks++;
+            }
+            else
+            {
+                culledChunks++;
+            }
         }
+
+        if (culledChunks > 0)
+        {
+            _logger.Verbose("Rendered {Visible} chunks, culled {Culled} chunks", visibleChunks, culledChunks);
+        }
+    }
+
+    private bool ShouldRenderChunk(ChunkComponent chunk, XnaVector3 cameraPosition)
+    {
+        if (chunk.Chunk == null)
+        {
+            return false;
+        }
+
+        var chunkPos = chunk.Position;
+        var chunkCenter = new XnaVector3(
+            chunkPos.X + ChunkEntity.Size * 0.5f,
+            chunkPos.Y + ChunkEntity.Height * 0.5f,
+            chunkPos.Z + ChunkEntity.Size * 0.5f
+        );
+
+        var distance = XnaVector3.Distance(cameraPosition, chunkCenter);
+        if (distance > ViewRange)
+        {
+            return false;
+        }
+
+        if (EnableFrustumCulling && _frustum != null)
+        {
+            var chunkRadius = MathF.Sqrt(
+                ChunkEntity.Size * ChunkEntity.Size +
+                ChunkEntity.Height * ChunkEntity.Height +
+                ChunkEntity.Size * ChunkEntity.Size
+            ) * 0.5f;
+
+            var chunkSphere = new BoundingSphere(chunkCenter, chunkRadius);
+
+            if (_frustum.Contains(chunkSphere) == ContainmentType.Disjoint)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void DrawChunk(ChunkComponent chunk, GameTime gameTime)
