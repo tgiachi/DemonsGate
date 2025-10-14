@@ -53,4 +53,6 @@ public interface IAssetManagerService
 
     // Utility
     AssetType GetTypeFromFileExtension(string extension);
+
+    Texture2D GetPixelTexture();
 }

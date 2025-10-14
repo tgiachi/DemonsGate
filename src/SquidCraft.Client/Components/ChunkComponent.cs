@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended.Graphics;
 using Serilog;
+using SquidCraft.Client.Context;
 using SquidCraft.Client.Services;
 using SquidCraft.Game.Data.Primitives;
 using SquidCraft.Game.Data.Types;
@@ -47,10 +48,10 @@ public sealed class ChunkComponent : IDisposable
     /// </summary>
     /// <param name="graphicsDevice">Graphics device used for rendering.</param>
     /// <param name="blockManagerService">Service that resolves block textures and metadata.</param>
-    public ChunkComponent(GraphicsDevice graphicsDevice, BlockManagerService blockManagerService)
+    public ChunkComponent()
     {
-        _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
-        _blockManagerService = blockManagerService ?? throw new ArgumentNullException(nameof(blockManagerService));
+        _graphicsDevice = SquidCraftClientContext.GraphicsDevice;
+        _blockManagerService = SquidCraftClientContext.BlockManagerService;
 
         _effect = new BasicEffect(_graphicsDevice)
         {

@@ -230,6 +230,9 @@ public abstract class BaseComponent : ISCDrawableComponent, IParentAwareComponen
             return;
         }
 
+        HandleMouse(Mouse.GetState(), gameTime);
+        HandleKeyboard(Keyboard.GetState(), gameTime);
+
         // Update children
         foreach (var child in _children)
         {

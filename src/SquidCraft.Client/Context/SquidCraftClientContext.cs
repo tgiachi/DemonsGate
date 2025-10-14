@@ -14,5 +14,5 @@ public static class SquidCraftClientContext
 
     public static BlockManagerService BlockManagerService { get; set; }
 
-    public static RootComponent RootComponent { get; set; } =  new();
+    public static EmptyComponent RootComponent { get; set; } =  new();
 }

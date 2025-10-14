@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using Microsoft.Xna.Framework;
@@ -9,6 +9,7 @@ using SquidCraft.Client.Components;
 using SquidCraft.Client.Context;
 using SquidCraft.Client.Data;
 using SquidCraft.Client.Services;
+using SquidCraft.Client.Components.UI.Controls;
 using SquidCraft.Core.Json;
 using SquidCraft.Game.Data.Types;
 using SquidCraft.Game.Data.Primitives;
@@ -98,7 +99,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         //     AutoRotate = true
         // };
 
-        _chunkComponent = new ChunkComponent(GraphicsDevice, SquidCraftClientContext.BlockManagerService)
+        _chunkComponent = new ChunkComponent()
         {
             AutoRotate = true,
             BlockScale = 1f,
@@ -124,6 +125,34 @@ public class Game1 : Microsoft.Xna.Framework.Game
         var fpsComponent = new FpsComponent(position: new Vector2(16, 16), fontSize: 16, color: Color.White);
         fpsComponent.ZIndex = 100;
         SquidCraftClientContext.RootComponent.AddChild(fpsComponent);
+
+        var labelComponent = new LabelComponent("Enter block label:", fontSize: 16, position: new Vector2(32, 80));
+
+        SquidCraftClientContext.RootComponent.AddChild(labelComponent);
+
+        var textBoxComponent = new TextBoxComponent(position: new Vector2(32, 108))
+        {
+            PreferredWidth = 260f,
+            PlaceholderText = "Type here..."
+        };
+        SquidCraftClientContext.RootComponent.AddChild(textBoxComponent);
+
+        var buttonComponent = new ButtonComponent("Apply Label", position: new Vector2(32, 148));
+        buttonComponent.Clicked += (_, _) =>
+        {
+            _logger.Information("Apply button clicked with input: {Input}", textBoxComponent.Text);
+        };
+        SquidCraftClientContext.RootComponent.AddChild(buttonComponent);
+
+        var comboBoxComponent = new ComboBoxComponent(
+            new[] { "Grass", "Dirt", "Stone", "Snow", "Water" },
+            position: new Vector2(32, 188));
+        comboBoxComponent.SelectedIndexChanged += (_, index) =>
+        {
+            var item = comboBoxComponent.SelectedItem ?? "<none>";
+            _logger.Information("ComboBox selection changed to {Index}:{Value}", index, item);
+        };
+        SquidCraftClientContext.RootComponent.AddChild(comboBoxComponent);
     }
 
     protected override void Update(GameTime gameTime)

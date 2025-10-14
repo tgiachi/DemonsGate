@@ -71,6 +71,11 @@ public class AssetManagerService : IAssetManagerService
     private readonly Dictionary<string, (Texture2DAtlas Atlas, int Rows, int Cols)> _loadedAtlases = new();
 
     /// <summary>
+    /// Lazy-initialized single pixel texture for primitive rendering helpers.
+    /// </summary>
+    private Texture2D? _pixelTexture;
+
+    /// <summary>
     /// Structured logger instance for asset management operations
     /// </summary>
     private readonly ILogger _logger = Log.ForContext<AssetManagerService>();
@@ -230,6 +235,21 @@ public class AssetManagerService : IAssetManagerService
         _loadedTextures[textureName] = texture;
 
         _logger.Information("Texture loaded from stream - {TextureName}", textureName);
+    }
+
+    /// <summary>
+    /// Retrieves a reusable 1x1 white texture useful for drawing rectangles and lines.
+    /// </summary>
+    public Texture2D GetPixelTexture()
+    {
+        if (_pixelTexture == null || _pixelTexture.IsDisposed || _pixelTexture.GraphicsDevice != _graphicsDevice)
+        {
+            _pixelTexture?.Dispose();
+            _pixelTexture = new Texture2D(_graphicsDevice, 1, 1);
+            _pixelTexture.SetData([Color.White]);
+        }
+
+        return _pixelTexture;
     }
 
     /// <summary>

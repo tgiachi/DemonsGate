@@ -10,12 +10,12 @@ namespace SquidCraft.Client.Components;
 /// Root component that serves as the top-level container for all UI components.
 /// Handles input dispatching to children with advanced features like mouse-based focus.
 /// </summary>
-public class RootComponent : BaseComponent
+public class EmptyComponent : BaseComponent
 {
     private ISCDrawableComponent? _hoveredComponent;
     private ISCDrawableComponent? _focusedComponent;
 
-    public RootComponent()
+    public EmptyComponent()
     {
         Name = "RootComponent";
         HasFocus = true; // Root always has focus
