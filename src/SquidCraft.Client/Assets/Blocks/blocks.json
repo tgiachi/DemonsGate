@@ -144,6 +144,7 @@
     "IsTransparent": true,
     "IsLiquid": true,
     "IsSolid": false,
+    "Height": 0.875,
     "Sides": {
       "Top": "2",
       "Bottom": "2",

@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Threading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -10,8 +7,6 @@ using SquidCraft.Client.Context;
 using SquidCraft.Client.Data;
 using SquidCraft.Client.Services;
 using SquidCraft.Client.Components.UI.Controls;
-using SquidCraft.Client.Components.UI.Layout;
-using SquidCraft.Client.Types.Layout;
 using SquidCraft.Core.Json;
 using SquidCraft.Game.Data.Types;
 using SquidCraft.Game.Data.Primitives;
@@ -41,7 +36,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         JsonUtils.RegisterJsonContext(SquidCraftGameJsonContext.Default);
         JsonUtils.RegisterJsonContext(SquidCraftClientJsonContext.Default);
 
-        Log.Logger = new LoggerConfiguration().MinimumLevel.Debug()
+        Log.Logger = new LoggerConfiguration().MinimumLevel.Information()
             .WriteTo.Console(formatProvider: Thread.CurrentThread.CurrentCulture)
             .CreateLogger();
 
@@ -304,6 +299,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
         {
             for (int z = 0; z < ChunkEntity.Size; z++)
             {
+                var isWater = (x > 5 && x < 10 && z > 5 && z < 10);
+
                 for (int y = 0; y < ChunkEntity.Height; y++)
                 {
                     BlockType blockType;
@@ -312,13 +309,17 @@ public class Game1 : Microsoft.Xna.Framework.Game
                     {
                         blockType = BlockType.Bedrock;
                     }
-                    else if (y < ChunkEntity.Height - 1)
+                    else if (y < ChunkEntity.Height - 2)
                     {
                         blockType = BlockType.Dirt;
                     }
+                    else if (y < ChunkEntity.Height - 1)
+                    {
+                        blockType = isWater ? BlockType.Dirt : BlockType.Dirt;
+                    }
                     else
                     {
-                        blockType = BlockType.Grass;
+                        blockType = isWater ? BlockType.Water : BlockType.Grass;
                     }
 
                     chunk.SetBlock(x, y, z, new BlockEntity(id++, blockType));

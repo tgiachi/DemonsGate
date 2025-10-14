@@ -348,7 +348,7 @@ public sealed class WorldComponent : IDisposable
             {
                 AutoRotate = false,
                 BlockScale = 1f,
-                RenderTransparentBlocks = false,
+                RenderTransparentBlocks = true,
                 GetNeighborChunk = GetChunkEntity
             };
 

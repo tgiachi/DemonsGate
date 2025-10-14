@@ -205,7 +205,7 @@ public sealed class ChunkComponent : IDisposable
         var previousRasterizerState = _graphicsDevice.RasterizerState;
         var previousSamplerState = _graphicsDevice.SamplerStates[0];
 
-        _graphicsDevice.BlendState = BlendState.Opaque;
+        _graphicsDevice.BlendState = RenderTransparentBlocks ? BlendState.AlphaBlend : BlendState.Opaque;
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
         _graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
@@ -296,7 +296,8 @@ public sealed class ChunkComponent : IDisposable
 
                         var uv = ExtractUv(region);
                         var faceColor = CalculateFaceColor(x, y, z, side);
-                        var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor);
+                        var blockHeight = definition.Height;
+                        var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor, blockHeight);
 
                         var baseIndex = vertices.Count;
                         vertices.AddRange(faceVertices);
@@ -334,11 +335,17 @@ public sealed class ChunkComponent : IDisposable
         _primitiveCount = indices.Count / 3;
 
         _geometryInvalidated = false;
-        _logger.Information("Chunk geometry rebuilt: {Vertices} vertices, {Faces} faces", vertices.Count, indices.Count / 6);
+        _logger.Debug("Chunk geometry rebuilt: {Vertices} vertices, {Faces} faces", vertices.Count, indices.Count / 6);
     }
 
     private bool ShouldRenderFace(int x, int y, int z, SideType side)
     {
+        var currentBlock = _chunk!.Blocks[ChunkEntity.GetIndex(x, y, z)];
+        if (currentBlock == null)
+        {
+            return false;
+        }
+
         var (offsetX, offsetY, offsetZ) = NeighborOffsets[side];
         var neighborX = x + offsetX;
         var neighborY = y + offsetY;
@@ -346,7 +353,7 @@ public sealed class ChunkComponent : IDisposable
 
         if (!IsWithinChunk(neighborX, neighborY, neighborZ))
         {
-            return ShouldRenderCrossChunkFace(x, y, z, side);
+            return ShouldRenderCrossChunkFace(x, y, z, side, currentBlock.BlockType);
         }
 
         var neighbor = _chunk!.Blocks[ChunkEntity.GetIndex(neighborX, neighborY, neighborZ)];
@@ -356,10 +363,19 @@ public sealed class ChunkComponent : IDisposable
             return true;
         }
 
+        if (currentBlock.BlockType == neighbor.BlockType)
+        {
+            var currentDef = _blockManagerService.GetBlockDefinition(currentBlock.BlockType);
+            if (currentDef != null && currentDef.IsLiquid)
+            {
+                return false;
+            }
+        }
+
         return _blockManagerService.IsTransparent(neighbor.BlockType);
     }
 
-    private bool ShouldRenderCrossChunkFace(int x, int y, int z, SideType side)
+    private bool ShouldRenderCrossChunkFace(int x, int y, int z, SideType side, BlockType currentBlockType)
     {
         if (GetNeighborChunk == null || _chunk == null)
         {
@@ -399,6 +415,15 @@ public sealed class ChunkComponent : IDisposable
             return true;
         }
 
+        if (currentBlockType == neighborBlock.BlockType)
+        {
+            var currentDef = _blockManagerService.GetBlockDefinition(currentBlockType);
+            if (currentDef != null && currentDef.IsLiquid)
+            {
+                return false;
+            }
+        }
+
         return _blockManagerService.IsTransparent(neighborBlock.BlockType);
     }
 
@@ -434,14 +459,14 @@ public sealed class ChunkComponent : IDisposable
         return new Color(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0f);
     }
 
-    private static VertexPositionColorTexture[] GetFaceVertices(SideType side, int blockX, int blockY, int blockZ, (Vector2 Min, Vector2 Max) uv, Color color)
+    private static VertexPositionColorTexture[] GetFaceVertices(SideType side, int blockX, int blockY, int blockZ, (Vector2 Min, Vector2 Max) uv, Color color, float height = 1.0f)
     {
         var (min, max) = uv;
         float x = blockX;
         float y = blockY;
         float z = blockZ;
         float x1 = blockX + 1f;
-        float y1 = blockY + 1f;
+        float y1 = blockY + height;
         float z1 = blockZ + 1f;
 
         return side switch
