@@ -79,19 +79,9 @@ public class TextComponent : BaseComponent
     }
 
     /// <summary>
-    /// Gets or sets the relative position of the text
-    /// </summary>
-    public new Vector2 Position { get; set; }
-
-    /// <summary>
     /// Gets or sets the color of the text
     /// </summary>
     public Color Color { get; set; }
-
-    /// <summary>
-    /// Gets the size of the text
-    /// </summary>
-    public new Vector2 Size => _font?.MeasureString(_text) ?? Vector2.Zero;
 
     /// <summary>
     /// Draws the text content

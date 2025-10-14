@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SquidCraft.Client.Collections;
 using SquidCraft.Client.Components.Interfaces;
+using SquidCraft.Client.Context;
 
 namespace SquidCraft.Client.Components.Base;
 
@@ -197,7 +198,19 @@ public abstract class BaseComponent : ISCDrawableComponent, IParentAwareComponen
     /// <summary>
     /// Gets the bounds rectangle of the component
     /// </summary>
-    public Rectangle Bounds => new((int)AbsolutePosition.X, (int)AbsolutePosition.Y, (int)Size.X, (int)Size.Y);
+    public Rectangle Bounds
+    {
+        get
+        {
+            var resolvedSize = ResolveSize();
+            return new Rectangle(
+                (int)AbsolutePosition.X,
+                (int)AbsolutePosition.Y,
+                (int)resolvedSize.X,
+                (int)resolvedSize.Y
+            );
+        }
+    }
 
     /// <summary>
     /// Initializes the component
@@ -291,12 +304,43 @@ public abstract class BaseComponent : ISCDrawableComponent, IParentAwareComponen
             return;
         }
 
-        DrawContent(spriteBatch, gameTime, parentPosition);
+        var graphicsDevice = spriteBatch.GraphicsDevice;
+        var previousScissor = graphicsDevice.ScissorRectangle;
+        var scissorApplied = false;
 
-        // Draw children
-        foreach (var child in _children)
+        var bounds = Bounds;
+        if (bounds.Width > 0 && bounds.Height > 0)
         {
-            child.Draw(gameTime, spriteBatch);
+            var intersectedScissor = Rectangle.Intersect(previousScissor, bounds);
+
+            if (intersectedScissor.Width <= 0 || intersectedScissor.Height <= 0)
+            {
+                return;
+            }
+
+            if (intersectedScissor != previousScissor)
+            {
+                graphicsDevice.ScissorRectangle = intersectedScissor;
+                scissorApplied = true;
+            }
+        }
+
+        try
+        {
+            DrawContent(spriteBatch, gameTime, parentPosition);
+
+            // Draw children
+            foreach (var child in _children)
+            {
+                child.Draw(gameTime, spriteBatch);
+            }
+        }
+        finally
+        {
+            if (scissorApplied)
+            {
+                graphicsDevice.ScissorRectangle = previousScissor;
+            }
         }
     }
 
@@ -478,5 +522,37 @@ public abstract class BaseComponent : ISCDrawableComponent, IParentAwareComponen
     void IParentAwareComponent.SetParent(ISCDrawableComponent? parent)
     {
         Parent = parent;
+    }
+
+    /// <summary>
+    /// Resolves the component size, expanding to viewport dimensions when a dimension is set to -1.
+    /// </summary>
+    /// <returns>Size adjusted for special values.</returns>
+    protected Vector2 ResolveSize()
+    {
+        var resolvedWidth = _size.X;
+        var resolvedHeight = _size.Y;
+
+        if (_size.X < 0 || _size.Y < 0)
+        {
+            var graphicsDevice = SquidCraftClientContext.GraphicsDevice;
+            if (graphicsDevice != null)
+            {
+                if (_size.X < 0)
+                {
+                    resolvedWidth = graphicsDevice.Viewport.Width;
+                }
+
+                if (_size.Y < 0)
+                {
+                    resolvedHeight = graphicsDevice.Viewport.Height;
+                }
+            }
+        }
+
+        resolvedWidth = Math.Max(0, resolvedWidth);
+        resolvedHeight = Math.Max(0, resolvedHeight);
+
+        return new Vector2(resolvedWidth, resolvedHeight);
     }
 }

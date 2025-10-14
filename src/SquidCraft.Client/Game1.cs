@@ -15,6 +15,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
     private ImGUIDebuggerService _imGUIDebuggerService;
+    private static readonly RasterizerState ScissorRasterizerState = new() { ScissorTestEnable = true };
 
     public Game1()
     {
@@ -32,8 +33,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
         SquidCraftClientContext.SceneManager = new SceneManager();
         SquidCraftClientContext.RootComponent.AddChild(SquidCraftClientContext.SceneManager);
 
-
-
         _imGUIDebuggerService = new ImGUIDebuggerService(this);
 
         base.Initialize();
@@ -50,6 +49,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
             GraphicsDevice
         );
         SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
+        var viewport = GraphicsDevice.Viewport;
+        SquidCraftClientContext.RootComponent.Size = new Vector2(viewport.Width, viewport.Height);
+        SquidCraftClientContext.SceneManager.Size = SquidCraftClientContext.RootComponent.Size;
 
         var textComponent = new TextComponent()
         {
@@ -77,7 +79,16 @@ public class Game1 : Microsoft.Xna.Framework.Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        _spriteBatch.Begin();
+        var viewportBounds = GraphicsDevice.Viewport.Bounds;
+        GraphicsDevice.ScissorRectangle = viewportBounds;
+        _spriteBatch.Begin(
+            SpriteSortMode.Immediate,
+            BlendState.AlphaBlend,
+            SamplerState.LinearClamp,
+            DepthStencilState.None,
+            ScissorRasterizerState
+        );
+        GraphicsDevice.ScissorRectangle = viewportBounds;
 
         SquidCraftClientContext.RootComponent.Draw(_spriteBatch, gameTime);
 

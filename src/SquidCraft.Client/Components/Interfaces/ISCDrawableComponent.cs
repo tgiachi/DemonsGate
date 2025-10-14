@@ -11,7 +11,7 @@ public interface ISCDrawableComponent : ISCUpdate, ISCDrawable, ISCInputReceiver
 
     Vector2 Position { get; set; }
 
-    Vector2 Size { get; }
+    Vector2 Size { get; set; }
 
     Vector2 Scale { get; set; }
 

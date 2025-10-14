@@ -44,7 +44,7 @@ public class SceneManager : ISceneManager, ISCDrawableComponent, IParentAwareCom
     /// <summary>
     /// Gets the size (not used for SceneManager)
     /// </summary>
-    public Vector2 Size => Vector2.Zero;
+    public Vector2 Size { get; set; } = Vector2.Zero;
 
     /// <summary>
     /// Gets or sets the scale (not used for SceneManager)
