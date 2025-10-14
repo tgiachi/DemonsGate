@@ -1,7 +1,10 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Serilog;
+using SquidCraft.Client.Components.Interfaces;
 using SquidCraft.Client.Interfaces;
+using SquidCraft.Client.Interfaces.Services;
 
 namespace SquidCraft.Client.Services;
 
@@ -9,16 +12,91 @@ namespace SquidCraft.Client.Services;
 /// Service for managing game scenes, including loading, switching, and lifecycle management.
 /// Supports scene transitions and maintains a collection of loaded scenes.
 /// </summary>
-public class SceneManager
+public class SceneManager : ISceneManager, ISCDrawableComponent, IParentAwareComponent
 {
     private readonly ILogger _logger = Log.ForContext<SceneManager>();
     private readonly Dictionary<string, IScene> _scenes = new();
     private ISceneTransition? _activeTransition;
+    private ISCDrawableComponent? _parent;
 
     public SceneManager()
     {
         _logger.Information("SceneManager created");
     }
+
+    #region ISCDrawableComponent Implementation
+
+    /// <summary>
+    /// Gets the unique identifier of the SceneManager
+    /// </summary>
+    public string Id { get; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets or sets the name of the SceneManager
+    /// </summary>
+    public string Name { get; set; } = nameof(SceneManager);
+
+    /// <summary>
+    /// Gets or sets the position (not used for SceneManager)
+    /// </summary>
+    public Vector2 Position { get; set; } = Vector2.Zero;
+
+    /// <summary>
+    /// Gets the size (not used for SceneManager)
+    /// </summary>
+    public Vector2 Size => Vector2.Zero;
+
+    /// <summary>
+    /// Gets or sets the scale (not used for SceneManager)
+    /// </summary>
+    public Vector2 Scale { get; set; } = Vector2.One;
+
+    /// <summary>
+    /// Gets the parent component (SceneManager has no parent)
+    /// </summary>
+    public ISCDrawableComponent? Parent => _parent;
+
+    /// <summary>
+    /// Gets the children components (scenes are not exposed as children)
+    /// </summary>
+    public IEnumerable<ISCDrawableComponent> Children => Enumerable.Empty<ISCDrawableComponent>();
+
+    /// <summary>
+    /// Gets or sets the Z-index (not used for SceneManager)
+    /// </summary>
+    public int ZIndex { get; set; } = 0;
+
+    /// <summary>
+    /// Gets or sets whether the SceneManager is visible
+    /// </summary>
+    public bool IsVisible { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether the SceneManager is enabled
+    /// </summary>
+    public bool IsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the opacity (not used for SceneManager)
+    /// </summary>
+    public float Opacity { get; set; } = 1.0f;
+
+    /// <summary>
+    /// Gets or sets the rotation (not used for SceneManager)
+    /// </summary>
+    public float Rotation { get; set; } = 0f;
+
+    /// <summary>
+    /// Gets or sets whether the SceneManager has focus
+    /// </summary>
+    public bool IsFocused { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets whether this SceneManager has input focus for keyboard and mouse events
+    /// </summary>
+    public bool HasFocus { get; set; } = true;
+
+    #endregion
 
     /// <summary>
     /// Gets the currently active scene
@@ -64,6 +142,21 @@ public class SceneManager
         RegisterScene(scene);
         scene.Load();
         _logger.Debug("Registered and loaded scene: {SceneName}", scene.Name);
+    }
+
+
+    public void LoadScene<TScene>() where TScene : IScene, new()
+    {
+        if (_scenes.TryGetValue(typeof(TScene).Name, out IScene scene))
+        {
+            LoadScene(scene.Name);
+
+            return;
+        }
+
+        var newScene = new TScene();
+        RegisterScene(newScene);
+        LoadScene(newScene);
     }
 
     /// <summary>
@@ -296,6 +389,11 @@ public class SceneManager
     /// <param name="gameTime">Game timing information</param>
     public void Update(GameTime gameTime)
     {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
         // Update active transition first
         if (_activeTransition != null)
         {
@@ -318,6 +416,11 @@ public class SceneManager
     /// <param name="spriteBatch">SpriteBatch for drawing</param>
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
+        if (!IsVisible)
+        {
+            return;
+        }
+
         if (_activeTransition != null)
         {
             // Let transition handle drawing during transition
@@ -328,6 +431,54 @@ public class SceneManager
             // Draw current scene if no transition is active
             CurrentScene?.Draw(gameTime, spriteBatch);
         }
+    }
+
+    /// <summary>
+    /// Handles keyboard input and propagates to current scene
+    /// </summary>
+    /// <param name="keyboardState">Current keyboard state</param>
+    /// <param name="gameTime">Game timing information</param>
+    public void HandleKeyboard(KeyboardState keyboardState, GameTime gameTime)
+    {
+        if (!IsEnabled || !HasFocus)
+        {
+            return;
+        }
+
+        // Propagate input to current scene if it has focus
+        if (CurrentScene != null && CurrentScene.HasFocus)
+        {
+            CurrentScene.HandleKeyboard(keyboardState, gameTime);
+        }
+    }
+
+    /// <summary>
+    /// Handles mouse input and propagates to current scene
+    /// </summary>
+    /// <param name="mouseState">Current mouse state</param>
+    /// <param name="gameTime">Game timing information</param>
+    public void HandleMouse(MouseState mouseState, GameTime gameTime)
+    {
+        if (!IsEnabled || !HasFocus)
+        {
+            return;
+        }
+
+        // Propagate input to current scene if it has focus
+        if (CurrentScene != null && CurrentScene.HasFocus)
+        {
+            CurrentScene.HandleMouse(mouseState, gameTime);
+        }
+    }
+
+    /// <summary>
+    /// Checks if a point is within the SceneManager bounds (always returns false as SceneManager doesn't have bounds)
+    /// </summary>
+    /// <param name="point">Point to check</param>
+    /// <returns>Always returns false</returns>
+    public bool Contains(Vector2 point)
+    {
+        return false;
     }
 
     /// <summary>
@@ -357,5 +508,10 @@ public class SceneManager
         _activeTransition = null;
 
         _logger.Debug("Transition cleanup completed");
+    }
+
+    void IParentAwareComponent.SetParent(ISCDrawableComponent? parent)
+    {
+        _parent = parent;
     }
 }

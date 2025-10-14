@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Serilog;
 using SquidCraft.Client.Interfaces;
 
@@ -27,6 +28,11 @@ public abstract class SceneBase : IScene
     /// Whether the scene is currently loaded
     /// </summary>
     public bool IsLoaded { get; private set; }
+
+    /// <summary>
+    /// Gets or sets whether this scene has input focus for keyboard and mouse events
+    /// </summary>
+    public bool HasFocus { get; set; } = true;
 
     /// <summary>
     /// Loads the scene and initializes its resources
@@ -92,6 +98,36 @@ public abstract class SceneBase : IScene
     }
 
     /// <summary>
+    /// Handles keyboard input when the scene has focus
+    /// </summary>
+    /// <param name="keyboardState">Current keyboard state</param>
+    /// <param name="gameTime">Game timing information</param>
+    public virtual void HandleKeyboard(KeyboardState keyboardState, GameTime gameTime)
+    {
+        if (!IsLoaded || !HasFocus)
+        {
+            return;
+        }
+
+        OnHandleKeyboard(keyboardState, gameTime);
+    }
+
+    /// <summary>
+    /// Handles mouse input when the scene has focus
+    /// </summary>
+    /// <param name="mouseState">Current mouse state</param>
+    /// <param name="gameTime">Game timing information</param>
+    public virtual void HandleMouse(MouseState mouseState, GameTime gameTime)
+    {
+        if (!IsLoaded || !HasFocus)
+        {
+            return;
+        }
+
+        OnHandleMouse(mouseState, gameTime);
+    }
+
+    /// <summary>
     /// Called when the scene is loaded. Override to implement scene-specific loading logic.
     /// </summary>
     protected abstract void OnLoad();
@@ -113,4 +149,22 @@ public abstract class SceneBase : IScene
     /// <param name="gameTime">Game timing information</param>
     /// <param name="spriteBatch">SpriteBatch for drawing</param>
     protected abstract void OnDraw(GameTime gameTime, SpriteBatch spriteBatch);
+
+    /// <summary>
+    /// Called when keyboard input is received. Override to implement scene-specific keyboard handling logic.
+    /// </summary>
+    /// <param name="keyboardState">Current keyboard state</param>
+    /// <param name="gameTime">Game timing information</param>
+    protected virtual void OnHandleKeyboard(KeyboardState keyboardState, GameTime gameTime)
+    {
+    }
+
+    /// <summary>
+    /// Called when mouse input is received. Override to implement scene-specific mouse handling logic.
+    /// </summary>
+    /// <param name="mouseState">Current mouse state</param>
+    /// <param name="gameTime">Game timing information</param>
+    protected virtual void OnHandleMouse(MouseState mouseState, GameTime gameTime)
+    {
+    }
 }

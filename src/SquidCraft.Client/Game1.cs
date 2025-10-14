@@ -1,7 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.IO;
+using System.Threading;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Serilog;
+using SquidCraft.Client.Components;
 using SquidCraft.Client.Context;
 using SquidCraft.Client.Services;
 
@@ -11,6 +14,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
 {
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
+    private ImGUIDebuggerService _imGUIDebuggerService;
 
     public Game1()
     {
@@ -21,29 +25,39 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-
-        SquidCraftClientContext.GraphicsDevice = GraphicsDevice;
-
-        SquidCraftClientContext.AssetManagerService = new AssetManagerService(
-            Directory.GetCurrentDirectory(),
-            GraphicsDevice
-        );
-
-        SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
     }
 
     protected override void Initialize()
     {
-        // TODO: Add your initialization logic here
+        SquidCraftClientContext.SceneManager = new SceneManager();
+        SquidCraftClientContext.RootComponent.AddChild(SquidCraftClientContext.SceneManager);
+
+
+
+        _imGUIDebuggerService = new ImGUIDebuggerService(this);
 
         base.Initialize();
     }
+
 
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // TODO: use this.Content to load your game content here
+        SquidCraftClientContext.GraphicsDevice = GraphicsDevice;
+        SquidCraftClientContext.AssetManagerService = new AssetManagerService(
+            Directory.GetCurrentDirectory(),
+            GraphicsDevice
+        );
+        SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
+
+        var textComponent = new TextComponent()
+        {
+            FontSize = 24
+        };
+        textComponent.Text = "SquidCraft";
+
+        SquidCraftClientContext.RootComponent.AddChild(textComponent);
     }
 
     protected override void Update(GameTime gameTime)
@@ -54,6 +68,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         // TODO: Add your update logic here
 
+        SquidCraftClientContext.RootComponent.Update(gameTime);
+
         base.Update(gameTime);
     }
 
@@ -61,7 +77,13 @@ public class Game1 : Microsoft.Xna.Framework.Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        // TODO: Add your drawing code here
+        _spriteBatch.Begin();
+
+        SquidCraftClientContext.RootComponent.Draw(_spriteBatch, gameTime);
+
+        _spriteBatch.End();
+
+        _imGUIDebuggerService.Draw(gameTime, _spriteBatch);
 
         base.Draw(gameTime);
     }

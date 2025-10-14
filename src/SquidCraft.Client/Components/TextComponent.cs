@@ -12,6 +12,8 @@ namespace SquidCraft.Client.Components;
 public class TextComponent : BaseComponent
 {
     private SpriteFontBase? _font;
+    private string _text;
+    private int _fontSize;
 
     /// <summary>
     /// Initializes a new instance of the TextComponent class
@@ -29,8 +31,8 @@ public class TextComponent : BaseComponent
         Color? color = null)
     {
         _text = text ?? string.Empty;
+        _fontSize = fontSize;
         FontName = fontName;
-        FontSize = fontSize;
         Position = position ?? Vector2.Zero;
         Color = color ?? Color.White;
 
@@ -60,14 +62,26 @@ public class TextComponent : BaseComponent
     public string FontName { get; }
 
     /// <summary>
-    /// Gets the font size
+    /// Gets or sets the font size
     /// </summary>
-    public int FontSize { get; }
+    public int FontSize
+    {
+        get => _fontSize;
+        set
+        {
+            if (_fontSize != value)
+            {
+                _fontSize = value;
+                LoadFont();
+                UpdateSize();
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets the relative position of the text
     /// </summary>
-    public Vector2 Position { get; set; }
+    public new Vector2 Position { get; set; }
 
     /// <summary>
     /// Gets or sets the color of the text
@@ -78,8 +92,6 @@ public class TextComponent : BaseComponent
     /// Gets the size of the text
     /// </summary>
     public new Vector2 Size => _font?.MeasureString(_text) ?? Vector2.Zero;
-
-    private string _text;
 
     /// <summary>
     /// Draws the text content

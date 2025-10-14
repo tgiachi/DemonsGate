@@ -6,7 +6,7 @@ namespace SquidCraft.Client.Interfaces;
 /// <summary>
 /// Interface for scene transitions that handle the visual transition between scenes
 /// </summary>
-public interface ISceneTransition : IDisposable
+public interface ISceneTransition : ISCUpdate, ISCDrawable, IDisposable
 {
     /// <summary>
     /// The scene being transitioned from
@@ -34,17 +34,4 @@ public interface ISceneTransition : IDisposable
     /// <param name="fromScene">The scene to transition from</param>
     /// <param name="toScene">The scene to transition to</param>
     void Start(IScene? fromScene, IScene toScene);
-
-    /// <summary>
-    /// Updates the transition
-    /// </summary>
-    /// <param name="gameTime">Game timing information</param>
-    void Update(GameTime gameTime);
-
-    /// <summary>
-    /// Draws the transition
-    /// </summary>
-    /// <param name="gameTime">Game timing information</param>
-    /// <param name="spriteBatch">SpriteBatch for drawing</param>
-    void Draw(GameTime gameTime, SpriteBatch spriteBatch);
 }

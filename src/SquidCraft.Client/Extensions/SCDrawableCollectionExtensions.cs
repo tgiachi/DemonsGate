@@ -229,6 +229,39 @@ public static class SCDrawableCollectionExtensions
     }
 
     /// <summary>
+    /// Gets components that are visible and enabled ordered by descending ZIndex.
+    /// Useful for hit-testing scenarios where top-most components should be evaluated first.
+    /// </summary>
+    /// <typeparam name="T">Type implementing ISCDrawableComponent</typeparam>
+    /// <param name="components">Enumerable of components to evaluate</param>
+    /// <returns>Enumerable of visible and enabled components ordered by ZIndex (highest first)</returns>
+    public static IEnumerable<T> GetVisibleEnabledDescendingByZIndex<T>(this IEnumerable<T> components)
+        where T : class, ISCDrawableComponent
+    {
+        var filtered = new List<T>();
+
+        foreach (var component in components)
+        {
+            if (component.IsVisible && component.IsEnabled)
+            {
+                filtered.Add(component);
+            }
+        }
+
+        if (filtered.Count == 0)
+        {
+            yield break;
+        }
+
+        filtered.Sort(static (left, right) => right.ZIndex.CompareTo(left.ZIndex));
+
+        for (var i = 0; i < filtered.Count; i++)
+        {
+            yield return filtered[i];
+        }
+    }
+
+    /// <summary>
     /// Gets all focused components from the collection
     /// </summary>
     /// <typeparam name="T">Type implementing ISCDrawableComponent</typeparam>

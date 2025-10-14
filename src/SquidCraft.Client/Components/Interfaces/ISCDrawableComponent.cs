@@ -1,15 +1,17 @@
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+using SquidCraft.Client.Interfaces;
 
 namespace SquidCraft.Client.Components.Interfaces;
 
-public interface ISCDrawableComponent
+public interface ISCDrawableComponent : ISCUpdate, ISCDrawable, ISCInputReceiver
 {
     string Id { get; }
 
     string Name { get; }
 
     Vector2 Position { get; set; }
+
+    Vector2 Size { get; }
 
     Vector2 Scale { get; set; }
 
@@ -27,9 +29,12 @@ public interface ISCDrawableComponent
 
     float Rotation { get; set; }
 
-    void Update(GameTime gameTime);
+    bool IsFocused { get; set; }
 
-    void Draw(GameTime gameTime, SpriteBatch spriteBatch);
-
-    bool IsFocused { get; }
+    /// <summary>
+    /// Checks if a point is within the component's bounds
+    /// </summary>
+    /// <param name="point">Point to check</param>
+    /// <returns>True if point is within bounds</returns>
+    bool Contains(Vector2 point);
 }
