@@ -59,7 +59,7 @@ public sealed class ChunkComponent : IDisposable
         {
             TextureEnabled = true,
             LightingEnabled = false,
-            VertexColorEnabled = false
+            VertexColorEnabled = true
         };
     }
 
@@ -249,7 +249,7 @@ public sealed class ChunkComponent : IDisposable
             return;
         }
 
-        var vertices = new List<VertexPositionTexture>();
+        var vertices = new List<VertexPositionColorTexture>();
         var indices = new List<int>();
         Texture2D? atlasTexture = null;
 
@@ -295,7 +295,8 @@ public sealed class ChunkComponent : IDisposable
                         atlasTexture ??= region.Texture;
 
                         var uv = ExtractUv(region);
-                        var faceVertices = GetFaceVertices(side, x, y, z, uv);
+                        var faceColor = CalculateFaceColor(x, y, z, side);
+                        var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor);
 
                         var baseIndex = vertices.Count;
                         vertices.AddRange(faceVertices);
@@ -323,7 +324,7 @@ public sealed class ChunkComponent : IDisposable
         _vertexBuffer?.Dispose();
         _indexBuffer?.Dispose();
 
-        _vertexBuffer = new VertexBuffer(_graphicsDevice, typeof(VertexPositionTexture), vertices.Count, BufferUsage.WriteOnly);
+        _vertexBuffer = new VertexBuffer(_graphicsDevice, typeof(VertexPositionColorTexture), vertices.Count, BufferUsage.WriteOnly);
         _vertexBuffer.SetData(vertices.ToArray());
 
         _indexBuffer = new IndexBuffer(_graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
@@ -408,7 +409,32 @@ public sealed class ChunkComponent : IDisposable
                z >= 0 && z < ChunkEntity.Size;
     }
 
-    private static VertexPositionTexture[] GetFaceVertices(SideType side, int blockX, int blockY, int blockZ, (Vector2 Min, Vector2 Max) uv)
+    private static Color CalculateFaceColor(int x, int y, int z, SideType side)
+    {
+        var ambientOcclusion = 1.0f;
+
+        switch (side)
+        {
+            case SideType.Top:
+                ambientOcclusion = 1.0f;
+                break;
+            case SideType.Bottom:
+                ambientOcclusion = 0.5f;
+                break;
+            case SideType.North:
+            case SideType.South:
+                ambientOcclusion = 0.8f;
+                break;
+            case SideType.East:
+            case SideType.West:
+                ambientOcclusion = 0.75f;
+                break;
+        }
+
+        return new Color(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0f);
+    }
+
+    private static VertexPositionColorTexture[] GetFaceVertices(SideType side, int blockX, int blockY, int blockZ, (Vector2 Min, Vector2 Max) uv, Color color)
     {
         var (min, max) = uv;
         float x = blockX;
@@ -422,45 +448,45 @@ public sealed class ChunkComponent : IDisposable
         {
             SideType.Top => new[]
             {
-                new VertexPositionTexture(new Vector3(x, y1, z), new Vector2(min.X, min.Y)),
-                new VertexPositionTexture(new Vector3(x, y1, z1), new Vector2(min.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y1, z1), new Vector2(max.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y1, z), new Vector2(max.X, min.Y))
+                new VertexPositionColorTexture(new Vector3(x, y1, z), color, new Vector2(min.X, min.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y1, z1), color, new Vector2(min.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y1, z1), color, new Vector2(max.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y1, z), color, new Vector2(max.X, min.Y))
             },
             SideType.Bottom => new[]
             {
-                new VertexPositionTexture(new Vector3(x, y, z1), new Vector2(min.X, min.Y)),
-                new VertexPositionTexture(new Vector3(x, y, z), new Vector2(min.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y, z), new Vector2(max.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y, z1), new Vector2(max.X, min.Y))
+                new VertexPositionColorTexture(new Vector3(x, y, z1), color, new Vector2(min.X, min.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y, z), color, new Vector2(min.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y, z), color, new Vector2(max.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y, z1), color, new Vector2(max.X, min.Y))
             },
             SideType.North => new[]
             {
-                new VertexPositionTexture(new Vector3(x, y1, z), new Vector2(min.X, min.Y)),
-                new VertexPositionTexture(new Vector3(x, y, z), new Vector2(min.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y, z), new Vector2(max.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y1, z), new Vector2(max.X, min.Y))
+                new VertexPositionColorTexture(new Vector3(x, y1, z), color, new Vector2(min.X, min.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y, z), color, new Vector2(min.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y, z), color, new Vector2(max.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y1, z), color, new Vector2(max.X, min.Y))
             },
             SideType.South => new[]
             {
-                new VertexPositionTexture(new Vector3(x1, y1, z1), new Vector2(min.X, min.Y)),
-                new VertexPositionTexture(new Vector3(x1, y, z1), new Vector2(min.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x, y, z1), new Vector2(max.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x, y1, z1), new Vector2(max.X, min.Y))
+                new VertexPositionColorTexture(new Vector3(x1, y1, z1), color, new Vector2(min.X, min.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y, z1), color, new Vector2(min.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y, z1), color, new Vector2(max.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y1, z1), color, new Vector2(max.X, min.Y))
             },
             SideType.East => new[]
             {
-                new VertexPositionTexture(new Vector3(x1, y1, z), new Vector2(min.X, min.Y)),
-                new VertexPositionTexture(new Vector3(x1, y, z), new Vector2(min.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y, z1), new Vector2(max.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x1, y1, z1), new Vector2(max.X, min.Y))
+                new VertexPositionColorTexture(new Vector3(x1, y1, z), color, new Vector2(min.X, min.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y, z), color, new Vector2(min.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y, z1), color, new Vector2(max.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x1, y1, z1), color, new Vector2(max.X, min.Y))
             },
             SideType.West => new[]
             {
-                new VertexPositionTexture(new Vector3(x, y1, z1), new Vector2(min.X, min.Y)),
-                new VertexPositionTexture(new Vector3(x, y, z1), new Vector2(min.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x, y, z), new Vector2(max.X, max.Y)),
-                new VertexPositionTexture(new Vector3(x, y1, z), new Vector2(max.X, min.Y))
+                new VertexPositionColorTexture(new Vector3(x, y1, z1), color, new Vector2(min.X, min.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y, z1), color, new Vector2(min.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y, z), color, new Vector2(max.X, max.Y)),
+                new VertexPositionColorTexture(new Vector3(x, y1, z), color, new Vector2(max.X, min.Y))
             },
             _ => throw new ArgumentOutOfRangeException(nameof(side), side, "Unsupported side type")
         };
