@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using SquidCraft.Client.Components.Base;
 using SquidCraft.Client.Components.Interfaces;
 using SquidCraft.Client.Types.Layout;
@@ -12,6 +16,8 @@ public class StackPanelComponent : BaseComponent
 {
     private bool _layoutInvalidated = true;
     private int _lastLayoutSignature;
+    private bool _mousePressed;
+    private ISCDrawableComponent? _focusedChild;
     private StackOrientation _orientation = StackOrientation.Vertical;
     private float _spacing = 4f;
     private Vector2 _padding = Vector2.Zero;
@@ -103,6 +109,38 @@ public class StackPanelComponent : BaseComponent
     /// </summary>
     public void RequestLayout() => _layoutInvalidated = true;
 
+    /// <summary>
+    /// Adds a child component and schedules layout.
+    /// </summary>
+    public new void AddChild(ISCDrawableComponent child)
+    {
+        base.AddChild(child);
+        RequestLayout();
+    }
+
+    /// <summary>
+    /// Removes a child component and schedules layout.
+    /// </summary>
+    public new void RemoveChild(ISCDrawableComponent child)
+    {
+        base.RemoveChild(child);
+        if (ReferenceEquals(_focusedChild, child))
+        {
+            ClearFocusedChild();
+        }
+        RequestLayout();
+    }
+
+    /// <summary>
+    /// Clears all children and schedules layout.
+    /// </summary>
+    public new void ClearChildren()
+    {
+        base.ClearChildren();
+        ClearFocusedChild();
+        RequestLayout();
+    }
+
     protected override void OnSizeChanged()
     {
         base.OnSizeChanged();
@@ -122,6 +160,49 @@ public class StackPanelComponent : BaseComponent
         }
 
         base.Update(gameTime);
+    }
+
+    public override void HandleMouse(MouseState mouseState, GameTime gameTime)
+    {
+        if (IsEnabled && HasFocus)
+        {
+            var mousePosition = new Vector2(mouseState.X, mouseState.Y);
+            var hovered = GetHitChild(mousePosition);
+
+            if (mouseState.LeftButton == ButtonState.Pressed)
+            {
+                if (!_mousePressed)
+                {
+                    _mousePressed = true;
+
+                    if (hovered != null)
+                    {
+                        FocusChild(hovered);
+                    }
+                    else
+                    {
+                        ClearFocusedChild();
+                    }
+                }
+            }
+            else
+            {
+                _mousePressed = false;
+            }
+        }
+
+        base.HandleMouse(mouseState, gameTime);
+    }
+
+    public override void HandleKeyboard(KeyboardState keyboardState, GameTime gameTime)
+    {
+        if (IsEnabled && HasFocus && _focusedChild != null && _focusedChild.HasFocus)
+        {
+            _focusedChild.HandleKeyboard(keyboardState, gameTime);
+            return;
+        }
+
+        base.HandleKeyboard(keyboardState, gameTime);
     }
 
     private void PerformLayout(IReadOnlyList<ISCDrawableComponent> visibleChildren)
@@ -233,6 +314,40 @@ public class StackPanelComponent : BaseComponent
         }
 
         return hash.ToHashCode();
+    }
+
+    private ISCDrawableComponent? GetHitChild(Vector2 point)
+    {
+        return Children
+            .Where(c => c.IsVisible)
+            .OrderByDescending(c => c.ZIndex)
+            .FirstOrDefault(c => c.Contains(point));
+    }
+
+    private void FocusChild(ISCDrawableComponent child)
+    {
+        if (ReferenceEquals(_focusedChild, child))
+        {
+            return;
+        }
+
+        ClearFocusedChild();
+
+        _focusedChild = child;
+        _focusedChild.HasFocus = true;
+        _focusedChild.IsFocused = true;
+    }
+
+    private void ClearFocusedChild()
+    {
+        if (_focusedChild == null)
+        {
+            return;
+        }
+
+        _focusedChild.HasFocus = false;
+        _focusedChild.IsFocused = false;
+        _focusedChild = null;
     }
 
     private enum Axis

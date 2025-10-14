@@ -267,13 +267,21 @@ public class TextBoxComponent : BaseComponent
         var mousePosition = new Vector2(mouseState.X, mouseState.Y);
         var isInside = Contains(mousePosition);
 
-        if (mouseState.LeftButton == ButtonState.Pressed && isInside)
+        if (mouseState.LeftButton == ButtonState.Pressed)
         {
-            if (!_isMouseDownInside)
+            if (isInside)
             {
-                _isMouseDownInside = true;
-                HasFocus = true;
-                SetCaretFromMouse(mousePosition);
+                if (!_isMouseDownInside)
+                {
+                    _isMouseDownInside = true;
+                    HasFocus = true;
+                    IsFocused = true;
+                    SetCaretFromMouse(mousePosition);
+                }
+            }
+            else
+            {
+                IsFocused = false;
             }
         }
         else if (mouseState.LeftButton == ButtonState.Released)
