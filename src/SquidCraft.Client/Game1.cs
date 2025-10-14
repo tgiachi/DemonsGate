@@ -8,11 +8,15 @@ using SquidCraft.Client.Components;
 using SquidCraft.Client.Context;
 using SquidCraft.Client.Data;
 using SquidCraft.Client.Services;
+using SquidCraft.Core.Json;
+using SquidCraft.Game.Data.Assets;
+using SquidCraft.Game.Data.Context;
 
 namespace SquidCraft.Client;
 
 public class Game1 : Microsoft.Xna.Framework.Game
 {
+    private readonly ILogger _logger;
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
     private ImGUIDebuggerService _imGUIDebuggerService;
@@ -20,9 +24,15 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
     public Game1()
     {
+        JsonUtils.RegisterJsonContext(SquidCraftClientJsonContext.Default);
+        JsonUtils.RegisterJsonContext(SquidCraftGameJsonContext.Default);
+        JsonUtils.RegisterJsonContext(SquidCraftClientJsonContext.Default);
+
         Log.Logger = new LoggerConfiguration().MinimumLevel.Debug()
             .WriteTo.Console(formatProvider: Thread.CurrentThread.CurrentCulture)
             .CreateLogger();
+
+        _logger = Log.ForContext<Game1>();
 
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
@@ -49,8 +59,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
             Directory.GetCurrentDirectory(),
             GraphicsDevice
         );
-        SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
 
+        SquidCraftClientContext.BlockManagerService = new BlockManagerService();
+        SquidCraftClientContext.AssetManagerService.LoadFontTtf("Fonts/DefaultFont.ttf", "DefaultFont");
         SquidCraftClientContext.AssetManagerService.LoadTexture("Textures/default_blocks.png", "DefaultBlocks");
 
 
@@ -63,6 +74,16 @@ public class Game1 : Microsoft.Xna.Framework.Game
             },
             "DefaultBlocksAtlas"
         );
+
+        var blocks = JsonUtils.DeserializeFromFile<BlockDefinitionData[]>(
+            Path.Combine(Directory.GetCurrentDirectory(), "Assets", "Blocks", "blocks.json")
+        );
+
+        foreach (var block in blocks)
+        {
+            SquidCraftClientContext.BlockManagerService.AddBlockDefinition("DefaultBlocksAtlas", block);
+        }
+
 
         var viewport = GraphicsDevice.Viewport;
         SquidCraftClientContext.RootComponent.Size = new Vector2(viewport.Width, viewport.Height);

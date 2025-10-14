@@ -12,5 +12,7 @@ public static class SquidCraftClientContext
     public static ISceneManager SceneManager { get; set; }
     public static GraphicsDevice GraphicsDevice { get; set; }
 
+    public static BlockManagerService BlockManagerService { get; set; }
+
     public static RootComponent RootComponent { get; set; } =  new();
 }

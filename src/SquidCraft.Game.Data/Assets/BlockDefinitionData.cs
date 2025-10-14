@@ -7,8 +7,19 @@ public class BlockDefinitionData
     public BlockType BlockType { get; set; }
     public Dictionary<SideType, string> Sides { get; set; } = new();
 
+    public bool IsTransparent { get; set; }
+
+    public bool IsLiquid { get; set; }
+
+    public bool IsSolid { get; set; }
+
     public void AddSide(SideType type, string side)
     {
         Sides.Add(type, side);
+    }
+
+    public override string ToString()
+    {
+        return "BlockDefinitionData { BlockType: " + BlockType + ", Sides: " + Sides.Count + " }";
     }
 }
