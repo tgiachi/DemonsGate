@@ -80,6 +80,11 @@ public class ScrollingTextBoxComponent : BaseComponent
     public IReadOnlyList<string> Lines => _lines;
 
     /// <summary>
+    /// Gets the underlying font used for rendering.
+    /// </summary>
+    public SpriteFontBase? Font => _font;
+
+    /// <summary>
     /// Gets or sets whether the view auto-scrolls when new lines are appended.
     /// </summary>
     public bool AutoScroll

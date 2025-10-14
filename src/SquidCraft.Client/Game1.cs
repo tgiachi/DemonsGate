@@ -28,6 +28,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private ImGUIDebuggerService _imGUIDebuggerService;
     private Block3DComponent? _blockPreviewComponent;
     private ChunkComponent? _chunkComponent;
+    private WorldComponent? _worldComponent;
+    private CameraComponent? _cameraComponent;
     private ProgressBarComponent? _progressBarComponent;
     private float _progressTimer;
     private ScrollingTextBoxComponent? _logTextBox;
@@ -104,15 +106,29 @@ public class Game1 : Microsoft.Xna.Framework.Game
         //     AutoRotate = true
         // };
 
+        _cameraComponent = new CameraComponent(GraphicsDevice)
+        {
+            Position = new Vector3(55f, 65f, 55f),
+            Target = new Vector3(8f, 18f, 8f),
+            MoveSpeed = 25f,
+            MouseSensitivity = 0.003f,
+            EnableInput = true
+        };
+
+        _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent);
+
         _chunkComponent = new ChunkComponent()
         {
-            AutoRotate = true,
+            AutoRotate = false,
             BlockScale = 1f,
             CameraPosition = new Vector3(55f, 65f, 55f),
             RenderTransparentBlocks = false
         };
 
         _chunkComponent.SetChunk(CreateDemoChunk());
+
+        _ = _worldComponent.AddChunkAsync(CreateDemoChunk());
+        _ = _worldComponent.AddChunkAsync(CreateDemoChunk(new System.Numerics.Vector3(16f, -20f, -8f)));
 
 
         var viewport = GraphicsDevice.Viewport;
@@ -131,26 +147,27 @@ public class Game1 : Microsoft.Xna.Framework.Game
         fpsComponent.ZIndex = 100;
         SquidCraftClientContext.RootComponent.AddChild(fpsComponent);
 
-        var detailsPanel = new StackPanelComponent
+        var inspectorWindow = new WindowComponent("Inspector")
         {
-            Orientation = StackOrientation.Vertical,
-            Alignment = Alignment.Start,
-            Position = new Vector2(32, 80),
-            Spacing = 10f,
-            Padding = Vector2.Zero,
-            AutoSize = true
+            Position = new Vector2(32, 72),
+            Size = new Vector2(320, 280)
         };
-        SquidCraftClientContext.RootComponent.AddChild(detailsPanel);
+        inspectorWindow.ContentPanel.Spacing = 10f;
+        inspectorWindow.ContentPanel.Padding = Vector2.Zero;
+        inspectorWindow.ContentPanel.AutoSize = false;
+        inspectorWindow.ContentPanel.HasFocus = true;
+
+        SquidCraftClientContext.RootComponent.AddChild(inspectorWindow);
 
         var labelComponent = new LabelComponent("Enter block label:", fontSize: 16);
-        detailsPanel.AddChild(labelComponent);
+        inspectorWindow.AddContent(labelComponent);
 
         var textBoxComponent = new TextBoxComponent()
         {
             PreferredWidth = 260f,
             PlaceholderText = "Type here..."
         };
-        detailsPanel.AddChild(textBoxComponent);
+        inspectorWindow.AddContent(textBoxComponent);
 
         var buttonComponent = new ButtonComponent("Apply Label");
         buttonComponent.Clicked += (_, _) =>
@@ -158,7 +175,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             _logger.Information("Apply button clicked with input: {Input}", textBoxComponent.Text);
             _logTextBox?.AppendLine($"[{DateTime.Now:HH:mm:ss}] Apply clicked with '{textBoxComponent.Text}'");
         };
-        detailsPanel.AddChild(buttonComponent);
+        inspectorWindow.AddContent(buttonComponent);
 
         var comboBoxComponent = new ComboBoxComponent(
             new[] { "Grass", "Dirt", "Stone", "Snow", "Water" });
@@ -169,7 +186,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             _logger.Information("ComboBox selection changed to {Index}:{Value}", index, item);
             _logTextBox?.AppendLine($"[{DateTime.Now:HH:mm:ss}] ComboBox -> {item}");
         };
-        detailsPanel.AddChild(comboBoxComponent);
+        inspectorWindow.AddContent(comboBoxComponent);
 
         _progressBarComponent = new ProgressBarComponent(size: new Vector2(260, 24))
         {
@@ -178,9 +195,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             ShowLabel = true,
             LabelFormat = "{0:P0}"
         };
-        detailsPanel.AddChild(_progressBarComponent);
-
-        detailsPanel.RequestLayout();
+        inspectorWindow.AddContent(_progressBarComponent);
 
         _logTextBox = new ScrollingTextBoxComponent(position: new Vector2(340, 80), size: new Vector2(320, 220))
         {
@@ -189,6 +204,10 @@ public class Game1 : Microsoft.Xna.Framework.Game
         };
         _logTextBox.AppendLine("[Log] UI initialized.");
         SquidCraftClientContext.RootComponent.AddChild(_logTextBox);
+
+        var toolTip = new ToolTipComponent();
+        toolTip.Show(new Vector2(340, 320), "WASD: move | Space/Shift: up/down | Mouse: look");
+        SquidCraftClientContext.RootComponent.AddChild(toolTip);
     }
 
     protected override void Update(GameTime gameTime)
@@ -213,6 +232,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         }
 
         _chunkComponent?.Update(gameTime);
+        _worldComponent?.Update(gameTime);
         //_blockPreviewComponent?.Update(gameTime);
         SquidCraftClientContext.RootComponent.Update(gameTime);
 
@@ -226,6 +246,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         var viewportBounds = GraphicsDevice.Viewport.Bounds;
         GraphicsDevice.ScissorRectangle = viewportBounds;
 
+        _worldComponent?.Draw(gameTime);
         _chunkComponent?.Draw(gameTime);
         //_blockPreviewComponent?.Draw3D(gameTime);
 
@@ -250,14 +271,15 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
     protected override void UnloadContent()
     {
+        _worldComponent?.Dispose();
         _chunkComponent?.Dispose();
         _blockPreviewComponent?.Dispose();
         base.UnloadContent();
     }
 
-    private static ChunkEntity CreateDemoChunk()
+    private static ChunkEntity CreateDemoChunk(System.Numerics.Vector3? position = null)
     {
-        var chunkOrigin = new System.Numerics.Vector3(-ChunkEntity.Size / 2f, -20f, -ChunkEntity.Size / 2f);
+        var chunkOrigin = position ?? new System.Numerics.Vector3(-ChunkEntity.Size / 2f, -20f, -ChunkEntity.Size / 2f);
         var chunk = new ChunkEntity(chunkOrigin);
         long id = 1;
 

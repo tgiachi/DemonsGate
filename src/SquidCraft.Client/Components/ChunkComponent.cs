@@ -151,6 +151,24 @@ public sealed class ChunkComponent : IDisposable
     /// <param name="gameTime">Elapsed time information.</param>
     public void Draw(GameTime gameTime)
     {
+        var viewport = _graphicsDevice.Viewport;
+        var aspectRatio = viewport.AspectRatio <= 0 ? 1f : viewport.AspectRatio;
+
+        var lookTarget = _customCameraTarget ?? DefaultCameraTarget;
+        var view = Matrix.CreateLookAt(CameraPosition, lookTarget, Vector3.Up);
+        var projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspectRatio, 0.1f, 500f);
+
+        DrawWithCamera(gameTime, view, projection);
+    }
+
+    /// <summary>
+    /// Draws the chunk mesh using external view and projection matrices.
+    /// </summary>
+    /// <param name="gameTime">Elapsed time information.</param>
+    /// <param name="view">View matrix from camera.</param>
+    /// <param name="projection">Projection matrix from camera.</param>
+    public void DrawWithCamera(GameTime gameTime, Matrix view, Matrix projection)
+    {
         EnsureGeometry();
 
         if (_vertexBuffer == null || _indexBuffer == null || _texture == null || _primitiveCount == 0)
@@ -158,20 +176,12 @@ public sealed class ChunkComponent : IDisposable
             return;
         }
 
-        var viewport = _graphicsDevice.Viewport;
-        var aspectRatio = viewport.AspectRatio <= 0 ? 1f : viewport.AspectRatio;
-
         var rotation = Matrix.CreateFromYawPitchRoll(_rotationY + ManualRotation.Y, ManualRotation.X, ManualRotation.Z);
         var world =
             Matrix.CreateTranslation(-_chunkCenter) *
             Matrix.CreateScale(BlockScale) *
             rotation *
             Matrix.CreateTranslation(_chunkCenter + Position);
-
-        var lookTarget = _customCameraTarget ?? DefaultCameraTarget;
-
-        var view = Matrix.CreateLookAt(CameraPosition, lookTarget, Vector3.Up);
-        var projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspectRatio, 0.1f, 500f);
 
         _effect.World = world;
         _effect.View = view;
