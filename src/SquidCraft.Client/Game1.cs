@@ -10,6 +10,8 @@ using SquidCraft.Client.Context;
 using SquidCraft.Client.Data;
 using SquidCraft.Client.Services;
 using SquidCraft.Client.Components.UI.Controls;
+using SquidCraft.Client.Components.UI.Layout;
+using SquidCraft.Client.Types.Layout;
 using SquidCraft.Core.Json;
 using SquidCraft.Game.Data.Types;
 using SquidCraft.Game.Data.Primitives;
@@ -26,6 +28,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private ImGUIDebuggerService _imGUIDebuggerService;
     private Block3DComponent? _blockPreviewComponent;
     private ChunkComponent? _chunkComponent;
+    private ProgressBarComponent? _progressBarComponent;
+    private float _progressTimer;
+    private ScrollingTextBoxComponent? _logTextBox;
     private static readonly RasterizerState ScissorRasterizerState = new() { ScissorTestEnable = true };
 
     public Game1()
@@ -126,33 +131,64 @@ public class Game1 : Microsoft.Xna.Framework.Game
         fpsComponent.ZIndex = 100;
         SquidCraftClientContext.RootComponent.AddChild(fpsComponent);
 
-        var labelComponent = new LabelComponent("Enter block label:", fontSize: 16, position: new Vector2(32, 80));
+        var detailsPanel = new StackPanelComponent
+        {
+            Orientation = StackOrientation.Vertical,
+            Alignment = Alignment.Start,
+            Position = new Vector2(32, 80),
+            Spacing = 10f,
+            Padding = Vector2.Zero,
+            AutoSize = true
+        };
+        SquidCraftClientContext.RootComponent.AddChild(detailsPanel);
 
-        SquidCraftClientContext.RootComponent.AddChild(labelComponent);
+        var labelComponent = new LabelComponent("Enter block label:", fontSize: 16);
+        detailsPanel.AddChild(labelComponent);
 
-        var textBoxComponent = new TextBoxComponent(position: new Vector2(32, 108))
+        var textBoxComponent = new TextBoxComponent()
         {
             PreferredWidth = 260f,
             PlaceholderText = "Type here..."
         };
-        SquidCraftClientContext.RootComponent.AddChild(textBoxComponent);
+        detailsPanel.AddChild(textBoxComponent);
 
-        var buttonComponent = new ButtonComponent("Apply Label", position: new Vector2(32, 148));
+        var buttonComponent = new ButtonComponent("Apply Label");
         buttonComponent.Clicked += (_, _) =>
         {
             _logger.Information("Apply button clicked with input: {Input}", textBoxComponent.Text);
+            _logTextBox?.AppendLine($"[{DateTime.Now:HH:mm:ss}] Apply clicked with '{textBoxComponent.Text}'");
         };
-        SquidCraftClientContext.RootComponent.AddChild(buttonComponent);
+        detailsPanel.AddChild(buttonComponent);
 
         var comboBoxComponent = new ComboBoxComponent(
-            new[] { "Grass", "Dirt", "Stone", "Snow", "Water" },
-            position: new Vector2(32, 188));
+            new[] { "Grass", "Dirt", "Stone", "Snow", "Water" });
+        comboBoxComponent.Width = 260f;
         comboBoxComponent.SelectedIndexChanged += (_, index) =>
         {
             var item = comboBoxComponent.SelectedItem ?? "<none>";
             _logger.Information("ComboBox selection changed to {Index}:{Value}", index, item);
+            _logTextBox?.AppendLine($"[{DateTime.Now:HH:mm:ss}] ComboBox -> {item}");
         };
-        SquidCraftClientContext.RootComponent.AddChild(comboBoxComponent);
+        detailsPanel.AddChild(comboBoxComponent);
+
+        _progressBarComponent = new ProgressBarComponent(size: new Vector2(260, 24))
+        {
+            Minimum = 0f,
+            Maximum = 1f,
+            ShowLabel = true,
+            LabelFormat = "{0:P0}"
+        };
+        detailsPanel.AddChild(_progressBarComponent);
+
+        detailsPanel.RequestLayout();
+
+        _logTextBox = new ScrollingTextBoxComponent(position: new Vector2(340, 80), size: new Vector2(320, 220))
+        {
+            AutoScroll = true,
+            MaxLines = 200
+        };
+        _logTextBox.AppendLine("[Log] UI initialized.");
+        SquidCraftClientContext.RootComponent.AddChild(_logTextBox);
     }
 
     protected override void Update(GameTime gameTime)
@@ -161,7 +197,20 @@ public class Game1 : Microsoft.Xna.Framework.Game
             Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        // TODO: Add your update logic here
+        _progressTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+        if (_progressBarComponent != null)
+        {
+            var progress = (MathF.Sin(_progressTimer) + 1f) * 0.5f;
+            _progressBarComponent.Value = progress;
+            if (_logTextBox != null)
+            {
+                var logLine = $"[{gameTime.TotalGameTime:c}] Progress: {progress:P0}";
+                if ((int)(_progressTimer * 2f) % 20 == 0)
+                {
+                    _logTextBox.AppendLine(logLine);
+                }
+            }
+        }
 
         _chunkComponent?.Update(gameTime);
         //_blockPreviewComponent?.Update(gameTime);
