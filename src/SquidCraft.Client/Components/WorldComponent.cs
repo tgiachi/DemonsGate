@@ -105,6 +105,11 @@ public sealed class WorldComponent : IDisposable
 
     public bool IsBlockSolid(XnaVector3 worldPosition)
     {
+        return IsBlockSolidForCollision(worldPosition, false);
+    }
+
+    public bool IsBlockSolidForCollision(XnaVector3 worldPosition, bool includeWater = false)
+    {
         var blockX = (int)MathF.Floor(worldPosition.X);
         var blockY = (int)MathF.Floor(worldPosition.Y);
         var blockZ = (int)MathF.Floor(worldPosition.Z);
@@ -129,7 +134,18 @@ public sealed class WorldComponent : IDisposable
         }
 
         var block = chunkEntity.GetBlock(localX, localY, localZ);
-        return block != null && block.BlockType != Game.Data.Types.BlockType.Air;
+        if (block == null || block.BlockType == Game.Data.Types.BlockType.Air)
+        {
+            return false;
+        }
+
+        // L'acqua non è solida per le collisioni (puoi camminarci attraverso)
+        if (!includeWater && block.BlockType == Game.Data.Types.BlockType.Water)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public void ClearChunks()

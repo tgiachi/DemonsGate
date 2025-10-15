@@ -29,7 +29,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private float _progressTimer;
     private ScrollingTextBoxComponent? _logTextBox;
     private static readonly RasterizerState ScissorRasterizerState = new() { ScissorTestEnable = true };
-    private Scenes.UITestScene? _uiTestScene;
+    private UITestScene? _uiTestScene;
     private bool _isUITestMode;
 
     public Game1()

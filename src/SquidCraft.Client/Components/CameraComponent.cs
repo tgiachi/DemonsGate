@@ -257,6 +257,10 @@ public sealed class CameraComponent
     public bool IsOnGround => _isOnGround;
 
     public Func<Vector3, Vector3, bool>? CheckCollision { get; set; }
+    
+    public bool EnableCollisionDebug { get; set; } = false;
+    
+    public Vector3 Velocity => _velocity;
 
     public void Update(GameTime gameTime)
     {
@@ -291,41 +295,152 @@ public sealed class CameraComponent
 
     private Vector3 ResolveCollisions(Vector3 newPosition)
     {
+        var oldPosition = _position;
         var halfSize = BoundingBoxSize * 0.5f;
         
         _isOnGround = false;
 
-        var resolved = newPosition;
+        // Risolvi collisioni per ogni asse separatamente per evitare che si blocchino a vicenda
+        var resolved = oldPosition;
 
-        if (_velocity.Y <= 0)
+        // 1. Risolvi movimento X (est/ovest)
+        if (Math.Abs(newPosition.X - oldPosition.X) > 0.001f)
         {
-            var feetY = newPosition.Y - BoundingBoxSize.Y * 0.5f;
-            var blockY = (int)MathF.Floor(feetY);
-
-            var minX = newPosition.X - halfSize.X;
-            var maxX = newPosition.X + halfSize.X;
-            var minZ = newPosition.Z - halfSize.Z;
-            var maxZ = newPosition.Z + halfSize.Z;
-
-            for (float x = minX; x <= maxX; x += 0.3f)
+            var testX = new Vector3(newPosition.X, oldPosition.Y, oldPosition.Z);
+            var isColliding = IsPositionColliding(testX, halfSize);
+            
+            // Debug solo per X-axis quando c'è movimento significativo
+            if (Math.Abs(newPosition.X - oldPosition.X) > 0.1f)
             {
-                for (float z = minZ; z <= maxZ; z += 0.3f)
+                Console.WriteLine($"[X-AXIS] Moving from {oldPosition.X:F2} to {newPosition.X:F2}, collision={isColliding}");
+            }
+            
+            if (!isColliding)
+            {
+                resolved.X = newPosition.X;
+            }
+            else
+            {
+                Console.WriteLine($"[X-AXIS BLOCKED] Wall hit! Stopped at X={resolved.X:F2}");
+            }
+        }
+
+        // 2. Risolvi movimento Z (nord/sud)
+        if (Math.Abs(newPosition.Z - oldPosition.Z) > 0.001f)
+        {
+            var testZ = new Vector3(resolved.X, oldPosition.Y, newPosition.Z);
+            if (!IsPositionColliding(testZ, halfSize))
+            {
+                resolved.Z = newPosition.Z;
+            }
+        }
+
+        // 3. Risolvi movimento Y (su/giù) - più complesso per gestire gravità e salti
+        if (Math.Abs(newPosition.Y - oldPosition.Y) > 0.001f)
+        {
+            var testY = new Vector3(resolved.X, newPosition.Y, resolved.Z);
+            
+            if (_velocity.Y <= 0) // Cadendo o fermo
+            {
+                // Testa la nuova posizione Y
+                if (IsPositionColliding(testY, halfSize))
                 {
-                    var testPos = new Vector3(x, blockY, z);
-                    
-                    if (CheckCollision!(testPos, Vector3.Zero) == true)
+                    // Collisione rilevata, trova il terreno corretto
+                    var groundLevel = FindGroundLevel(resolved.X, resolved.Z, oldPosition.Y, halfSize);
+                    if (groundLevel.HasValue)
                     {
-                        resolved.Y = blockY + 1.0f + BoundingBoxSize.Y * 0.5f;
+                        resolved.Y = groundLevel.Value + halfSize.Y;
                         _velocity.Y = 0;
                         _isOnGround = true;
-                        break;
+                    }
+                    else
+                    {
+                        // Fallback: usa la posizione precedente
+                        resolved.Y = oldPosition.Y;
+                        _velocity.Y = 0;
                     }
                 }
-                if (_isOnGround) break;
+                else
+                {
+                    // Nessuna collisione, usa la nuova posizione
+                    resolved.Y = newPosition.Y;
+                    
+                    // Controlla se siamo ancora sul terreno (piccolo controllo sotto i piedi)
+                    var feetCheck = new Vector3(resolved.X, resolved.Y - halfSize.Y - 0.05f, resolved.Z);
+                    _isOnGround = CheckCollision(feetCheck, Vector3.Zero);
+                }
+            }
+            else // Saltando
+            {
+                // Controlla collisione con il soffitto
+                if (IsPositionColliding(testY, halfSize))
+                {
+                    _velocity.Y = 0; // Ferma il salto
+                }
+                else
+                {
+                    resolved.Y = newPosition.Y;
+                }
             }
         }
 
         return resolved;
+    }
+
+    private bool IsPositionColliding(Vector3 position, Vector3 halfSize)
+    {
+        if (CheckCollision == null) return false;
+
+        // Controlla gli 8 angoli del bounding box del giocatore
+        var corners = new Vector3[]
+        {
+            new(position.X - halfSize.X, position.Y - halfSize.Y, position.Z - halfSize.Z), // Bottom-back-left
+            new(position.X + halfSize.X, position.Y - halfSize.Y, position.Z - halfSize.Z), // Bottom-back-right
+            new(position.X - halfSize.X, position.Y - halfSize.Y, position.Z + halfSize.Z), // Bottom-front-left
+            new(position.X + halfSize.X, position.Y - halfSize.Y, position.Z + halfSize.Z), // Bottom-front-right
+            new(position.X - halfSize.X, position.Y + halfSize.Y, position.Z - halfSize.Z), // Top-back-left
+            new(position.X + halfSize.X, position.Y + halfSize.Y, position.Z - halfSize.Z), // Top-back-right
+            new(position.X - halfSize.X, position.Y + halfSize.Y, position.Z + halfSize.Z), // Top-front-left
+            new(position.X + halfSize.X, position.Y + halfSize.Y, position.Z + halfSize.Z)  // Top-front-right
+        };
+
+        // Se qualsiasi angolo è dentro un blocco solido, c'è collisione
+        for (int i = 0; i < corners.Length; i++)
+        {
+            var corner = corners[i];
+            var isBlocked = CheckCollision(corner, Vector3.Zero);
+            
+            if (EnableCollisionDebug && isBlocked)
+            {
+                Console.WriteLine($"Corner {i} collision at ({corner.X:F2},{corner.Y:F2},{corner.Z:F2})");
+            }
+            
+            if (isBlocked)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private float? FindGroundLevel(float x, float z, float startY, Vector3 halfSize)
+    {
+        if (CheckCollision == null) return null;
+
+        // Cerca il blocco solido più alto sotto la posizione corrente
+        for (int blockY = (int)MathF.Floor(startY); blockY >= (int)MathF.Floor(startY) - 10; blockY--)
+        {
+            // Testa il centro del blocco per vedere se è solido
+            var testPos = new Vector3(x, blockY + 0.5f, z);
+            if (CheckCollision(testPos, Vector3.Zero))
+            {
+                // Blocco solido trovato, ritorna la superficie superiore
+                return blockY + 1.0f;
+            }
+        }
+
+        return null; // Nessun terreno trovato
     }
 
     private void HandleKeyboardInput(float deltaTime)
@@ -369,7 +484,26 @@ public sealed class CameraComponent
             {
                 horizontalMovement.Normalize();
                 horizontalMovement *= MoveSpeed * deltaTime;
-                Move(horizontalMovement);
+                
+                // Testa il movimento con collisioni
+                var newPosition = _position + horizontalMovement;
+                var halfSize = BoundingBoxSize * 0.5f;
+                
+                // Testa X separatamente
+                var testX = new Vector3(newPosition.X, _position.Y, _position.Z);
+                if (!IsPositionColliding(testX, halfSize))
+                {
+                    _position.X = newPosition.X;
+                }
+                
+                // Testa Z separatamente  
+                var testZ = new Vector3(_position.X, _position.Y, newPosition.Z);
+                if (!IsPositionColliding(testZ, halfSize))
+                {
+                    _position.Z = newPosition.Z;
+                }
+                
+                _viewDirty = true;
             }
 
             if (keyboardState.IsKeyDown(Keys.Space) && _isOnGround)
