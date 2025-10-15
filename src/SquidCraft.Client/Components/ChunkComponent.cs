@@ -48,6 +48,7 @@ public sealed class ChunkComponent : Base3dComponent
     private Vector3? _customCameraTarget;
 
     private float _opacity = 0f;
+    // private DayNightCycle? _dayNightCycle;
     private float _targetOpacity = 1f;
     private bool _isFadingIn;
 
@@ -113,6 +114,11 @@ public sealed class ChunkComponent : Base3dComponent
     /// <summary>
     /// Gets or sets the uniform block scale applied during rendering.
     /// </summary>
+    // public void SetDayNightCycle(DayNightCycle dayNightCycle)
+    // {
+    //     _dayNightCycle = dayNightCycle;
+    // }
+
     public float BlockScale { get; set; } = 1f;
 
     /// <summary>
@@ -637,33 +643,86 @@ public sealed class ChunkComponent : Base3dComponent
     private Color CalculateFaceColor(int x, int y, int z, SideType side)
     {
         var ambientOcclusion = 1.0f;
+        var faceNormal = Vector3.Zero;
 
         switch (side)
         {
             case SideType.Top:
                 ambientOcclusion = 1.0f;
+                faceNormal = Vector3.Up;
                 break;
             case SideType.Bottom:
                 ambientOcclusion = 0.5f;
+                faceNormal = Vector3.Down;
                 break;
             case SideType.North:
+                ambientOcclusion = 0.8f;
+                faceNormal = Vector3.Backward;
+                break;
             case SideType.South:
                 ambientOcclusion = 0.8f;
+                faceNormal = Vector3.Forward;
                 break;
             case SideType.East:
+                ambientOcclusion = 0.75f;
+                faceNormal = Vector3.Right;
+                break;
             case SideType.West:
                 ambientOcclusion = 0.75f;
+                faceNormal = Vector3.Left;
                 break;
         }
 
-        var lightLevel = 1.0f;
+        var lightLevel = 0.2f; // Minimum ambient brightness
         if (_chunk != null && _chunk.IsInBounds(x, y, z))
         {
             var rawLight = _chunk.GetLightLevel(x, y, z);
-            lightLevel = rawLight / 15f;
+            lightLevel = Math.Max(0.2f, rawLight / 15f); // Never below 0.2f (20% brightness)
         }
 
         var finalBrightness = ambientOcclusion * lightLevel;
+        finalBrightness = Math.Max(0.1f, finalBrightness); // Absolute minimum brightness
+
+        // Apply dynamic shadows based on sun direction
+        // var shadowFactor = 1.0f;
+        // if (_dayNightCycle != null)
+        // {
+        //     var sunDirection = _dayNightCycle.GetSunDirection();
+        //     // Normalize the sun direction
+        //     sunDirection = Vector3.Normalize(sunDirection);
+
+        //     // Dot product between face normal and sun direction
+        //     // Positive values mean face is facing toward sun (more light)
+        //     // Negative values mean face is facing away from sun (less light)
+        //     var dotProduct = Vector3.Dot(faceNormal, sunDirection);
+
+        //     // Map from [-1,1] to [0.2,1.0] for very visible shadows
+        //     shadowFactor = Math.Max(0.2f, (dotProduct + 1.0f) * 0.4f);
+
+        //     // Make shadows more pronounced during day
+        //     var currentSunIntensity = _dayNightCycle.GetSunIntensity();
+        //     shadowFactor = MathHelper.Lerp(0.8f, shadowFactor, currentSunIntensity);
+        // }
+
+        // finalBrightness *= shadowFactor;
+
+        // Apply sun color and intensity
+        // var sunColor = Color.White;
+        // var sunIntensity = 1.0f;
+
+        // if (_dayNightCycle != null)
+        // {
+        //     sunColor = _dayNightCycle.GetSunColor();
+        //     sunIntensity = _dayNightCycle.GetSunIntensity();
+        // }
+
+        // Combine brightness with sun color
+        // var r = finalBrightness * sunColor.R * sunIntensity;
+        // var g = finalBrightness * sunColor.G * sunIntensity;
+        // var b = finalBrightness * sunColor.B * sunIntensity;
+
+        // return new Color(r, g, b, 1.0f);
+
         return new Color(finalBrightness, finalBrightness, finalBrightness, 1.0f);
     }
 

@@ -2,6 +2,8 @@ using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Serilog;
+using SquidCraft.Client.Components;
 using SquidCraft.Client.Components.UI;
 using SquidCraft.Client.Components.UI.Controls;
 using SquidCraft.Client.Context;
@@ -176,6 +178,7 @@ public class UITestScene : SceneBase
     {
         _font = SquidCraftClientContext.AssetManagerService.GetFontTtf("DefaultFont", 12);
         InitializeControls();
+
         _controlsInitialized = true;
     }
 

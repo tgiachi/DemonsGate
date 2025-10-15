@@ -121,14 +121,32 @@ public class Game1 : Microsoft.Xna.Framework.Game
         var watchTextComponent = new WatchTextComponent(
             new Vector2(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2),
             TimeSpan.FromSeconds(1),
-            () => $"X: {_cameraComponent.Position.X} " +
-                  $"Y: {_cameraComponent.Position.Y} " +
-                  $"Z: {_cameraComponent.Position.Z} | " +
-                  $"Yaw: {_cameraComponent.Yaw} " +
-                  $"Pitch: {_cameraComponent.Pitch}"
+            () => $"X: {_cameraComponent.Position.X:F1} " +
+                  $"Y: {_cameraComponent.Position.Y:F1} " +
+                  $"Z: {_cameraComponent.Position.Z:F1} | " +
+                  $"Yaw: {_cameraComponent.Yaw:F1} " +
+                  $"Pitch: {_cameraComponent.Pitch:F1}"
         );
 
+        // // Add day/night cycle display
+        // var timeDisplayComponent = new WatchTextComponent(
+        //     new Vector2(16, 32),
+        //     TimeSpan.FromSeconds(0.5f),
+        //     () => {
+        //         if (_worldComponent != null)
+        //         {
+        //             var timeOfDay = _worldComponent.DayNightCycle.TimeOfDay;
+        //             var hour = (int)(timeOfDay * 24);
+        //             var minute = (int)((timeOfDay * 24 - hour) * 60);
+        //             var sunIntensity = _worldComponent.DayNightCycle.GetSunIntensity();
+        //             return $"Time: {hour:D2}:{minute:D2} | Sun: {(sunIntensity * 100):F0}%";
+        //         }
+        //         return "Time: --:--";
+        //     }
+        // );
+
         SquidCraftClientContext.RootComponent.AddChild(watchTextComponent);
+        // SquidCraftClientContext.RootComponent.AddChild(timeDisplayComponent);
 
             _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent)
             {
@@ -142,6 +160,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
             };
 
         _cameraComponent.CheckCollision = (pos, size) => _worldComponent.IsBlockSolid(pos);
+
+        // // Test DayNightCycle
+        // _logger.Information("DayNightCycle created, initial time: {_time}", _worldComponent.DayNightCycle.TimeOfDay);
 
         _blockOutlineComponent = new BlockOutlineComponent(GraphicsDevice)
         {
@@ -293,6 +314,63 @@ public class Game1 : Microsoft.Xna.Framework.Game
             }
         }
 
+        // Handle block breaking with left mouse click
+        if (!_isUITestMode && Mouse.GetState().LeftButton == ButtonState.Pressed)
+        {
+            if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
+            {
+                var (chunk, x, y, z) = selected.Value;
+                var blockWorldPos = chunk.Position + new Vector3(x, y, z);
+
+                // Remove the block (set to air)
+                chunk.Chunk?.SetBlock(x, y, z, new BlockEntity(0, BlockType.Air));
+
+                // Invalidate chunk mesh and lighting for this chunk and all adjacent chunks
+                _worldComponent?.InvalidateBlockAndAdjacentChunks(chunk, x, y, z);
+
+                // Spawn particles at block position
+                _worldComponent.SpawnParticles(blockWorldPos + new Vector3(0.5f, 0.5f, 0.5f), 20, spread: 0.5f, speed: 3f, lifeTime: 1.5f, Color.Orange);
+
+                _logger.Information("Block broken at {Position}", blockWorldPos);
+            }
+        }
+
+        // Handle block placing with right mouse click
+        if (!_isUITestMode && Mouse.GetState().RightButton == ButtonState.Pressed)
+        {
+            // For placing, we need to find an adjacent air block to the selected block
+            if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
+            {
+                var (chunk, x, y, z) = selected.Value;
+
+                // Try to place on top of the selected block first
+                var placeX = x;
+                var placeY = y + 1;
+                var placeZ = z;
+
+                // Check if the position is valid and empty
+                if (placeY < ChunkEntity.Height)
+                {
+                    var existingBlock = chunk.Chunk?.GetBlock(placeX, placeY, placeZ);
+                    if (existingBlock == null || existingBlock.BlockType == BlockType.Air)
+                    {
+                        var blockWorldPos = chunk.Position + new Vector3(placeX, placeY, placeZ);
+
+                        // Place a dirt block
+                        chunk.Chunk?.SetBlock(placeX, placeY, placeZ, new BlockEntity(1, BlockType.Dirt));
+
+                        // Invalidate chunk mesh and lighting for this chunk and all adjacent chunks
+                        _worldComponent?.InvalidateBlockAndAdjacentChunks(chunk, placeX, placeY, placeZ);
+
+                        // Spawn particles at block position
+                        _worldComponent.SpawnParticles(blockWorldPos + new Vector3(0.5f, 0.5f, 0.5f), 15, spread: 0.3f, speed: 2f, lifeTime: 1f, Color.Brown);
+
+                        _logger.Information("Block placed at {Position}", blockWorldPos);
+                    }
+                }
+            }
+        }
+
         _worldComponent?.Update(gameTime);
         //_blockPreviewComponent?.Update(gameTime);
         SquidCraftClientContext.RootComponent.Update(gameTime);
@@ -312,6 +390,44 @@ public class Game1 : Microsoft.Xna.Framework.Game
         }
         else
         {
+            // Dynamic sky color based on time of day
+            // var skyColor = Color.CornflowerBlue; // Default fallback
+            // if (_worldComponent != null)
+            // {
+            //     var sunColor = _worldComponent.DayNightCycle.GetSunColor();
+            //     var sunIntensity = _worldComponent.DayNightCycle.GetSunIntensity();
+
+            //     // Create sky color based on sun color and intensity
+            //     var timeOfDay = _worldComponent.DayNightCycle.TimeOfDay;
+
+            //     if (timeOfDay < 0.2f || timeOfDay > 0.8f)
+            //     {
+            //         // Night sky: dark blue with slight sun color tint
+            //         skyColor = new Color(0.1f, 0.1f, 0.3f) * 0.3f;
+            //     }
+            //     else if (timeOfDay >= 0.2f && timeOfDay <= 0.3f)
+            //     {
+            //         // Sunrise: blend from night to day
+            //         var t = (timeOfDay - 0.2f) / 0.1f;
+            //         var nightSky = new Color(0.1f, 0.1f, 0.3f) * 0.3f;
+            //         var daySky = new Color(0.4f, 0.6f, 1.0f);
+            //         skyColor = Color.Lerp(nightSky, daySky, t);
+            //     }
+            //     else if (timeOfDay >= 0.7f && timeOfDay <= 0.8f)
+            //     {
+            //         // Sunset: blend from day to night
+            //         var t = (timeOfDay - 0.7f) / 0.1f;
+            //         var daySky = new Color(0.4f, 0.6f, 1.0f);
+            //         var nightSky = new Color(0.1f, 0.1f, 0.3f) * 0.3f;
+            //         skyColor = Color.Lerp(daySky, nightSky, t);
+            //     }
+            //     else
+            //     {
+            //         // Day sky: light blue
+            //         skyColor = new Color(0.4f, 0.6f, 1.0f);
+            //     }
+            // }
+
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             var viewportBounds = GraphicsDevice.Viewport.Bounds;
