@@ -16,12 +16,15 @@ public abstract class SceneBase : IScene
     {
         Name = name;
         Logger = Log.ForContext(GetType());
-        Components = [];
+        Components = new SCDrawableCollection<ISCDrawableComponent>();
+        Components3d = new SC3dDrawableCollection<ISC3dDrawableComponent>();
     }
 
     public string Name { get; }
 
     public SCDrawableCollection<ISCDrawableComponent> Components { get; }
+
+    public SC3dDrawableCollection<ISC3dDrawableComponent> Components3d { get; }
 
     public bool IsLoaded { get; private set; }
 
@@ -53,6 +56,7 @@ public abstract class SceneBase : IScene
         Logger.Information("Unloading scene: {SceneName}", Name);
         OnUnload();
         Components.Clear();
+        Components3d.Clear();
         IsLoaded = false;
         Logger.Information("Scene unloaded: {SceneName}", Name);
     }
@@ -71,6 +75,11 @@ public abstract class SceneBase : IScene
         {
             component.Update(gameTime);
         }
+
+        foreach (var component in Components3d.GetEnabledComponents())
+        {
+            component.Update(gameTime);
+        }
     }
 
     public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
@@ -80,14 +89,19 @@ public abstract class SceneBase : IScene
             return;
         }
 
+        // Draw 3D components first (no spriteBatch needed)
+        foreach (var component in Components3d.GetVisibleComponents())
+        {
+            component.Draw3d(gameTime);
+        }
 
+        // Draw 2D components (spriteBatch should already be begun by caller)
         OnDraw(gameTime, spriteBatch);
 
         foreach (var component in Components.GetVisibleComponents())
         {
             component.Draw(gameTime, spriteBatch);
         }
-
     }
 
     public virtual void HandleKeyboard(KeyboardState keyboardState, GameTime gameTime)
@@ -103,6 +117,11 @@ public abstract class SceneBase : IScene
         {
             component.HandleKeyboard(keyboardState, gameTime);
         }
+
+        foreach (var component in Components3d.GetEnabledComponents())
+        {
+            component.HandleKeyboard(keyboardState, gameTime);
+        }
     }
 
     public virtual void HandleMouse(MouseState mouseState, GameTime gameTime)
@@ -115,6 +134,11 @@ public abstract class SceneBase : IScene
         OnHandleMouse(mouseState, gameTime);
 
         foreach (var component in Components.GetEnabledComponents())
+        {
+            component.HandleMouse(mouseState, gameTime);
+        }
+
+        foreach (var component in Components3d.GetEnabledComponents())
         {
             component.HandleMouse(mouseState, gameTime);
         }
@@ -139,6 +163,14 @@ public abstract class SceneBase : IScene
     private void InitializeComponents()
     {
         foreach (var component in Components)
+        {
+            if (component is ISCInitializable initializable)
+            {
+                initializable.Initialize();
+            }
+        }
+
+        foreach (var component in Components3d)
         {
             if (component is ISCInitializable initializable)
             {

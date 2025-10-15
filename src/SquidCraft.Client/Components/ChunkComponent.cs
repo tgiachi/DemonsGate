@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended.Graphics;
 using Serilog;
+using SquidCraft.Client.Components.Base;
 using SquidCraft.Client.Context;
 using SquidCraft.Client.Services;
 using SquidCraft.Game.Data.Primitives;
@@ -18,7 +19,7 @@ public sealed class MeshData
     public Texture2D? Texture { get; set; }
 }
 
-public sealed class ChunkComponent : IDisposable
+public sealed class ChunkComponent : Base3dComponent
 {
     private static readonly Dictionary<SideType, (int X, int Y, int Z)> NeighborOffsets = new()
     {
@@ -79,12 +80,6 @@ public sealed class ChunkComponent : IDisposable
     public ChunkEntity? Chunk => _chunk;
 
     /// <summary>
-    /// Gets or sets the translation applied to the chunk in world space.
-    /// Defaults to the chunk origin derived from <see cref="ChunkEntity.Position"/>.
-    /// </summary>
-    public Vector3 Position { get; set; } = Vector3.Zero;
-
-    /// <summary>
     /// Gets or sets the manual rotation applied to the chunk (Yaw, Pitch, Roll).
     /// </summary>
     public Vector3 ManualRotation { get; set; } = Vector3.Zero;
@@ -125,12 +120,6 @@ public sealed class ChunkComponent : IDisposable
     /// </summary>
     public bool RenderTransparentBlocks { get; set; } = false;
 
-    public float Opacity
-    {
-        get => _opacity;
-        set => _opacity = MathHelper.Clamp(value, 0f, 1f);
-    }
-
     public float FadeInSpeed { get; set; } = 2f;
 
     public bool EnableFadeIn { get; set; } = true;
@@ -148,12 +137,12 @@ public sealed class ChunkComponent : IDisposable
 
         if (EnableFadeIn)
         {
-            _opacity = 0f;
+            Opacity = 0f;
             _isFadingIn = true;
         }
         else
         {
-            _opacity = 1f;
+            Opacity = 1f;
             _isFadingIn = false;
         }
     }
@@ -214,7 +203,7 @@ public sealed class ChunkComponent : IDisposable
     /// Updates the component state (handles optional auto rotation).
     /// </summary>
     /// <param name="gameTime">Elapsed time information.</param>
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         var elapsedSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -222,10 +211,10 @@ public sealed class ChunkComponent : IDisposable
 
         if (_isFadingIn)
         {
-            _opacity += FadeInSpeed * elapsedSeconds;
-            if (_opacity >= _targetOpacity)
+            Opacity += FadeInSpeed * elapsedSeconds;
+            if (Opacity >= _targetOpacity)
             {
-                _opacity = _targetOpacity;
+                Opacity = _targetOpacity;
                 _isFadingIn = false;
             }
         }
@@ -234,6 +223,17 @@ public sealed class ChunkComponent : IDisposable
         {
             _rotationY = (_rotationY + RotationSpeed * elapsedSeconds) % MathHelper.TwoPi;
         }
+
+        base.Update(gameTime);
+    }
+
+    /// <summary>
+    /// Draws the 3D chunk mesh using the component's internal camera.
+    /// </summary>
+    /// <param name="gameTime">Elapsed time information.</param>
+    public override void Draw3d(GameTime gameTime)
+    {
+        Draw(gameTime);
     }
 
     /// <summary>
@@ -265,7 +265,7 @@ public sealed class ChunkComponent : IDisposable
             return;
         }
 
-        if (_opacity <= 0f)
+        if (Opacity <= 0f)
         {
             return;
         }
@@ -281,7 +281,7 @@ public sealed class ChunkComponent : IDisposable
         _effect.View = view;
         _effect.Projection = projection;
         _effect.Texture = _texture;
-        _effect.Alpha = _opacity;
+        _effect.Alpha = Opacity;
 
         var previousBlendState = _graphicsDevice.BlendState;
         var previousDepthStencilState = _graphicsDevice.DepthStencilState;
@@ -313,10 +313,14 @@ public sealed class ChunkComponent : IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        ClearGeometry();
-        _effect.Dispose();
+        if (disposing)
+        {
+            ClearGeometry();
+            _effect.Dispose();
+        }
+        base.Dispose(disposing);
     }
 
     private MeshData BuildMeshData()
