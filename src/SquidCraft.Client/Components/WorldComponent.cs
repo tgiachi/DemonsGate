@@ -93,6 +93,35 @@ public sealed class WorldComponent : IDisposable
         return chunk?.Chunk;
     }
 
+    public bool IsBlockSolid(XnaVector3 worldPosition)
+    {
+        var blockX = (int)MathF.Floor(worldPosition.X);
+        var blockY = (int)MathF.Floor(worldPosition.Y);
+        var blockZ = (int)MathF.Floor(worldPosition.Z);
+
+        var chunkX = MathF.Floor(blockX / (float)ChunkEntity.Size) * ChunkEntity.Size;
+        var chunkZ = MathF.Floor(blockZ / (float)ChunkEntity.Size) * ChunkEntity.Size;
+        var chunkPos = new SysVector3(chunkX, 0f, chunkZ);
+
+        var chunkEntity = GetChunkEntity(new XnaVector3(chunkX, 0f, chunkZ));
+        if (chunkEntity == null)
+        {
+            return false;
+        }
+
+        var localX = blockX - (int)chunkEntity.Position.X;
+        var localY = blockY - (int)chunkEntity.Position.Y;
+        var localZ = blockZ - (int)chunkEntity.Position.Z;
+
+        if (!chunkEntity.IsInBounds(localX, localY, localZ))
+        {
+            return false;
+        }
+
+        var block = chunkEntity.GetBlock(localX, localY, localZ);
+        return block != null && block.BlockType != Game.Data.Types.BlockType.Air;
+    }
+
     public void ClearChunks()
     {
         foreach (var chunk in _chunks.Values)

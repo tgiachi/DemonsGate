@@ -30,10 +30,14 @@ public sealed class CameraComponent
     private Point _lastMousePosition;
     private bool _firstMouseMove = true;
 
+    private Vector3 _velocity = Vector3.Zero;
+    private bool _isOnGround;
+    private bool _enablePhysics = true;
+
     public CameraComponent(GraphicsDevice graphicsDevice)
     {
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
-        _position = new Vector3(8f, ChunkEntity.Size + 2f, 8f);
+        _position = new Vector3(8f, ChunkEntity.Height + 20f, 8f);
         
         _front = Vector3.UnitZ;
         _up = Vector3.Up;
@@ -232,56 +236,179 @@ public sealed class CameraComponent
 
     public bool EnableInput { get; set; } = true;
 
+    public bool EnablePhysics
+    {
+        get => _enablePhysics;
+        set => _enablePhysics = value;
+    }
+
+    public bool FlyMode { get; set; } = false;
+
+    public float Gravity { get; set; } = 32f;
+
+    public float JumpForce { get; set; } = 10f;
+
+    public Vector3 BoundingBoxSize { get; set; } = new Vector3(0.6f, 1.8f, 0.6f);
+
+    public bool IsOnGround => _isOnGround;
+
+    public Func<Vector3, Vector3, bool>? CheckCollision { get; set; }
+
     public void Update(GameTime gameTime)
     {
-        if (!EnableInput)
-        {
-            return;
-        }
-
         var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        HandleKeyboardInput(deltaTime);
-        HandleMouseInput();
+        if (EnablePhysics && !FlyMode)
+        {
+            ApplyPhysics(deltaTime);
+        }
+
+        if (EnableInput)
+        {
+            HandleKeyboardInput(deltaTime);
+            HandleMouseInput();
+        }
+    }
+
+    private void ApplyPhysics(float deltaTime)
+    {
+        _velocity.Y -= Gravity * deltaTime;
+
+        var newPosition = _position + _velocity * deltaTime;
+
+        if (CheckCollision != null)
+        {
+            newPosition = ResolveCollisions(newPosition);
+        }
+
+        _position = newPosition;
+        _viewDirty = true;
+    }
+
+    private Vector3 ResolveCollisions(Vector3 newPosition)
+    {
+        var halfSize = BoundingBoxSize * 0.5f;
+        
+        _isOnGround = false;
+
+        var resolved = newPosition;
+
+        if (_velocity.Y <= 0)
+        {
+            var feetY = newPosition.Y - BoundingBoxSize.Y * 0.5f;
+            var blockY = (int)MathF.Floor(feetY);
+
+            var minX = newPosition.X - halfSize.X;
+            var maxX = newPosition.X + halfSize.X;
+            var minZ = newPosition.Z - halfSize.Z;
+            var maxZ = newPosition.Z + halfSize.Z;
+
+            for (float x = minX; x <= maxX; x += 0.3f)
+            {
+                for (float z = minZ; z <= maxZ; z += 0.3f)
+                {
+                    var testPos = new Vector3(x, blockY, z);
+                    
+                    if (CheckCollision!(testPos, Vector3.Zero) == true)
+                    {
+                        resolved.Y = blockY + 1.0f + BoundingBoxSize.Y * 0.5f;
+                        _velocity.Y = 0;
+                        _isOnGround = true;
+                        break;
+                    }
+                }
+                if (_isOnGround) break;
+            }
+        }
+
+        return resolved;
     }
 
     private void HandleKeyboardInput(float deltaTime)
     {
         var keyboardState = Keyboard.GetState();
-        var moveDistance = MoveSpeed * deltaTime;
 
-        var movement = Vector3.Zero;
+        if (EnablePhysics && !FlyMode)
+        {
+            var horizontalMovement = Vector3.Zero;
 
-        if (keyboardState.IsKeyDown(Keys.W))
-        {
-            movement += _front;
-        }
-        if (keyboardState.IsKeyDown(Keys.S))
-        {
-            movement -= _front;
-        }
-        if (keyboardState.IsKeyDown(Keys.A))
-        {
-            movement -= _right;
-        }
-        if (keyboardState.IsKeyDown(Keys.D))
-        {
-            movement += _right;
-        }
-        if (keyboardState.IsKeyDown(Keys.Space))
-        {
-            movement += _worldUp;
-        }
-        if (keyboardState.IsKeyDown(Keys.LeftShift))
-        {
-            movement -= _worldUp;
-        }
+            var forwardFlat = new Vector3(_front.X, 0, _front.Z);
+            if (forwardFlat != Vector3.Zero)
+            {
+                forwardFlat.Normalize();
+            }
 
-        if (movement != Vector3.Zero)
+            var rightFlat = new Vector3(_right.X, 0, _right.Z);
+            if (rightFlat != Vector3.Zero)
+            {
+                rightFlat.Normalize();
+            }
+
+            if (keyboardState.IsKeyDown(Keys.W))
+            {
+                horizontalMovement += forwardFlat;
+            }
+            if (keyboardState.IsKeyDown(Keys.S))
+            {
+                horizontalMovement -= forwardFlat;
+            }
+            if (keyboardState.IsKeyDown(Keys.A))
+            {
+                horizontalMovement -= rightFlat;
+            }
+            if (keyboardState.IsKeyDown(Keys.D))
+            {
+                horizontalMovement += rightFlat;
+            }
+
+            if (horizontalMovement != Vector3.Zero)
+            {
+                horizontalMovement.Normalize();
+                horizontalMovement *= MoveSpeed * deltaTime;
+                Move(horizontalMovement);
+            }
+
+            if (keyboardState.IsKeyDown(Keys.Space) && _isOnGround)
+            {
+                _velocity.Y = JumpForce;
+            }
+        }
+        else
         {
-            movement.Normalize();
-            movement *= moveDistance;
-            Move(movement);
+            var moveDistance = MoveSpeed * deltaTime;
+            var movement = Vector3.Zero;
+
+            if (keyboardState.IsKeyDown(Keys.W))
+            {
+                movement += _front;
+            }
+            if (keyboardState.IsKeyDown(Keys.S))
+            {
+                movement -= _front;
+            }
+            if (keyboardState.IsKeyDown(Keys.A))
+            {
+                movement -= _right;
+            }
+            if (keyboardState.IsKeyDown(Keys.D))
+            {
+                movement += _right;
+            }
+            if (keyboardState.IsKeyDown(Keys.Space))
+            {
+                movement += _worldUp;
+            }
+            if (keyboardState.IsKeyDown(Keys.LeftShift))
+            {
+                movement -= _worldUp;
+            }
+
+            if (movement != Vector3.Zero)
+            {
+                movement.Normalize();
+                movement *= moveDistance;
+                Move(movement);
+            }
         }
     }
 

@@ -48,7 +48,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _graphics.ApplyChanges();
 
         Content.RootDirectory = "Content";
-        IsMouseVisible = true;
+        IsMouseVisible = false;
     }
 
     protected override void Initialize()
@@ -99,11 +99,14 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         _cameraComponent = new CameraComponent(GraphicsDevice)
         {
-            Position = new Vector3(8f, ChunkEntity.Height + 10f, 8f),
+            Position = new Vector3(9f, ChunkEntity.Height + 10f, 9f),
             Pitch = -45f,
             MoveSpeed = 25f,
             MouseSensitivity = 0.1f,
-            EnableInput = true
+            EnableInput = true,
+            EnablePhysics = true,
+            Gravity = 32f,
+            JumpForce = 20f
         };
 
         var watchTextComponent = new WatchTextComponent(
@@ -117,7 +120,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         );
 
         SquidCraftClientContext.RootComponent.AddChild(watchTextComponent);
-        
+
             _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent)
             {
                 ViewRange = 150f,
@@ -128,6 +131,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
                 GenerationDistance = 3,
                 ChunkGenerator = CreateFlatChunk
             };
+
+        _cameraComponent.CheckCollision = (pos, size) => _worldComponent.IsBlockSolid(pos);
 
         _blockOutlineComponent = new BlockOutlineComponent(GraphicsDevice)
         {

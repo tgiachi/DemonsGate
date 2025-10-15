@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 
 namespace SquidCraft.Client.Components.UI.Controls;
 
-public class WatchTextComponent : TextBoxComponent
+public class WatchTextComponent : TextComponent
 {
     private readonly TimeSpan _updateInterval;
 
