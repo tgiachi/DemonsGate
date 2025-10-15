@@ -17,6 +17,10 @@ public class BlockEntity
     /// </summary>
     public BlockType BlockType { get; set; }
 
+    /// <summary>
+    /// Gets or sets the water level (0-7, where 7 is full source block, 0 is no water).
+    /// </summary>
+    public byte WaterLevel { get; set; }
 
     /// <summary>
     /// Initializes a new <see cref="BlockEntity"/> with the provided identifier and type.
@@ -27,6 +31,7 @@ public class BlockEntity
     {
         Id = id;
         BlockType = blockType;
+        WaterLevel = blockType == BlockType.Water ? (byte)7 : (byte)0;
     }
 
     public override string ToString() => $"BlockEntity({Id}, {BlockType})";

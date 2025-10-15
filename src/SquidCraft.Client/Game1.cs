@@ -28,6 +28,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private ProgressBarComponent? _progressBarComponent;
     private float _progressTimer;
     private ScrollingTextBoxComponent? _logTextBox;
+    private ChatBoxComponent? _chatBox;
     private static readonly RasterizerState ScissorRasterizerState = new() { ScissorTestEnable = true };
     private UITestScene? _uiTestScene;
     private bool _isUITestMode;
@@ -249,6 +250,25 @@ public class Game1 : Microsoft.Xna.Framework.Game
         toolTip.Show(new Vector2(340, 320), "WASD: move | Space/Shift: up/down | Mouse: look");
         SquidCraftClientContext.RootComponent.AddChild(toolTip);
 
+        _chatBox = new ChatBoxComponent(
+            position: new Vector2(10, GraphicsDevice.Viewport.Height - 310),
+            size: new Vector2(500, 300))
+        {
+            FadeDelay = 5f,
+            AlwaysVisible = false,
+            MaxMessages = 100
+        };
+        
+        _chatBox.MessageSent += OnChatMessageSent;
+        _chatBox.CommandExecuted += OnChatCommandExecuted;
+        
+        _chatBox.Initialize();
+        SquidCraftClientContext.RootComponent.AddChild(_chatBox);
+        
+        _chatBox.AddSystemMessage("Welcome to SquidCraft!");
+        _chatBox.AddSystemMessage("Press T to open chat");
+        _chatBox.AddMessage("Use /help to see available commands", ChatMessageType.Info);
+
         _uiTestScene = new UITestScene();
         _uiTestScene.Load();
         _isUITestMode = true;
@@ -296,6 +316,14 @@ public class Game1 : Microsoft.Xna.Framework.Game
         }
         else
         {
+            var isChatActive = _chatBox?.IsInputActive ?? false;
+            
+            if (_cameraComponent != null)
+            {
+                _cameraComponent.EnableInput = !isChatActive;
+                _cameraComponent.IsMouseCaptured = !isChatActive;
+            }
+            
             IsMouseVisible = !(_cameraComponent?.IsMouseCaptured ?? false);
         }
 
@@ -469,6 +497,108 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _blockOutlineComponent?.Dispose();
         _uiTestScene?.Unload();
         base.UnloadContent();
+    }
+
+    private void OnChatMessageSent(object? sender, string message)
+    {
+        _logger.Information("Chat message sent: {Message}", message);
+        _chatBox?.AddSystemMessage($"Message sent: {message}");
+    }
+
+    private void OnChatCommandExecuted(object? sender, string command)
+    {
+        _logger.Information("Chat command executed: {Command}", command);
+        
+        var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var cmd = parts[0].ToLower();
+
+        switch (cmd)
+        {
+            case "/help":
+                _chatBox?.AddSystemMessage("Available commands:");
+                _chatBox?.AddMessage("/help - Show this message", ChatMessageType.Info);
+                _chatBox?.AddMessage("/clear - Clear chat", ChatMessageType.Info);
+                _chatBox?.AddMessage("/time - Show current time", ChatMessageType.Info);
+                _chatBox?.AddMessage("/pos - Show player position", ChatMessageType.Info);
+                _chatBox?.AddMessage("/fly - Toggle fly mode", ChatMessageType.Info);
+                _chatBox?.AddMessage("/water - Place water block in front of you", ChatMessageType.Info);
+                break;
+
+            case "/clear":
+                _chatBox?.Clear();
+                _chatBox?.AddSystemMessage("Chat cleared");
+                break;
+
+            case "/time":
+                var now = DateTime.Now;
+                _chatBox?.AddSystemMessage($"Current time: {now:HH:mm:ss}");
+                break;
+
+            case "/pos":
+                if (_cameraComponent != null)
+                {
+                    var pos = _cameraComponent.Position;
+                    _chatBox?.AddSystemMessage($"Position: X={pos.X:F2}, Y={pos.Y:F2}, Z={pos.Z:F2}");
+                }
+                break;
+
+            case "/fly":
+                if (_cameraComponent != null)
+                {
+                    _cameraComponent.FlyMode = !_cameraComponent.FlyMode;
+                    var mode = _cameraComponent.FlyMode ? "enabled" : "disabled";
+                    _chatBox?.AddSystemMessage($"Fly mode {mode}");
+                }
+                break;
+
+            case "/water":
+                if (_worldComponent != null && _cameraComponent != null)
+                {
+                    var ray = _cameraComponent.GetPickRay();
+                    var raycastResult = _worldComponent.RaycastBlock(ray);
+                    
+                    if (raycastResult.HasValue)
+                    {
+                        var (chunk, x, y, z) = raycastResult.Value;
+                        
+                        var placeY = y + 1;
+                        if (placeY < ChunkEntity.Height)
+                        {
+                            var existingBlock = chunk.Chunk?.GetBlock(x, placeY, z);
+                            if (existingBlock == null || existingBlock.BlockType == BlockType.Air)
+                            {
+                                var waterBlock = new BlockEntity(DateTime.Now.Ticks, BlockType.Water)
+                                {
+                                    WaterLevel = 7
+                                };
+                                
+                                chunk.Chunk?.SetBlock(x, placeY, z, waterBlock);
+                                _worldComponent.InvalidateBlockAndAdjacentChunks(chunk, x, placeY, z);
+                                
+                                _chatBox?.AddSystemMessage($"Water block placed at Y={placeY}");
+                            }
+                            else
+                            {
+                                _chatBox?.AddErrorMessage("Position occupied!");
+                            }
+                        }
+                        else
+                        {
+                            _chatBox?.AddErrorMessage("Height too high!");
+                        }
+                    }
+                    else
+                    {
+                        _chatBox?.AddErrorMessage("No block selected!");
+                    }
+                }
+                break;
+
+            default:
+                _chatBox?.AddErrorMessage($"Unknown command: {cmd}");
+                _chatBox?.AddMessage("Use /help to see available commands", ChatMessageType.Info);
+                break;
+        }
     }
 
     private static ChunkEntity CreateFlatChunk(int chunkX, int chunkZ)

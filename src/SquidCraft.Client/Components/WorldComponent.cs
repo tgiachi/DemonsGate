@@ -19,6 +19,7 @@ public sealed class WorldComponent : IDisposable
     private readonly CameraComponent _camera;
     private readonly Particle3dComponent _particleComponent;
     private readonly Systems.ChunkLightSystem _lightSystem;
+    private readonly Systems.WaterSimulationSystem _waterSystem;
     // private readonly DayNightCycle _dayNightCycle;
     private bool _isDisposed;
     private BoundingFrustum? _frustum;
@@ -31,6 +32,7 @@ public sealed class WorldComponent : IDisposable
         _camera = camera ?? throw new ArgumentNullException(nameof(camera));
         _particleComponent = new Particle3dComponent();
         _lightSystem = new Systems.ChunkLightSystem();
+        _waterSystem = new Systems.WaterSimulationSystem();
         // _dayNightCycle = new DayNightCycle();
         // _lastSunColor = _dayNightCycle.GetSunColor(); // Initialize with current sun color
     }
@@ -201,11 +203,45 @@ public sealed class WorldComponent : IDisposable
         UpdateChunkLoading();
 
         UpdateBlockSelection();
+        
+        UpdateWaterSimulation();
 
         foreach (var chunk in _chunks.Values)
         {
             chunk.Update(gameTime);
         }
+    }
+
+    private void UpdateWaterSimulation()
+    {
+        _waterSystem.Update(
+            GetChunkAtWorldPosition,
+            (chunk, x, y, z) => chunk.GetBlock(x, y, z),
+            (chunk, x, y, z, block) =>
+            {
+                chunk.SetBlock(x, y, z, block);
+                var chunkPos = new SysVector3(chunk.Position.X, chunk.Position.Y, chunk.Position.Z);
+                if (_chunks.TryGetValue(chunkPos, out var chunkComponent))
+                {
+                    chunkComponent.InvalidateGeometry();
+                    _meshBuildQueue.Enqueue(chunkComponent);
+                }
+            }
+        );
+    }
+
+    private ChunkEntity? GetChunkAtWorldPosition(XnaVector3 worldPos)
+    {
+        var chunkX = MathF.Floor(worldPos.X / ChunkEntity.Size) * ChunkEntity.Size;
+        var chunkZ = MathF.Floor(worldPos.Z / ChunkEntity.Size) * ChunkEntity.Size;
+        var chunkPos = new SysVector3(chunkX, 0f, chunkZ);
+        
+        if (_chunks.TryGetValue(chunkPos, out var chunkComponent))
+        {
+            return chunkComponent.Chunk;
+        }
+        
+        return null;
     }
 
     private void ProcessMeshBuildQueue()
@@ -459,6 +495,18 @@ public sealed class WorldComponent : IDisposable
 
             _logger.Debug("Cross-chunk lighting recalculated for {Count} chunks", affectedChunks.Count);
         }
+        
+        QueueWaterUpdatesAroundBlock(chunk.Chunk, blockX, blockY, blockZ);
+    }
+
+    public void QueueWaterUpdatesAroundBlock(ChunkEntity chunk, int x, int y, int z)
+    {
+        _waterSystem.QueueWaterUpdate(chunk, x, y - 1, z);
+        _waterSystem.QueueWaterUpdate(chunk, x + 1, y, z);
+        _waterSystem.QueueWaterUpdate(chunk, x - 1, y, z);
+        _waterSystem.QueueWaterUpdate(chunk, x, y, z + 1);
+        _waterSystem.QueueWaterUpdate(chunk, x, y, z - 1);
+        _waterSystem.QueueWaterUpdate(chunk, x, y + 1, z);
     }
 
     private ChunkEntity? GetChunkEntityForLighting(int chunkX, int chunkZ)
