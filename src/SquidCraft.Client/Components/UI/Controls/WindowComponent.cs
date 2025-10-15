@@ -58,7 +58,7 @@ public class WindowComponent : BaseComponent
             Orientation = StackOrientation.Vertical,
             Alignment = Alignment.Start,
             Padding = new Vector2(12f, 12f),
-            Spacing = 8f,
+            Spacing = 10f,
             AutoSize = false,
             HasFocus = true
         };

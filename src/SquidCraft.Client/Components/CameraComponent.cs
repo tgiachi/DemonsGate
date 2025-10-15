@@ -1,17 +1,21 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using SquidCraft.Game.Data.Primitives;
 
 namespace SquidCraft.Client.Components;
 
 public sealed class CameraComponent
 {
     private Vector3 _position;
-    private Vector3 _target;
     private float _fieldOfView = MathHelper.PiOver4;
     private float _nearPlane = 0.1f;
-    private float _farPlane = 500f;
-    private Vector3 _up = Vector3.Up;
+    private float _farPlane = 1000f;
+    
+    private readonly Vector3 _worldUp = Vector3.Up;
+    private Vector3 _front;
+    private Vector3 _right;
+    private Vector3 _up;
     
     private Matrix _view;
     private Matrix _projection;
@@ -20,21 +24,22 @@ public sealed class CameraComponent
     
     private readonly GraphicsDevice _graphicsDevice;
 
-    private float _yaw;
+    private float _yaw = -90f;
     private float _pitch;
+    private float _zoom = 60f;
     private Point _lastMousePosition;
     private bool _firstMouseMove = true;
 
     public CameraComponent(GraphicsDevice graphicsDevice)
     {
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
-        _position = new Vector3(55f, 65f, 55f);
-        _target = new Vector3(8f, 18f, 8f);
+        _position = new Vector3(8f, ChunkEntity.Size + 2f, 8f);
         
-        var direction = _target - _position;
-        direction.Normalize();
-        _yaw = MathF.Atan2(direction.X, direction.Z);
-        _pitch = MathF.Asin(-direction.Y);
+        _front = Vector3.UnitZ;
+        _up = Vector3.Up;
+        _right = Vector3.Normalize(Vector3.Cross(_front, _worldUp));
+        
+        UpdateCameraVectors();
     }
 
     public Vector3 Position
@@ -50,29 +55,40 @@ public sealed class CameraComponent
         }
     }
 
-    public Vector3 Target
+    public Vector3 Front => _front;
+    
+    public Vector3 Right => _right;
+    
+    public Vector3 Up => _up;
+    
+    public float Yaw
     {
-        get => _target;
+        get => _yaw;
         set
         {
-            if (_target != value)
-            {
-                _target = value;
-                _viewDirty = true;
-            }
+            _yaw = value;
+            UpdateCameraVectors();
         }
     }
-
-    public Vector3 Up
+    
+    public float Pitch
     {
-        get => _up;
+        get => _pitch;
         set
         {
-            if (_up != value)
-            {
-                _up = value;
-                _viewDirty = true;
-            }
+            _pitch = MathHelper.Clamp(value, -89f, 89f);
+            UpdateCameraVectors();
+        }
+    }
+    
+    public float Zoom
+    {
+        get => _zoom;
+        set
+        {
+            _zoom = MathHelper.Clamp(value, 1f, 120f);
+            _fieldOfView = MathHelper.ToRadians(_zoom);
+            _projectionDirty = true;
         }
     }
 
@@ -121,7 +137,7 @@ public sealed class CameraComponent
         {
             if (_viewDirty)
             {
-                _view = Matrix.CreateLookAt(_position, _target, _up);
+                _view = Matrix.CreateLookAt(_position, _position + _front, _up);
                 _viewDirty = false;
             }
             return _view;
@@ -143,55 +159,47 @@ public sealed class CameraComponent
         }
     }
 
-    public void LookAt(Vector3 position, Vector3 target)
-    {
-        _position = position;
-        _target = target;
-        _viewDirty = true;
-    }
-
-    public void LookAt(Vector3 position, Vector3 target, Vector3 up)
-    {
-        _position = position;
-        _target = target;
-        _up = up;
-        _viewDirty = true;
-    }
-
     public void Move(Vector3 delta)
     {
         _position += delta;
-        _target += delta;
         _viewDirty = true;
     }
 
-    public void Rotate(float yaw, float pitch)
+    public void ModifyDirection(float xOffset, float yOffset)
     {
-        var direction = _target - _position;
-        var distance = direction.Length();
+        _yaw += xOffset;
+        _pitch -= yOffset;
+        _pitch = MathHelper.Clamp(_pitch, -89f, 89f);
         
-        direction.Normalize();
-        
-        var rotationMatrix = Matrix.CreateFromYawPitchRoll(yaw, pitch, 0);
-        direction = Vector3.Transform(direction, rotationMatrix);
-        
-        _target = _position + direction * distance;
-        _viewDirty = true;
+        UpdateCameraVectors();
     }
 
-    public Vector3 Forward
+    public void ModifyZoom(float zoomAmount)
     {
-        get
-        {
-            var direction = _target - _position;
-            direction.Normalize();
-            return direction;
-        }
+        Zoom = MathHelper.Clamp(_zoom - zoomAmount, 1f, 120f);
+    }
+
+    private void UpdateCameraVectors()
+    {
+        var yawRadians = MathHelper.ToRadians(_yaw);
+        var pitchRadians = MathHelper.ToRadians(_pitch);
+        
+        var cameraDirection = new Vector3(
+            MathF.Cos(yawRadians) * MathF.Cos(pitchRadians),
+            MathF.Sin(pitchRadians),
+            MathF.Sin(yawRadians) * MathF.Cos(pitchRadians)
+        );
+        
+        _front = Vector3.Normalize(cameraDirection);
+        _right = Vector3.Normalize(Vector3.Cross(_front, _worldUp));
+        _up = Vector3.Normalize(Vector3.Cross(_right, _front));
+        
+        _viewDirty = true;
     }
 
     public Ray GetPickRay()
     {
-        return new Ray(_position, Forward);
+        return new Ray(_position, _front);
     }
 
     public Ray GetPickRay(int screenX, int screenY)
@@ -242,37 +250,31 @@ public sealed class CameraComponent
         var keyboardState = Keyboard.GetState();
         var moveDistance = MoveSpeed * deltaTime;
 
-        var forward = _target - _position;
-        forward.Normalize();
-
-        var right = Vector3.Cross(forward, _up);
-        right.Normalize();
-
         var movement = Vector3.Zero;
 
         if (keyboardState.IsKeyDown(Keys.W))
         {
-            movement += forward;
+            movement += _front;
         }
         if (keyboardState.IsKeyDown(Keys.S))
         {
-            movement -= forward;
+            movement -= _front;
         }
         if (keyboardState.IsKeyDown(Keys.A))
         {
-            movement -= right;
+            movement -= _right;
         }
         if (keyboardState.IsKeyDown(Keys.D))
         {
-            movement += right;
+            movement += _right;
         }
         if (keyboardState.IsKeyDown(Keys.Space))
         {
-            movement += _up;
+            movement += _worldUp;
         }
         if (keyboardState.IsKeyDown(Keys.LeftShift))
         {
-            movement -= _up;
+            movement -= _worldUp;
         }
 
         if (movement != Vector3.Zero)
@@ -300,19 +302,10 @@ public sealed class CameraComponent
 
         if (deltaX != 0 || deltaY != 0)
         {
-            _yaw += deltaX * MouseSensitivity;
-            _pitch -= deltaY * MouseSensitivity;
-
-            _pitch = MathHelper.Clamp(_pitch, -MathHelper.PiOver2 + 0.01f, MathHelper.PiOver2 - 0.01f);
-
-            var forward = new Vector3(
-                MathF.Sin(_yaw) * MathF.Cos(_pitch),
-                -MathF.Sin(_pitch),
-                MathF.Cos(_yaw) * MathF.Cos(_pitch)
-            );
-
-            _target = _position + forward;
-            _viewDirty = true;
+            var xOffset = deltaX * MouseSensitivity;
+            var yOffset = deltaY * MouseSensitivity;
+            
+            ModifyDirection(xOffset, yOffset);
         }
 
         _lastMousePosition = currentMousePosition;

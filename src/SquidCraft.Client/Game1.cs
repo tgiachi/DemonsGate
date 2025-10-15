@@ -97,21 +97,12 @@ public class Game1 : Microsoft.Xna.Framework.Game
             SquidCraftClientContext.BlockManagerService.AddBlockDefinition("DefaultBlocksAtlas", block);
         }
 
-        // _blockPreviewComponent = new Block3DComponent(GraphicsDevice, SquidCraftClientContext.BlockManagerService)
-        // {
-        //     BlockType = BlockType.Grass,
-        //     Size = 1f,
-        //     Position = Vector3.Zero,
-        //     ShowSideLabels = true,
-        //     AutoRotate = true
-        // };
 
         _cameraComponent = new CameraComponent(GraphicsDevice)
         {
             Position = new Vector3(8f, ChunkEntity.Height + 2f, 8f),
-            Target = new Vector3(8f, ChunkEntity.Height + 2f, 24f),
             MoveSpeed = 25f,
-            MouseSensitivity = 0.003f,
+            MouseSensitivity = 0.1f,
             EnableInput = true
         };
 
