@@ -1,0 +1,157 @@
+[
+  {
+    "BlockType": "Air",
+    "IsTransparent": true,
+    "IsLiquid": false,
+    "IsSolid": false,
+    "Sides": {
+      "Top": "576",
+      "Bottom": "576",
+      "North": "576",
+      "South": "576",
+      "East": "576",
+      "West": "576"
+    }
+  },
+  {
+    "BlockType": "Dirt",
+    "IsTransparent": false,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "232",
+      "Bottom": "232",
+      "North": "232",
+      "South": "232",
+      "East": "232",
+      "West": "232"
+    }
+  },
+  {
+    "BlockType": "Grass",
+    "IsTransparent": false,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "332",
+      "Bottom": "577",
+      "North": "321",
+      "South": "321",
+      "East": "321",
+      "West": "321"
+    }
+  },
+  {
+    "BlockType": "Bedrock",
+    "IsTransparent": false,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "44",
+      "Bottom": "44",
+      "North": "44",
+      "South": "44",
+      "East": "44",
+      "West": "44"
+    }
+  },
+  {
+    "BlockType": "Snow",
+    "IsTransparent": false,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "272",
+      "Bottom": "272",
+      "North": "272",
+      "South": "272",
+      "East": "272",
+      "West": "272"
+    }
+  },
+  {
+    "BlockType": "Ice",
+    "IsTransparent": true,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "364",
+      "Bottom": "364",
+      "North": "364",
+      "South": "364",
+      "East": "364",
+      "West": "364"
+    }
+  },
+  {
+    "BlockType": "Moss",
+    "IsTransparent": false,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "69",
+      "Bottom": "69",
+      "North": "69",
+      "South": "69",
+      "East": "69",
+      "West": "69"
+    }
+  },
+  {
+    "BlockType": "Stone",
+    "IsTransparent": false,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "83",
+      "Bottom": "83",
+      "North": "83",
+      "South": "83",
+      "East": "83",
+      "West": "83"
+    }
+  },
+  {
+    "BlockType": "Wood",
+    "IsTransparent": false,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "45",
+      "Bottom": "45",
+      "North": "45",
+      "South": "45",
+      "East": "45",
+      "West": "45"
+    }
+  },
+  {
+    "BlockType": "Leaves",
+    "IsTransparent": true,
+    "IsLiquid": false,
+    "IsSolid": true,
+    "Sides": {
+      "Top": "405",
+      "Bottom": "405",
+      "North": "405",
+      "South": "405",
+      "East": "405",
+      "West": "405"
+    }
+  },
+  {
+    "BlockType": "Water",
+    "IsTransparent": true,
+    "IsLiquid": true,
+    "IsSolid": false,
+    "Height": 0.875,
+    "Sides": {
+      "Top": "2",
+      "Bottom": "2",
+      "North": "2",
+      "South": "2",
+      "East": "2",
+      "West": "2"
+    }
+  }
+]

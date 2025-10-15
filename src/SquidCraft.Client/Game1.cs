@@ -7,6 +7,7 @@ using SquidCraft.Client.Context;
 using SquidCraft.Client.Data;
 using SquidCraft.Client.Services;
 using SquidCraft.Client.Components.UI.Controls;
+using SquidCraft.Client.Scenes;
 using SquidCraft.Core.Json;
 using SquidCraft.Game.Data.Types;
 using SquidCraft.Game.Data.Primitives;
@@ -28,6 +29,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private float _progressTimer;
     private ScrollingTextBoxComponent? _logTextBox;
     private static readonly RasterizerState ScissorRasterizerState = new() { ScissorTestEnable = true };
+    private Scenes.UITestScene? _uiTestScene;
+    private bool _isUITestMode;
 
     public Game1()
     {
@@ -58,6 +61,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         _imGUIDebuggerService = new ImGUIDebuggerService(this);
 
+        IsMouseVisible = false;
+
         base.Initialize();
     }
 
@@ -68,7 +73,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         SquidCraftClientContext.GraphicsDevice = GraphicsDevice;
         SquidCraftClientContext.AssetManagerService = new AssetManagerService(
-            Directory.GetCurrentDirectory(),
+            Path.Combine(Directory.GetCurrentDirectory()),
             GraphicsDevice
         );
 
@@ -97,6 +102,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
         }
 
 
+
+
         _cameraComponent = new CameraComponent(GraphicsDevice)
         {
             Position = new Vector3(9f, ChunkEntity.Height + 10f, 9f),
@@ -105,8 +112,10 @@ public class Game1 : Microsoft.Xna.Framework.Game
             MouseSensitivity = 0.1f,
             EnableInput = true,
             EnablePhysics = true,
+            FlyMode = false,
             Gravity = 32f,
-            JumpForce = 20f
+            JumpForce = 10f,
+            IsMouseCaptured = true
         };
 
         var watchTextComponent = new WatchTextComponent(
@@ -218,6 +227,16 @@ public class Game1 : Microsoft.Xna.Framework.Game
         var toolTip = new ToolTipComponent();
         toolTip.Show(new Vector2(340, 320), "WASD: move | Space/Shift: up/down | Mouse: look");
         SquidCraftClientContext.RootComponent.AddChild(toolTip);
+
+        _uiTestScene = new UITestScene();
+        _uiTestScene.Load();
+        _isUITestMode = true;
+        if (_cameraComponent != null)
+        {
+            _cameraComponent.EnableInput = false;
+            _cameraComponent.IsMouseCaptured = false;
+        }
+        IsMouseVisible = true;
     }
 
     protected override void Update(GameTime gameTime)
@@ -225,6 +244,39 @@ public class Game1 : Microsoft.Xna.Framework.Game
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
             Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
+
+        // Toggle UI test mode with F1
+        if (Keyboard.GetState().IsKeyDown(Keys.F1) && !_isUITestMode)
+        {
+            _isUITestMode = true;
+            _uiTestScene?.Load();
+            if (_cameraComponent != null)
+            {
+                _cameraComponent.EnableInput = false;
+                _cameraComponent.IsMouseCaptured = false;
+            }
+            IsMouseVisible = true;
+        }
+        else if (Keyboard.GetState().IsKeyDown(Keys.F2) && _isUITestMode)
+        {
+            _isUITestMode = false;
+            _uiTestScene?.Unload();
+            if (_cameraComponent != null)
+            {
+                _cameraComponent.EnableInput = true;
+                _cameraComponent.IsMouseCaptured = true;
+            }
+            IsMouseVisible = false;
+        }
+
+        if (_isUITestMode)
+        {
+            _uiTestScene?.Update(gameTime);
+        }
+        else
+        {
+            IsMouseVisible = !(_cameraComponent?.IsMouseCaptured ?? false);
+        }
 
         _progressTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
         if (_progressBarComponent != null)
@@ -250,36 +302,44 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Color.CornflowerBlue);
-
-        var viewportBounds = GraphicsDevice.Viewport.Bounds;
-        GraphicsDevice.ScissorRectangle = viewportBounds;
-
-        _worldComponent?.Draw(gameTime);
-        //_blockPreviewComponent?.Draw3D(gameTime);
-
-        if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
+        if (_isUITestMode)
         {
-            var (chunk, x, y, z) = selected.Value;
-            var blockWorldPos = chunk.Position + new Vector3(x, y, z);
-            _blockOutlineComponent?.Draw(blockWorldPos, _cameraComponent!.View, _cameraComponent.Projection);
+            // Draw UI test scene
+            _uiTestScene?.Draw(gameTime, _spriteBatch);
         }
+        else
+        {
+            GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        _spriteBatch.Begin(
-            SpriteSortMode.Immediate,
-            BlendState.AlphaBlend,
-            SamplerState.LinearClamp,
-            DepthStencilState.None,
-            ScissorRasterizerState
-        );
-        GraphicsDevice.ScissorRectangle = viewportBounds;
+            var viewportBounds = GraphicsDevice.Viewport.Bounds;
+            GraphicsDevice.ScissorRectangle = viewportBounds;
 
-        //_blockPreviewComponent?.DrawLabels(_spriteBatch);
-        SquidCraftClientContext.RootComponent.Draw(_spriteBatch, gameTime);
+            _worldComponent?.Draw(gameTime);
+            //_blockPreviewComponent?.Draw3D(gameTime);
 
-        _spriteBatch.End();
+            if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
+            {
+                var (chunk, x, y, z) = selected.Value;
+                var blockWorldPos = chunk.Position + new Vector3(x, y, z);
+                _blockOutlineComponent?.Draw(blockWorldPos, _cameraComponent!.View, _cameraComponent.Projection);
+            }
 
-        _imGUIDebuggerService.Draw(gameTime, _spriteBatch);
+            _spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                BlendState.AlphaBlend,
+                SamplerState.LinearClamp,
+                DepthStencilState.None,
+                ScissorRasterizerState
+            );
+            GraphicsDevice.ScissorRectangle = viewportBounds;
+
+            //_blockPreviewComponent?.DrawLabels(_spriteBatch);
+            SquidCraftClientContext.RootComponent.Draw(_spriteBatch, gameTime);
+
+            _spriteBatch.End();
+
+            _imGUIDebuggerService.Draw(gameTime, _spriteBatch);
+        }
 
         base.Draw(gameTime);
     }
@@ -288,6 +348,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     {
         _worldComponent?.Dispose();
         _blockOutlineComponent?.Dispose();
+        _uiTestScene?.Unload();
         base.UnloadContent();
     }
 

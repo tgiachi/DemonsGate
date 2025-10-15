@@ -44,6 +44,8 @@ public sealed class CameraComponent
         _right = Vector3.Normalize(Vector3.Cross(_front, _worldUp));
         
         UpdateCameraVectors();
+        
+        Mouse.SetPosition(_graphicsDevice.Viewport.Width / 2, _graphicsDevice.Viewport.Height / 2);
     }
 
     public Vector3 Position
@@ -236,6 +238,8 @@ public sealed class CameraComponent
 
     public bool EnableInput { get; set; } = true;
 
+    public bool IsMouseCaptured { get; set; } = true;
+
     public bool EnablePhysics
     {
         get => _enablePhysics;
@@ -414,18 +418,29 @@ public sealed class CameraComponent
 
     private void HandleMouseInput()
     {
+        if (!IsMouseCaptured)
+        {
+            _firstMouseMove = true;
+            return;
+        }
+
+        var viewport = _graphicsDevice.Viewport;
+        var centerX = viewport.Width / 2;
+        var centerY = viewport.Height / 2;
+
         var mouseState = Mouse.GetState();
         var currentMousePosition = new Point(mouseState.X, mouseState.Y);
 
         if (_firstMouseMove)
         {
-            _lastMousePosition = currentMousePosition;
+            _lastMousePosition = new Point(centerX, centerY);
             _firstMouseMove = false;
+            Mouse.SetPosition(centerX, centerY);
             return;
         }
 
-        var deltaX = currentMousePosition.X - _lastMousePosition.X;
-        var deltaY = currentMousePosition.Y - _lastMousePosition.Y;
+        var deltaX = currentMousePosition.X - centerX;
+        var deltaY = currentMousePosition.Y - centerY;
 
         if (deltaX != 0 || deltaY != 0)
         {
@@ -433,8 +448,8 @@ public sealed class CameraComponent
             var yOffset = deltaY * MouseSensitivity;
             
             ModifyDirection(xOffset, yOffset);
+            
+            Mouse.SetPosition(centerX, centerY);
         }
-
-        _lastMousePosition = currentMousePosition;
     }
 }
