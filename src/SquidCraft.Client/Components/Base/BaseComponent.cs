@@ -4,13 +4,11 @@ using Microsoft.Xna.Framework.Input;
 using SquidCraft.Client.Collections;
 using SquidCraft.Client.Components.Interfaces;
 using SquidCraft.Client.Context;
+using SquidCraft.Client.Interfaces;
 
 namespace SquidCraft.Client.Components.Base;
 
-/// <summary>
-/// Base class for UI components with positioning, sizing, and rendering support
-/// </summary>
-public abstract class BaseComponent : ISCDrawableComponent, IParentAwareComponent, IDisposable
+public abstract class BaseComponent : ISCDrawableComponent, IParentAwareComponent, ISCInitializable, IDisposable
 {
     private readonly SCDrawableCollection<ISCDrawableComponent> _children = new();
     private Vector2 _position;

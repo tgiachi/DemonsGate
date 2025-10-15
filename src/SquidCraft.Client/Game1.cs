@@ -304,8 +304,11 @@ public class Game1 : Microsoft.Xna.Framework.Game
     {
         if (_isUITestMode)
         {
+            _spriteBatch.Begin();
             // Draw UI test scene
             _uiTestScene?.Draw(gameTime, _spriteBatch);
+
+            _spriteBatch.End();
         }
         else
         {

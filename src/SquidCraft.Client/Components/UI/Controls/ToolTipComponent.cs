@@ -1,3 +1,4 @@
+using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SquidCraft.Client.Components.Base;
@@ -24,12 +25,14 @@ public class ToolTipComponent : BaseComponent
             Padding = Vector2.Zero,
             BackgroundColor = Color.Transparent,
             BorderColor = Color.Transparent,
-            Size = new Vector2(200, 80)
+            Size = new Vector2(200, 80),
+            ZIndex = 1
         };
 
         AddChild(_textBox);
         TextColor = Color.White;
         IsVisible = false;
+        ZIndex = 9999;
     }
 
     public Color BackgroundColor { get; set; }
@@ -98,6 +101,19 @@ public class ToolTipComponent : BaseComponent
 
         spriteBatch.Draw(pixel, bounds, BackgroundColor * Opacity);
         DrawBorder(spriteBatch, pixel, bounds, BorderColor * Opacity);
+
+        SpriteFontBase? font = _textBox.Font;
+        if (font != null && _textBox.Lines.Count > 0)
+        {
+            var textPos = absolute + Padding;
+            var yOffset = 0f;
+            foreach (var line in _textBox.Lines)
+            {
+                var drawPos = textPos + new Vector2(0, yOffset);
+                spriteBatch.DrawString(font, line, drawPos, TextColor * Opacity);
+                yOffset += font.MeasureString(line).Y;
+            }
+        }
     }
 
     private void UpdateLayout()

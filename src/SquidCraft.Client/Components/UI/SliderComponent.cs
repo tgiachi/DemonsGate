@@ -310,17 +310,14 @@ public class SliderComponent : BaseComponent
         // Size is already set
     }
 
-    /// <summary>
-    ///     Updates the component state
-    /// </summary>
-    /// <param name="gameTime">Game timing information</param>
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
+        base.Update(gameTime);
+
         if (!IsEnabled)
         {
             _isHovered = false;
             _isDragging = false;
-            base.Update(gameTime);
             return;
         }
 

@@ -8,16 +8,12 @@ using SquidCraft.Client.Context;
 
 namespace SquidCraft.Client.Scenes;
 
-/// <summary>
-///     UI Test Scene for showcasing and testing all UI components
-/// </summary>
 public class UITestScene : SceneBase
 {
     private string _statusText = "UI Components Test Scene - Press F2 to return to 3D world, ESC to exit game";
     private SpriteFontBase? _font;
     private bool _controlsInitialized;
 
-    // Sample UI controls
     private CheckBoxComponent? _sampleCheckBox;
     private RadioButtonComponent? _sampleRadio1;
     private RadioButtonComponent? _sampleRadio2;
@@ -28,62 +24,16 @@ public class UITestScene : SceneBase
     private GroupBoxComponent? _sampleGroupBox;
     private ListBoxComponent? _sampleListBox;
     private MenuBarComponent? _sampleMenuBar;
+    private TabControlComponent? _sampleTabControl;
+    private ToolTipComponent? _sampleToolTip;
+    private ButtonComponent? _tooltipTriggerButton;
 
-    /// <summary>
-    ///     Initializes the UI test scene
-    /// </summary>
     public UITestScene() : base("UI Test Scene")
     {
     }
 
-    /// <summary>
-    ///     Called when the scene is loaded
-    /// </summary>
-    protected override void OnLoad()
-    {
-        _font = SquidCraftClientContext.AssetManagerService.GetFontTtf("DefaultFont", 12);
-    }
-
-    /// <summary>
-    ///     Called when the scene is unloaded
-    /// </summary>
-    protected override void OnUnload()
-    {
-        // Cleanup if needed
-    }
-
-    /// <summary>
-    ///     Called every frame to update scene logic
-    /// </summary>
-    /// <param name="gameTime">Game timing information</param>
-    protected override void OnUpdate(GameTime gameTime)
-    {
-        // Initialize controls after assets are loaded
-        if (!_controlsInitialized && _font != null)
-        {
-            InitializeControls();
-            _controlsInitialized = true;
-        }
-
-        // Update controls
-        _sampleCheckBox?.Update(gameTime);
-        _sampleRadio1?.Update(gameTime);
-        _sampleRadio2?.Update(gameTime);
-        _sampleSlider?.Update(gameTime);
-        _sampleNumeric?.Update(gameTime);
-        _sampleButton?.Update(gameTime);
-        _sampleScrollBar?.Update(gameTime);
-        _sampleGroupBox?.Update(gameTime);
-        _sampleListBox?.Update(gameTime);
-        _sampleMenuBar?.Update(gameTime);
-    }
-
-    /// <summary>
-    ///     Initializes the sample UI controls
-    /// </summary>
     private void InitializeControls()
     {
-        // Checkbox
         _sampleCheckBox = new CheckBoxComponent("Enable Feature")
         {
             Position = new Vector2(600, 100),
@@ -94,7 +44,6 @@ public class UITestScene : SceneBase
             _statusText = $"Checkbox: {(args.IsChecked ? "Checked" : "Unchecked")}";
         };
 
-        // Radio buttons
         _sampleRadio1 = new RadioButtonComponent("Option A", "SampleGroup")
         {
             Position = new Vector2(600, 140),
@@ -114,7 +63,6 @@ public class UITestScene : SceneBase
             if (args.IsChecked) _statusText = "Radio: Option B selected";
         };
 
-        // Slider
         _sampleSlider = new SliderComponent(0f, 100f, 50f, 200f)
         {
             Position = new Vector2(600, 200)
@@ -124,7 +72,6 @@ public class UITestScene : SceneBase
             _statusText = $"Slider: {args.NewValue:F1}";
         };
 
-        // Numeric up/down
         _sampleNumeric = new NumericUpDownComponent(0f, 100f, 42f, 120f)
         {
             Position = new Vector2(600, 230)
@@ -134,37 +81,6 @@ public class UITestScene : SceneBase
             _statusText = $"Numeric: {value}";
         };
 
-        // Button
-        _sampleButton = new ButtonComponent
-        {
-            Position = new Vector2(600, 270),
-            Size = new Vector2(100, 30),
-            Text = "Click Me"
-        };
-        _sampleButton.Clicked += (sender, args) =>
-        {
-            _statusText = "Button clicked!";
-        };
-
-        // ScrollBar
-        _sampleScrollBar = new ScrollBarComponent(ScrollBarOrientation.Vertical)
-        {
-            Position = new Vector2(750, 100),
-            Size = new Vector2(20, 200),
-            Minimum = 0,
-            Maximum = 100,
-            Value = 50
-        };
-        _sampleScrollBar.ValueChanged += (sender, value) =>
-        {
-            _statusText = $"ScrollBar: {value}";
-        };
-        _sampleNumeric.ValueChanged += (sender, value) =>
-        {
-            _statusText = $"Numeric: {value}";
-        };
-
-        // Button
         _sampleButton = new ButtonComponent
         {
             Position = new Vector2(550, 260),
@@ -176,11 +92,6 @@ public class UITestScene : SceneBase
             _statusText = "Button clicked!";
         };
 
-
-
-
-
-        // ScrollBar
         _sampleScrollBar = new ScrollBarComponent(ScrollBarOrientation.Vertical)
         {
             Position = new Vector2(750, 100),
@@ -194,13 +105,11 @@ public class UITestScene : SceneBase
             _statusText = $"ScrollBar: {value}";
         };
 
-        // GroupBox
         _sampleGroupBox = new GroupBoxComponent("Settings", 150f, 100f)
         {
             Position = new Vector2(600, 320)
         };
 
-        // ListBox
         _sampleListBox = new ListBoxComponent(150f, 120f)
         {
             Position = new Vector2(600, 430)
@@ -215,7 +124,6 @@ public class UITestScene : SceneBase
             _statusText = $"ListBox: Selected {index}";
         };
 
-        // MenuBar
         _sampleMenuBar = new MenuBarComponent
         {
             Position = new Vector2(600, 560),
@@ -225,68 +133,97 @@ public class UITestScene : SceneBase
         _sampleMenuBar.AddMenuItem("Edit");
         _sampleMenuBar.AddMenuItem("View");
 
-        // Initialize all controls
-        _sampleCheckBox.Initialize();
-        _sampleRadio1.Initialize();
-        _sampleRadio2.Initialize();
-        _sampleSlider.Initialize();
-        _sampleNumeric.Initialize();
-        _sampleButton.Initialize();
-        _sampleScrollBar.Initialize();
-        _sampleGroupBox.Initialize();
-        _sampleListBox.Initialize();
-        _sampleMenuBar.Initialize();
+        _sampleTabControl = new TabControlComponent
+        {
+            Position = new Vector2(800, 100),
+            Size = new Vector2(300, 200)
+        };
+        var tab1 = _sampleTabControl.AddTab("Tab 1");
+        tab1.Content = "Content of Tab 1";
+        var tab2 = _sampleTabControl.AddTab("Tab 2");
+        tab2.Content = "Content of Tab 2";
+        var tab3 = _sampleTabControl.AddTab("Tab 3");
+        tab3.Content = "Content of Tab 3";
+
+        _tooltipTriggerButton = new ButtonComponent
+        {
+            Position = new Vector2(800, 320),
+            Size = new Vector2(150, 30),
+            Text = "Hover for Tooltip"
+        };
+
+        _sampleToolTip = new ToolTipComponent
+        {
+            IsVisible = false
+        };
+
+        Components.Add(_sampleCheckBox);
+        Components.Add(_sampleRadio1);
+        Components.Add(_sampleRadio2);
+        Components.Add(_sampleSlider);
+        Components.Add(_sampleNumeric);
+        Components.Add(_sampleButton);
+        Components.Add(_sampleScrollBar);
+        Components.Add(_sampleGroupBox);
+        Components.Add(_sampleListBox);
+        Components.Add(_sampleMenuBar);
+        Components.Add(_sampleTabControl);
+        Components.Add(_tooltipTriggerButton);
+        Components.Add(_sampleToolTip);
     }
 
-    /// <summary>
-    ///     Called when keyboard input is received. Override to implement scene-specific keyboard handling logic.
-    /// </summary>
-    /// <param name="keyboardState">Current keyboard state</param>
-    /// <param name="gameTime">Game timing information</param>
+    protected override void OnLoad()
+    {
+        _font = SquidCraftClientContext.AssetManagerService.GetFontTtf("DefaultFont", 12);
+        InitializeControls();
+        _controlsInitialized = true;
+    }
+
+    protected override void OnUnload()
+    {
+    }
+
+    protected override void OnUpdate(GameTime gameTime)
+    {
+        if (_tooltipTriggerButton != null && _sampleToolTip != null)
+        {
+            var mouseState = Mouse.GetState();
+            var mousePos = new Vector2(mouseState.X, mouseState.Y);
+            var buttonBounds = new Rectangle(
+                (int)_tooltipTriggerButton.Position.X,
+                (int)_tooltipTriggerButton.Position.Y,
+                (int)_tooltipTriggerButton.Size.X,
+                (int)_tooltipTriggerButton.Size.Y
+            );
+
+            if (buttonBounds.Contains(mousePos))
+            {
+                _sampleToolTip.Show(mousePos + new Vector2(10, 10), "This is a tooltip!\nIt can have multiple lines.\nHover over me!");
+            }
+            else
+            {
+                _sampleToolTip.Hide();
+            }
+        }
+    }
+
     protected override void OnHandleKeyboard(KeyboardState keyboardState, GameTime gameTime)
     {
-        // Handle keyboard input for sample controls
-        _sampleNumeric?.HandleKeyboard(keyboardState, gameTime);
     }
 
-    /// <summary>
-    ///     Called when mouse input is received. Override to implement scene-specific mouse handling logic.
-    /// </summary>
-    /// <param name="mouseState">Current mouse state</param>
-    /// <param name="gameTime">Game timing information</param>
     protected override void OnHandleMouse(MouseState mouseState, GameTime gameTime)
     {
-        // Handle mouse input for sample controls
-        _sampleCheckBox?.HandleMouse(mouseState, gameTime);
-        _sampleRadio1?.HandleMouse(mouseState, gameTime);
-        _sampleRadio2?.HandleMouse(mouseState, gameTime);
-        _sampleSlider?.HandleMouse(mouseState, gameTime);
-        _sampleNumeric?.HandleMouse(mouseState, gameTime);
-        _sampleButton?.HandleMouse(mouseState, gameTime);
-        _sampleScrollBar?.HandleMouse(mouseState, gameTime);
-        _sampleListBox?.HandleMouse(mouseState, gameTime);
-        _sampleMenuBar?.HandleMouse(mouseState, gameTime);
     }
 
-    /// <summary>
-    ///     Called every frame to draw the scene
-    /// </summary>
-    /// <param name="gameTime">Game timing information</param>
-    /// <param name="spriteBatch">SpriteBatch for drawing</param>
     protected override void OnDraw(GameTime gameTime, SpriteBatch spriteBatch)
     {
-        // Clear with a nice background color
         SquidCraftClientContext.GraphicsDevice.Clear(new Color(64, 64, 96));
 
-        spriteBatch.Begin();
-
-        // Draw title and status
         if (_font != null)
         {
             spriteBatch.DrawString(_font, "UI Components Showcase", new Vector2(10, 10), Color.White);
             spriteBatch.DrawString(_font, _statusText, new Vector2(10, 30), Color.Yellow);
 
-            // Draw component list
             var y = 60;
             spriteBatch.DrawString(_font, "Available UI Components:", new Vector2(10, y), Color.Cyan);
             y += 20;
@@ -308,6 +245,8 @@ public class UITestScene : SceneBase
             spriteBatch.DrawString(_font, "✓ NumericUpDownComponent - Numeric input", new Vector2(10, y), Color.LightGreen);
             y += 15;
             spriteBatch.DrawString(_font, "✓ TabControl/TabPage - Tabbed interface", new Vector2(10, y), Color.LightGreen);
+            y += 15;
+            spriteBatch.DrawString(_font, "✓ ToolTipComponent - Contextual tooltips", new Vector2(10, y), Color.LightGreen);
             y += 15;
 
             y += 10;
@@ -337,26 +276,11 @@ public class UITestScene : SceneBase
             y += 15;
             spriteBatch.DrawString(_font, "• Click the button", new Vector2(10, y), Color.LightGray);
             y += 15;
+            spriteBatch.DrawString(_font, "• Hover the tooltip button", new Vector2(10, y), Color.LightGray);
+            y += 15;
 
             y += 20;
             spriteBatch.DrawString(_font, "Press F2 to switch to 3D world, ESC to exit game", new Vector2(10, y), Color.Red);
         }
-
-        // Draw sample controls
-        if (_controlsInitialized)
-        {
-            _sampleCheckBox?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleRadio1?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleRadio2?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleSlider?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleNumeric?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleButton?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleScrollBar?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleGroupBox?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleListBox?.Draw(spriteBatch, gameTime, Vector2.Zero);
-            _sampleMenuBar?.Draw(spriteBatch, gameTime, Vector2.Zero);
-        }
-
-        spriteBatch.End();
     }
 }
