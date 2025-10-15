@@ -21,7 +21,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
     private ImGUIDebuggerService _imGUIDebuggerService;
-    private Block3DComponent? _blockPreviewComponent;
     private WorldComponent? _worldComponent;
     private CameraComponent? _cameraComponent;
     private BlockOutlineComponent? _blockOutlineComponent;
@@ -107,23 +106,33 @@ public class Game1 : Microsoft.Xna.Framework.Game
             EnableInput = true
         };
 
-        _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent)
-        {
-            ViewRange = 150f,
-            EnableFrustumCulling = true,
-            MaxRaycastDistance = 10f,
-            ChunkLoadDistance = 2,
-            MaxChunkBuildsPerFrame = 5,
-            GenerationDistance = 3,
-            ChunkGenerator = CreateFlatChunk
-        };
+        var watchTextComponent = new WatchTextComponent(
+            new Vector2(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2),
+            TimeSpan.FromSeconds(1),
+            () => $"X: {_cameraComponent.Position.X} " +
+                  $"Y: {_cameraComponent.Position.Y} " +
+                  $"Z: {_cameraComponent.Position.Z} | " +
+                  $"Yaw: {_cameraComponent.Yaw} " +
+                  $"Pitch: {_cameraComponent.Pitch}"
+        );
+
+        SquidCraftClientContext.RootComponent.AddChild(watchTextComponent);
+        
+            _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent)
+            {
+                ViewRange = 150f,
+                EnableFrustumCulling = true,
+                MaxRaycastDistance = 10f,
+                ChunkLoadDistance = 2,
+                MaxChunkBuildsPerFrame = 5,
+                GenerationDistance = 3,
+                ChunkGenerator = CreateFlatChunk
+            };
 
         _blockOutlineComponent = new BlockOutlineComponent(GraphicsDevice)
         {
             OutlineColor = Color.White * 0.8f
         };
-
-
 
 
         var viewport = GraphicsDevice.Viewport;
@@ -173,7 +182,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
         inspectorWindow.AddContent(buttonComponent);
 
         var comboBoxComponent = new ComboBoxComponent(
-            new[] { "Grass", "Dirt", "Stone", "Snow", "Water" });
+            new[] { "Grass", "Dirt", "Stone", "Snow", "Water" }
+        );
         comboBoxComponent.Width = 260f;
         comboBoxComponent.SelectedIndexChanged += (_, index) =>
         {
@@ -272,7 +282,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
     protected override void UnloadContent()
     {
         _worldComponent?.Dispose();
-        _blockPreviewComponent?.Dispose();
         _blockOutlineComponent?.Dispose();
         base.UnloadContent();
     }
@@ -328,7 +337,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             }
         }
 
-        var lightSystem = new SquidCraft.Client.Systems.ChunkLightSystem();
+        var lightSystem = new Systems.ChunkLightSystem();
         lightSystem.CalculateInitialSunlight(chunk);
 
         return chunk;
