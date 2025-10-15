@@ -40,11 +40,29 @@ First-person 3D camera with full input handling (adapted from Astralis).
 - `MoveSpeed` - Movement speed (default: 20f)
 - `MouseSensitivity` - Mouse look sensitivity (default: 0.1f)
 - `EnableInput` - Enable/disable input handling
+- `EnablePhysics` - Enable gravity and collisions (default: true)
+- `FlyMode` - Disable physics for creative flight (default: false)
+- `Gravity` - Gravity acceleration (default: 32f)
+- `JumpForce` - Jump velocity (default: 10f)
+- `BoundingBoxSize` - Player collision box (default: 0.6×1.8×0.6)
+- `IsOnGround` - True when player is on solid ground (readonly)
+- `CheckCollision` - Delegate for world collision testing
 
 **Controls:**
-- `W/A/S/D` - Movement (forward/left/back/right)
-- `Space` - Move up (world up, not camera up)
+
+*Physics Mode (FlyMode = false):*
+- `W/A/S/D` - Walk (horizontal only, no Y movement)
+- `Space` - Jump (only when on ground)
+- Gravity pulls player down
+- Collisions with blocks
+
+*Fly Mode (FlyMode = true):*
+- `W/A/S/D` - Move forward/left/back/right
+- `Space` - Move up
 - `Left Shift` - Move down
+- No gravity, free movement
+
+*Both Modes:*
 - `Mouse` - Look around (yaw/pitch)
 
 **Key Methods:**
@@ -62,16 +80,42 @@ UpdateCameraVectors():
 └── Up = normalize(cross(Right, Front))
 ```
 
+**Physics System:**
+```csharp
+ApplyPhysics(deltaTime):
+├── velocity.Y -= Gravity × deltaTime
+├── newPosition = position + velocity × deltaTime
+└── ResolveCollisions(newPosition)
+    ├── Calculate player feet position
+    ├── Test blocks under bounding box
+    ├── If collision: position above block
+    └── Set IsOnGround flag
+```
+
 **Usage:**
 ```csharp
+// Physics mode (survival)
 var camera = new CameraComponent(GraphicsDevice)
 {
-    Position = new Vector3(8, 73, 8),
-    Pitch = -45f,
-    MoveSpeed = 25f,
+    Position = new Vector3(8, 84, 8),
+    MoveSpeed = 5f,
     MouseSensitivity = 0.1f,
-    EnableInput = true
+    EnableInput = true,
+    EnablePhysics = true,
+    FlyMode = false,
+    Gravity = 32f,
+    JumpForce = 10f
 };
+camera.CheckCollision = (pos, size) => world.IsBlockSolid(pos);
+
+// Fly mode (creative)
+camera.FlyMode = true;  // Toggle anytime
+
+// Switch modes with key
+if (Keyboard.GetState().IsKeyDown(Keys.F))
+{
+    camera.FlyMode = !camera.FlyMode;
+}
 ```
 
 ---
