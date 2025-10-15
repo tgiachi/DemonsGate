@@ -172,10 +172,12 @@ public sealed class ChunkComponent : IDisposable
             return;
         }
 
-        if (_meshBuildTask == null || _meshBuildTask.IsCompleted)
+        if (_meshBuildTask != null && !_meshBuildTask.IsCompleted)
         {
-            _meshBuildTask = Task.Run(() => BuildMeshData());
+            return;
         }
+
+        _meshBuildTask = Task.Run(() => BuildMeshData());
     }
 
     private void CheckMeshBuildCompletion()
@@ -556,6 +558,16 @@ public sealed class ChunkComponent : IDisposable
             }
         }
 
+        var currentBlockDef = _blockManagerService.GetBlockDefinition(currentBlock.BlockType);
+        if (currentBlockDef != null && currentBlockDef.IsLiquid)
+        {
+            var neighborDef = _blockManagerService.GetBlockDefinition(neighbor.BlockType);
+            if (neighborDef != null && !neighborDef.IsTransparent)
+            {
+                return false;
+            }
+        }
+
         return _blockManagerService.IsTransparent(neighbor.BlockType);
     }
 
@@ -618,7 +630,7 @@ public sealed class ChunkComponent : IDisposable
                z >= 0 && z < ChunkEntity.Size;
     }
 
-    private static Color CalculateFaceColor(int x, int y, int z, SideType side)
+    private Color CalculateFaceColor(int x, int y, int z, SideType side)
     {
         var ambientOcclusion = 1.0f;
 
@@ -640,7 +652,15 @@ public sealed class ChunkComponent : IDisposable
                 break;
         }
 
-        return new Color(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0f);
+        var lightLevel = 1.0f;
+        if (_chunk != null && _chunk.IsInBounds(x, y, z))
+        {
+            var rawLight = _chunk.GetLightLevel(x, y, z);
+            lightLevel = rawLight / 15f;
+        }
+
+        var finalBrightness = ambientOcclusion * lightLevel;
+        return new Color(finalBrightness, finalBrightness, finalBrightness, 1.0f);
     }
 
     private static VertexPositionColorTexture[] GetFaceVertices(SideType side, int blockX, int blockY, int blockZ, (Vector2 Min, Vector2 Max) uv, Color color, float height = 1.0f)

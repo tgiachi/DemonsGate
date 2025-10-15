@@ -100,7 +100,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         _cameraComponent = new CameraComponent(GraphicsDevice)
         {
-            Position = new Vector3(8f, ChunkEntity.Height + 2f, 8f),
+            Position = new Vector3(8f, ChunkEntity.Height + 10f, 8f),
+            Pitch = -45f,
             MoveSpeed = 25f,
             MouseSensitivity = 0.1f,
             EnableInput = true
@@ -292,12 +293,17 @@ public class Game1 : Microsoft.Xna.Framework.Game
             for (int z = 0; z < ChunkEntity.Size; z++)
             {
                 var isWater = (x > 5 && x < 10 && z > 5 && z < 10);
+                var isTower = (x == 3 || x == 12) && (z == 3 || z == 12);
 
                 for (int y = 0; y < ChunkEntity.Height; y++)
                 {
                     BlockType blockType;
 
-                    if (y == 0)
+                    if (isTower && y > 58 && y < 63)
+                    {
+                        blockType = BlockType.Stone;
+                    }
+                    else if (y == 0)
                     {
                         blockType = BlockType.Bedrock;
                     }
@@ -314,10 +320,16 @@ public class Game1 : Microsoft.Xna.Framework.Game
                         blockType = isWater ? BlockType.Water : BlockType.Grass;
                     }
 
-                    chunk.SetBlock(x, y, z, new BlockEntity(id++, blockType));
+                    if (blockType != BlockType.Air)
+                    {
+                        chunk.SetBlock(x, y, z, new BlockEntity(id++, blockType));
+                    }
                 }
             }
         }
+
+        var lightSystem = new SquidCraft.Client.Systems.ChunkLightSystem();
+        lightSystem.CalculateInitialSunlight(chunk);
 
         return chunk;
     }

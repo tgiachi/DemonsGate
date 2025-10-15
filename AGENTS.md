@@ -25,37 +25,51 @@ Description: Analyzes the current git changes, generates a conventional commit m
 ### Components
 
 #### CameraComponent (`Components/CameraComponent.cs`)
-First-person 3D camera with full input handling.
+First-person 3D camera with full input handling (adapted from Astralis).
 
 **Properties:**
 - `Position` - Camera world position (Vector3)
-- `Target` - Look-at target (Vector3)
-- `FieldOfView` - FOV in radians (default: π/4)
-- `NearPlane` / `FarPlane` - Clipping planes
+- `Front` - Forward direction vector (normalized, readonly)
+- `Right` - Right direction vector (normalized, readonly)
+- `Up` - Up direction vector (normalized, readonly)
+- `Yaw` - Horizontal rotation in degrees (default: -90°)
+- `Pitch` - Vertical rotation in degrees (clamped: -89° to 89°)
+- `Zoom` - Field of view in degrees (default: 60°, range: 1-120°)
+- `FieldOfView` - FOV in radians (auto-calculated from Zoom)
+- `NearPlane` / `FarPlane` - Clipping planes (0.1f / 1000f)
 - `MoveSpeed` - Movement speed (default: 20f)
-- `MouseSensitivity` - Mouse look sensitivity (default: 0.003f)
+- `MouseSensitivity` - Mouse look sensitivity (default: 0.1f)
 - `EnableInput` - Enable/disable input handling
 
 **Controls:**
 - `W/A/S/D` - Movement (forward/left/back/right)
-- `Space` - Move up
+- `Space` - Move up (world up, not camera up)
 - `Left Shift` - Move down
 - `Mouse` - Look around (yaw/pitch)
 
 **Key Methods:**
 - `GetPickRay()` - Ray from camera forward for raycasting
 - `GetPickRay(screenX, screenY)` - Ray from screen coordinates
-- `LookAt(position, target)` - Set camera position and target
 - `Move(delta)` - Translate camera
-- `Rotate(yaw, pitch)` - Rotate camera
+- `ModifyDirection(xOffset, yOffset)` - Change yaw/pitch in degrees
+- `ModifyZoom(amount)` - Adjust FOV zoom
+
+**Camera Vectors:**
+```csharp
+UpdateCameraVectors():
+├── Front = normalize(cos(yaw)×cos(pitch), sin(pitch), sin(yaw)×cos(pitch))
+├── Right = normalize(cross(Front, WorldUp))
+└── Up = normalize(cross(Right, Front))
+```
 
 **Usage:**
 ```csharp
 var camera = new CameraComponent(GraphicsDevice)
 {
-    Position = new Vector3(8, 66, 8),
+    Position = new Vector3(8, 73, 8),
+    Pitch = -45f,
     MoveSpeed = 25f,
-    MouseSensitivity = 0.003f,
+    MouseSensitivity = 0.1f,
     EnableInput = true
 };
 ```
@@ -315,27 +329,79 @@ if (worldComponent.SelectedBlock is var selected && selected.HasValue)
 }
 ```
 
-### Vertex Color Lighting
+### Lighting System
 
-**Per-Face Ambient Occlusion:**
+#### ChunkLightSystem (`Systems/ChunkLightSystem.cs`)
+
+Sunlight propagation system adapted from Astralis.
+
+**Algorithm:**
+```csharp
+CalculateInitialSunlight(chunk):
+├── For each column (X, Z):
+│   └── ProcessSunlightColumn()
+│       ├── Start Y=63 (top) with light = 15
+│       ├── First solid block: gets full light (15)
+│       ├── Air below solid: light reduces by 1 per block
+│       ├── Transparent blocks (water): light passes through (-1)
+│       └── Solid blocks below first: light = 0
+│
+└── PropagateHorizontalLight()
+    └── Spread light sideways (reduction: -2 per hop)
+```
+
+**Light Levels:**
+- 15 = Full sunlight (top exposed blocks)
+- 10-14 = Indirect sunlight (near surface)
+- 5-9 = Shadow/cave lighting
+- 0-4 = Deep shadow
+
+**ChunkEntity Integration:**
+```csharp
+public byte[] LightLevels { get; }  // 16×64×16 array
+public byte GetLightLevel(int x, int y, int z)
+public void SetLightLevel(int x, int y, int z, byte level)
+public void SetLightLevels(byte[] levels)
+```
+
+**Vertex Color Calculation:**
 ```csharp
 CalculateFaceColor(x, y, z, side):
-├── Top:    100% brightness (full sun)
-├── Bottom:  50% brightness (shadow)
-├── North/South: 80% brightness
-└── East/West:   75% brightness
+├── Ambient Occlusion (per-face):
+│   ├── Top:    100%
+│   ├── Bottom:  50%
+│   ├── North/South: 80%
+│   └── East/West:   75%
+│
+├── Light Level:
+│   └── lightLevel = chunk.GetLightLevel(x, y, z) / 15.0
+│
+└── Final = AO × lightLevel
+    └── return Color(brightness, brightness, brightness)
 ```
+
+**Usage:**
+```csharp
+var lightSystem = new ChunkLightSystem();
+lightSystem.CalculateInitialSunlight(chunk);
+
+// Light levels now calculated for all blocks
+// Vertex colors automatically use lighting in rendering
+```
+
+**Transparent Blocks:**
+- Water (IsTransparent=true) allows light through
+- Light reduces by 1 per water block
+- Enables underwater lighting effects
 
 **Customization Examples:**
 ```csharp
-// Height-based lighting
-var heightFactor = y / (float)ChunkEntity.Height;
-var brightness = baseLight * (0.5f + heightFactor * 0.5f);
-return new Color(brightness, brightness, brightness);
+// Add block light (torches, lava)
+chunk.SetLightLevel(x, y, z, 14); // Torch light
 
 // Time-of-day
 var dayNightFactor = MathF.Cos(timeOfDay * MathF.PI);
-var brightness = baseBrightness * dayNightFactor;
+var brightness = baseBrightness * dayNightFactor * lightLevel;
 ```
 
 ---

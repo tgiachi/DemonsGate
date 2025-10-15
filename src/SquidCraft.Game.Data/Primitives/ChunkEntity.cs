@@ -30,13 +30,24 @@ public class ChunkEntity
     public ChunkEntity(Vector3 position)
     {
         Blocks = new BlockEntity[Size * Size * Height];
+        LightLevels = new byte[Size * Size * Height];
         Position = position;
+        
+        for (int i = 0; i < LightLevels.Length; i++)
+        {
+            LightLevels[i] = 15;
+        }
     }
 
     /// <summary>
     /// Gets the raw backing array that stores blocks for the chunk.
     /// </summary>
     public BlockEntity[] Blocks { get; }
+
+    /// <summary>
+    /// Gets the raw backing array that stores light levels for the chunk.
+    /// </summary>
+    public byte[] LightLevels { get; }
 
     /// <summary>
     /// Retrieves the block stored at the specified coordinates.
@@ -144,6 +155,38 @@ public class ChunkEntity
     {
         get => GetBlock(position);
         set => SetBlock(position, value);
+    }
+
+    public byte GetLightLevel(int x, int y, int z)
+    {
+        return LightLevels[GetIndex(x, y, z)];
+    }
+
+    public void SetLightLevel(int x, int y, int z, byte level)
+    {
+        LightLevels[GetIndex(x, y, z)] = level;
+    }
+
+    public void SetLightLevels(byte[] levels)
+    {
+        if (levels.Length != LightLevels.Length)
+        {
+            throw new ArgumentException($"Light levels array must have length {LightLevels.Length}", nameof(levels));
+        }
+
+        Array.Copy(levels, LightLevels, levels.Length);
+    }
+
+    public bool IsInBounds(int x, int y, int z)
+    {
+        return x >= 0 && x < Size &&
+               y >= 0 && y < Height &&
+               z >= 0 && z < Size;
+    }
+
+    public bool IsInBounds(Vector3 position)
+    {
+        return IsInBounds((int)position.X, (int)position.Y, (int)position.Z);
     }
 
     /// <summary>
