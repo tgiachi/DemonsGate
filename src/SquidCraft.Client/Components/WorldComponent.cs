@@ -763,6 +763,7 @@ public sealed class WorldComponent : IDisposable
                 AutoRotate = false,
                 BlockScale = 1f,
                 RenderTransparentBlocks = true,
+                EnableFadeIn = false,
                 GetNeighborChunk = GetChunkEntity
             };
 

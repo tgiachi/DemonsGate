@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SquidCraft.Game.Data.Primitives;
@@ -37,6 +38,10 @@ public sealed class CameraComponent
     private const float Gravity = 32f;
     private const float JumpVelocity = 12f;
     private const float TerminalVelocity = 50f;
+
+    // Spatial hashing for collision detection optimization
+    private const float CellSize = 1.0f;
+    private readonly Dictionary<(int, int, int), HashSet<Vector3>> _spatialGrid = new();
     private bool _isOnGround;
 
     /// <summary>
@@ -527,6 +532,13 @@ public sealed class CameraComponent
 
     private bool CheckCollision(Vector3 position)
     {
+        // Use optimized spatial grid collision detection if available
+        if (_spatialGrid.Count > 0)
+        {
+            return CheckCollisionOptimized(position);
+        }
+
+        // Fallback to original method if spatial grid is not populated
         if (IsBlockSolid == null) return false;
 
         var halfSize = BoundingBoxSize / 2;
@@ -552,6 +564,13 @@ public sealed class CameraComponent
 
     private bool CheckGroundCollision(Vector3 position)
     {
+        // Use optimized spatial grid collision detection if available
+        if (_spatialGrid.Count > 0)
+        {
+            return CheckGroundCollisionOptimized(position);
+        }
+
+        // Fallback to original method if spatial grid is not populated
         if (IsBlockSolid == null) return false;
 
         var feetY = position.Y - BoundingBoxSize.Y / 2 - 0.01f;
@@ -572,6 +591,158 @@ public sealed class CameraComponent
             if (IsBlockSolid(testPos))
             {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Populates the spatial grid with solid blocks for efficient collision detection.
+    /// Call this when the world changes or IsBlockSolid delegate is updated.
+    /// </summary>
+    /// <param name="worldBounds">The bounds of the world to scan for solid blocks.</param>
+    public void PopulateSpatialGrid(BoundingBox worldBounds)
+    {
+        _spatialGrid.Clear();
+
+        var minCellX = (int)MathF.Floor(worldBounds.Min.X / CellSize);
+        var maxCellX = (int)MathF.Ceiling(worldBounds.Max.X / CellSize);
+        var minCellY = (int)MathF.Floor(worldBounds.Min.Y / CellSize);
+        var maxCellY = (int)MathF.Ceiling(worldBounds.Max.Y / CellSize);
+        var minCellZ = (int)MathF.Floor(worldBounds.Min.Z / CellSize);
+        var maxCellZ = (int)MathF.Ceiling(worldBounds.Max.Z / CellSize);
+
+        for (var cellX = minCellX; cellX <= maxCellX; cellX++)
+        {
+            for (var cellY = minCellY; cellY <= maxCellY; cellY++)
+            {
+                for (var cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+                {
+                    var cellKey = (cellX, cellY, cellZ);
+                    var cellBlocks = new HashSet<Vector3>();
+
+                    // Scan all blocks in this cell
+                    var cellMin = new Vector3(cellX * CellSize, cellY * CellSize, cellZ * CellSize);
+                    var cellMax = cellMin + new Vector3(CellSize, CellSize, CellSize);
+
+                    for (float x = cellMin.X; x < cellMax.X; x += 0.5f)
+                    {
+                        for (float y = cellMin.Y; y < cellMax.Y; y += 0.5f)
+                        {
+                            for (float z = cellMin.Z; z < cellMax.Z; z += 0.5f)
+                            {
+                                var blockPos = new Vector3(x, y, z);
+                                if (IsBlockSolid?.Invoke(blockPos) == true)
+                                {
+                                    cellBlocks.Add(blockPos);
+                                }
+                            }
+                        }
+                    }
+
+                    if (cellBlocks.Count > 0)
+                    {
+                        _spatialGrid[cellKey] = cellBlocks;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Optimized collision detection using spatial grid.
+    /// </summary>
+    private bool CheckCollisionOptimized(Vector3 position)
+    {
+        if (IsBlockSolid == null) return false;
+
+        var halfSize = BoundingBoxSize / 2;
+        var min = position - halfSize;
+        var max = position + halfSize;
+
+        // Get cells that intersect with the bounding box
+        var minCellX = (int)MathF.Floor(min.X / CellSize);
+        var maxCellX = (int)MathF.Ceiling(max.X / CellSize);
+        var minCellY = (int)MathF.Floor(min.Y / CellSize);
+        var maxCellY = (int)MathF.Ceiling(max.Y / CellSize);
+        var minCellZ = (int)MathF.Floor(min.Z / CellSize);
+        var maxCellZ = (int)MathF.Ceiling(max.Z / CellSize);
+
+        // Check all intersecting cells
+        for (var cellX = minCellX; cellX <= maxCellX; cellX++)
+        {
+            for (var cellY = minCellY; cellY <= maxCellY; cellY++)
+            {
+                for (var cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+                {
+                    var cellKey = (cellX, cellY, cellZ);
+                    if (_spatialGrid.TryGetValue(cellKey, out var cellBlocks))
+                    {
+                        // Check if any block in this cell intersects with our bounding box
+                        foreach (var blockPos in cellBlocks)
+                        {
+                            if (blockPos.X >= min.X && blockPos.X <= max.X &&
+                                blockPos.Y >= min.Y && blockPos.Y <= max.Y &&
+                                blockPos.Z >= min.Z && blockPos.Z <= max.Z)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Optimized ground collision detection using spatial grid.
+    /// </summary>
+    private bool CheckGroundCollisionOptimized(Vector3 position)
+    {
+        if (IsBlockSolid == null) return false;
+
+        var feetY = position.Y - BoundingBoxSize.Y / 2 - 0.01f;
+        var halfWidth = BoundingBoxSize.X / 2;
+        var halfDepth = BoundingBoxSize.Z / 2;
+
+        var testPositions = new[]
+        {
+            new Vector3(position.X - halfWidth, feetY, position.Z - halfDepth),
+            new Vector3(position.X + halfWidth, feetY, position.Z - halfDepth),
+            new Vector3(position.X - halfWidth, feetY, position.Z + halfDepth),
+            new Vector3(position.X + halfWidth, feetY, position.Z + halfDepth),
+            new Vector3(position.X, feetY, position.Z)
+        };
+
+        // Get the cell for the ground level
+        var cellY = (int)MathF.Floor(feetY / CellSize);
+        var minCellX = (int)MathF.Floor((position.X - halfWidth) / CellSize);
+        var maxCellX = (int)MathF.Ceiling((position.X + halfWidth) / CellSize);
+        var minCellZ = (int)MathF.Floor((position.Z - halfDepth) / CellSize);
+        var maxCellZ = (int)MathF.Ceiling((position.Z + halfDepth) / CellSize);
+
+        // Check intersecting cells at ground level
+        for (var cellX = minCellX; cellX <= maxCellX; cellX++)
+        {
+            for (var cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+            {
+                var cellKey = (cellX, cellY, cellZ);
+                if (_spatialGrid.TryGetValue(cellKey, out var cellBlocks))
+                {
+                    foreach (var blockPos in cellBlocks)
+                    {
+                        foreach (var testPos in testPositions)
+                        {
+                            if (Vector3.DistanceSquared(blockPos, testPos) < 0.01f) // Small epsilon for floating point comparison
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
             }
         }
 

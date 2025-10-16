@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.ObjectPool;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended.Graphics;
@@ -15,26 +18,6 @@ namespace SquidCraft.Client.Components;
 
 /// <summary>
 /// Represents mesh data containing vertices, indices, and texture for rendering.
-/// </summary>
-/// <summary>
-/// Represents mesh data containing vertices, indices, and texture for rendering.
-/// </summary>
-public sealed class MeshData
-{
-    /// <summary>
-    /// Gets or sets the array of vertices for the mesh.
-    /// </summary>
-    public VertexPositionColorTexture[] Vertices { get; set; } = Array.Empty<VertexPositionColorTexture>();
-    /// <summary>
-    /// Gets or sets the array of indices for the mesh.
-    /// </summary>
-    public int[] Indices { get; set; } = Array.Empty<int>();
-    /// <summary>
-    /// Gets or sets the texture for the mesh.
-    /// </summary>
-    public Texture2D? Texture { get; set; }
-}
-
 /// <summary>
 /// Renders a single 16x64x16 chunk with greedy meshing and async mesh building.
 /// </summary>
@@ -78,6 +61,21 @@ public sealed class ChunkComponent : Base3dComponent
 
     private Task<MeshData>? _meshBuildTask;
     private MeshData? _pendingMeshData;
+
+
+    // Object pools for mesh data to reduce GC pressure
+    private static readonly ObjectPool<List<VertexPositionColorTexture>> _vertexPool =
+        ObjectPool.Create(new VertexListPolicy());
+    private static readonly ObjectPool<List<int>> _indexPool =
+        ObjectPool.Create(new IndexListPolicy());
+
+    // GPU upload thread for mesh data
+    private static readonly ConcurrentQueue<MeshData> _gpuUploadQueue = new();
+    private static Thread? _gpuUploadThread;
+    private static readonly AutoResetEvent _gpuUploadSignal = new(false);
+
+    // Wind animation time for billboards
+
 
     /// <summary>
     /// Gets or sets the delegate for retrieving neighboring chunks for cross-chunk face culling.
@@ -157,6 +155,11 @@ public sealed class ChunkComponent : Base3dComponent
     /// Gets or sets whether transparent blocks (e.g. water) should be rendered.
     /// </summary>
     public bool RenderTransparentBlocks { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets whether to use greedy meshing for mesh generation.
+    /// </summary>
+    public bool UseGreedyMeshing { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the speed of the fade-in animation.
@@ -269,6 +272,8 @@ public sealed class ChunkComponent : Base3dComponent
     {
         var elapsedSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+
+
         CheckMeshBuildCompletion();
 
         if (_isFadingIn)
@@ -285,6 +290,8 @@ public sealed class ChunkComponent : Base3dComponent
         {
             _rotationY = (_rotationY + RotationSpeed * elapsedSeconds) % MathHelper.TwoPi;
         }
+
+
 
         base.Update(gameTime);
     }
@@ -415,8 +422,8 @@ public sealed class ChunkComponent : Base3dComponent
             return new MeshData();
         }
 
-        var vertices = new List<VertexPositionColorTexture>();
-        var indices = new List<int>();
+        var vertices = _vertexPool.Get();
+        var indices = _indexPool.Get();
         Texture2D? atlasTexture = null;
 
         for (int x = 0; x < ChunkEntity.Size; x++)
@@ -479,6 +486,12 @@ public sealed class ChunkComponent : Base3dComponent
                                 continue;
                             }
 
+                            // Additional greedy meshing check - skip faces between same block types
+                            if (UseGreedyMeshing && ShouldSkipFace(x, y, z, side, block.BlockType))
+                            {
+                                continue;
+                            }
+
                             var region = _blockManagerService.GetBlockSide(block.BlockType, side);
 
                             if (region == null)
@@ -509,12 +522,18 @@ public sealed class ChunkComponent : Base3dComponent
             }
         }
 
-        return new MeshData
+        var meshData = new MeshData
         {
             Vertices = vertices.ToArray(),
             Indices = indices.ToArray(),
             Texture = atlasTexture
         };
+
+        // Return lists to pool
+        _vertexPool.Return(vertices);
+        _indexPool.Return(indices);
+
+        return meshData;
     }
 
     private void UploadMeshToGpu(MeshData meshData)
@@ -535,7 +554,7 @@ public sealed class ChunkComponent : Base3dComponent
         _texture = meshData.Texture;
         _primitiveCount = meshData.Indices.Length / 3;
 
-        _logger.Information("Chunk mesh uploaded: {Vertices} vertices, {Faces} faces", meshData.Vertices.Length, meshData.Indices.Length / 6);
+        _logger.Information("Chunk mesh uploaded: {Vertices} vertices, {Faces} faces", meshData.Vertices.Length, meshData.Indices.Length / 3);
     }
 
     private bool ShouldRenderFace(int x, int y, int z, SideType side)
@@ -795,8 +814,10 @@ public sealed class ChunkComponent : Base3dComponent
         float y = blockY;
         float z = blockZ + 0.5f;
         float y1 = blockY + height;
-        
+
         const float offset = 0.4f;
+
+        // No wind animation - leaves and flowers should not move
 
         return new[]
         {
@@ -804,7 +825,7 @@ public sealed class ChunkComponent : Base3dComponent
             new VertexPositionColorTexture(new Vector3(x - offset, y, z - offset), color, new Vector2(min.X, max.Y)),
             new VertexPositionColorTexture(new Vector3(x + offset, y, z + offset), color, new Vector2(max.X, max.Y)),
             new VertexPositionColorTexture(new Vector3(x + offset, y1, z + offset), color, new Vector2(max.X, min.Y)),
-            
+
             new VertexPositionColorTexture(new Vector3(x + offset, y1, z - offset), color, new Vector2(min.X, min.Y)),
             new VertexPositionColorTexture(new Vector3(x + offset, y, z - offset), color, new Vector2(min.X, max.Y)),
             new VertexPositionColorTexture(new Vector3(x - offset, y, z + offset), color, new Vector2(max.X, max.Y)),
@@ -827,6 +848,9 @@ public sealed class ChunkComponent : Base3dComponent
         return (new Vector2(minX, minY), new Vector2(maxX, maxY));
     }
 
+
+
+
     private void ClearGeometry()
     {
         _vertexBuffer?.Dispose();
@@ -837,5 +861,132 @@ public sealed class ChunkComponent : Base3dComponent
 
         _texture = null;
         _primitiveCount = 0;
+    }
+
+    // Object pool policies for mesh data
+    private class VertexListPolicy : IPooledObjectPolicy<List<VertexPositionColorTexture>>
+    {
+        public List<VertexPositionColorTexture> Create()
+        {
+            return new List<VertexPositionColorTexture>(16384); // Pre-allocate capacity for typical chunk
+        }
+
+        public bool Return(List<VertexPositionColorTexture> obj)
+        {
+            obj.Clear();
+            return true;
+        }
+    }
+
+    private class IndexListPolicy : IPooledObjectPolicy<List<int>>
+    {
+        public List<int> Create()
+        {
+            return new List<int>(24576); // Pre-allocate capacity for typical chunk (6 indices per quad * 4 quads per block * 1024 blocks)
+        }
+
+        public bool Return(List<int> obj)
+        {
+            obj.Clear();
+            return true;
+        }
+    }
+
+    // GPU upload thread management
+    private static void StartGpuUploadThread()
+    {
+        if (_gpuUploadThread != null) return;
+
+        _gpuUploadThread = new Thread(() =>
+        {
+            while (true)
+            {
+                if (_gpuUploadQueue.TryDequeue(out var meshData))
+                {
+                    UploadMeshToGpuAsync(meshData);
+                }
+                else
+                {
+                    _gpuUploadSignal.WaitOne(1); // Wait for new work or timeout
+                }
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "GPU Upload Thread"
+        };
+
+        _gpuUploadThread.Start();
+    }
+
+    // Simple greedy meshing optimization - skip faces between same block types
+    private bool ShouldSkipFace(int x, int y, int z, SideType side, BlockType currentBlockType)
+    {
+        if (_chunk == null) return false;
+
+        // Check if the neighboring block is the same type
+        var (offsetX, offsetY, offsetZ) = side switch
+        {
+            SideType.Top => (0, 1, 0),
+            SideType.Bottom => (0, -1, 0),
+            SideType.North => (0, 0, -1),
+            SideType.South => (0, 0, 1),
+            SideType.East => (1, 0, 0),
+            SideType.West => (-1, 0, 0),
+            _ => (0, 0, 0)
+        };
+
+        var neighborX = x + offsetX;
+        var neighborY = y + offsetY;
+        var neighborZ = z + offsetZ;
+
+        // Check bounds
+        if (neighborX < 0 || neighborX >= ChunkEntity.Size ||
+            neighborY < 0 || neighborY >= ChunkEntity.Height ||
+            neighborZ < 0 || neighborZ >= ChunkEntity.Size)
+        {
+            // Check cross-chunk neighbor if delegate is available
+            if (GetNeighborChunk != null)
+            {
+                var chunkPos = new Vector3(
+                    (int)(_chunk.Position.X / ChunkEntity.Size),
+                    0,
+                    (int)(_chunk.Position.Z / ChunkEntity.Size));
+
+                var neighborChunkPos = chunkPos + new Vector3(
+                    neighborX < 0 ? -1 : neighborX >= ChunkEntity.Size ? 1 : 0,
+                    0,
+                    neighborZ < 0 ? -1 : neighborZ >= ChunkEntity.Size ? 1 : 0);
+
+                var neighborChunk = GetNeighborChunk(neighborChunkPos);
+                if (neighborChunk != null)
+                {
+                    var localX = neighborX < 0 ? ChunkEntity.Size - 1 : neighborX >= ChunkEntity.Size ? 0 : neighborX;
+                    var localZ = neighborZ < 0 ? ChunkEntity.Size - 1 : neighborZ >= ChunkEntity.Size ? 0 : neighborZ;
+
+                    var crossChunkBlock = neighborChunk.Blocks[ChunkEntity.GetIndex(localX, neighborY, localZ)];
+                    return crossChunkBlock?.BlockType == currentBlockType;
+                }
+            }
+            return false; // Edge of world, render face
+        }
+
+        var neighborBlock = _chunk.Blocks[ChunkEntity.GetIndex(neighborX, neighborY, neighborZ)];
+        return neighborBlock?.BlockType == currentBlockType;
+    }
+
+    private static void UploadMeshToGpuAsync(MeshData meshData)
+    {
+        // This method runs on the GPU upload thread
+        // Note: In MonoGame, GPU operations should be done on the main thread
+        // This is a placeholder - actual implementation would need to coordinate with main thread
+
+        // For now, we'll just simulate the work
+        // In a real implementation, this would:
+        // 1. Create vertex and index buffers
+        // 2. Upload data to GPU
+        // 3. Signal completion back to main thread
+
+        Thread.Sleep(1); // Simulate GPU upload time
     }
 }

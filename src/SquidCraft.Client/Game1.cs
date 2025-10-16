@@ -42,7 +42,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         JsonUtils.RegisterJsonContext(SquidCraftGameJsonContext.Default);
         JsonUtils.RegisterJsonContext(SquidCraftClientJsonContext.Default);
 
-        Log.Logger = new LoggerConfiguration().MinimumLevel.Information()
+        Log.Logger = new LoggerConfiguration().MinimumLevel.Debug()
             .WriteTo.Console(formatProvider: Thread.CurrentThread.CurrentCulture)
             .CreateLogger();
 
@@ -205,7 +205,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         // Handle block breaking with left mouse click
         var currentMouseState = Mouse.GetState();
-        if (currentMouseState.LeftButton == ButtonState.Pressed && 
+        if (currentMouseState.LeftButton == ButtonState.Pressed &&
             _previousMouseState.LeftButton == ButtonState.Released)
         {
             if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
@@ -247,7 +247,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
                 _logger.Information("Block broken at {Position}", blockWorldPos);
             }
         }
-        
+
         _previousMouseState = currentMouseState;
 
         // Handle block placing with right mouse click

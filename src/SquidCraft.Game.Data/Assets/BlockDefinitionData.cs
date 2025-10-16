@@ -15,6 +15,10 @@ public class BlockDefinitionData
 
     public bool IsBillboard { get; set; }
 
+    public bool IsWindable { get; set; }
+
+    public float WindSpeed { get; set; } = 1.0f;
+
     public float Height { get; set; } = 1.0f;
 
     public void AddSide(SideType type, string side)

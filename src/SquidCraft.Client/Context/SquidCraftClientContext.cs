@@ -8,6 +8,8 @@ namespace SquidCraft.Client.Context;
 
 public static class SquidCraftClientContext
 {
+
+
     public static IAssetManagerService AssetManagerService { get; set; }
     public static ISceneManager SceneManager { get; set; }
     public static GraphicsDevice GraphicsDevice { get; set; }
