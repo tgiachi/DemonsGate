@@ -22,7 +22,6 @@ public sealed class WorldComponent : IDisposable
     private readonly Particle3dComponent _particleComponent;
     private readonly ChunkLightSystem _lightSystem;
     private readonly WaterSimulationSystem _waterSystem;
-    private readonly ChunkLightSystem _lightingSystem = new();
 
     private bool _isDisposed;
     private BoundingFrustum? _frustum;
@@ -106,7 +105,7 @@ public sealed class WorldComponent : IDisposable
     {
         ArgumentNullException.ThrowIfNull(chunk);
 
-        _lightingSystem.CalculateInitialSunlight(chunk);
+        _lightSystem.CalculateInitialSunlight(chunk);
     }
 
     /// <summary>
@@ -114,18 +113,16 @@ public sealed class WorldComponent : IDisposable
     /// </summary>
     /// <param name="chunk">The chunk entity to add.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task AddChunkAsync(ChunkEntity chunk)
+    public Task AddChunkAsync(ChunkEntity chunk)
     {
         ArgumentNullException.ThrowIfNull(chunk);
 
         var chunkPosition = chunk.Position;
 
-        await Task.Run(() =>
-            {
-                _pendingChunks.Enqueue((chunkPosition, chunk));
-                _logger.Debug("Chunk queued for addition at position {Position}", chunkPosition);
-            }
-        );
+        _pendingChunks.Enqueue((chunkPosition, chunk));
+        _logger.Debug("Chunk queued for addition at position {Position}", chunkPosition);
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -162,9 +159,8 @@ public sealed class WorldComponent : IDisposable
     /// <returns>The chunk entity if found; otherwise, null.</returns>
     public ChunkEntity? GetChunkEntity(XnaVector3 position)
     {
-        var sysPos = new SysVector3(position.X, position.Y, position.Z);
-        var chunk = GetChunk(sysPos);
-        return chunk?.Chunk;
+        var chunkPos = new SysVector3(position.X, position.Y, position.Z);
+        return _chunks.TryGetValue(chunkPos, out var chunk) ? chunk.Chunk : null;
     }
 
     /// <summary>
@@ -191,7 +187,6 @@ public sealed class WorldComponent : IDisposable
 
         var chunkX = MathF.Floor(blockX / (float)ChunkEntity.Size) * ChunkEntity.Size;
         var chunkZ = MathF.Floor(blockZ / (float)ChunkEntity.Size) * ChunkEntity.Size;
-        var chunkPos = new SysVector3(chunkX, 0f, chunkZ);
 
         var chunkEntity = GetChunkEntity(new XnaVector3(chunkX, 0f, chunkZ));
         if (chunkEntity == null)
@@ -416,21 +411,17 @@ public sealed class WorldComponent : IDisposable
     private void UnloadDistantChunks(int centerX, int centerZ)
     {
         var unloadDistance = GenerationDistance + 1;
-        var chunksToRemove = new List<SysVector3>();
 
-        foreach (var (pos, _) in _chunks)
-        {
-            var chunkX = (int)(pos.X / ChunkEntity.Size);
-            var chunkZ = (int)(pos.Z / ChunkEntity.Size);
-
-            var distanceX = Math.Abs(chunkX - centerX);
-            var distanceZ = Math.Abs(chunkZ - centerZ);
-
-            if (distanceX > unloadDistance || distanceZ > unloadDistance)
+        var chunksToRemove = _chunks.Keys
+            .Where(pos =>
             {
-                chunksToRemove.Add(pos);
-            }
-        }
+                var chunkX = (int)(pos.X / ChunkEntity.Size);
+                var chunkZ = (int)(pos.Z / ChunkEntity.Size);
+                var distanceX = Math.Abs(chunkX - centerX);
+                var distanceZ = Math.Abs(chunkZ - centerZ);
+                return distanceX > unloadDistance || distanceZ > unloadDistance;
+            })
+            .ToList();
 
         foreach (var pos in chunksToRemove)
         {
@@ -463,15 +454,13 @@ public sealed class WorldComponent : IDisposable
         {
             var point = ray.Position + ray.Direction * currentDistance;
 
-            foreach (var chunk in _chunks.Values)
-            {
-                if (chunk.Chunk == null)
-                {
-                    continue;
-                }
+            var chunkX = MathF.Floor(point.X / ChunkEntity.Size) * ChunkEntity.Size;
+            var chunkZ = MathF.Floor(point.Z / ChunkEntity.Size) * ChunkEntity.Size;
+            var chunkPos = new SysVector3(chunkX, 0f, chunkZ);
 
-                var chunkPos = chunk.Position;
-                var relativePos = point - chunkPos;
+            if (_chunks.TryGetValue(chunkPos, out var chunk) && chunk.Chunk != null)
+            {
+                var relativePos = point - chunk.Position;
 
                 var blockX = (int)MathF.Floor(relativePos.X);
                 var blockY = (int)MathF.Floor(relativePos.Y);

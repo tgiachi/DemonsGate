@@ -53,6 +53,8 @@ public sealed class ChunkComponent : Base3dComponent
         { SideType.West, (-1, 0, 0) }
     };
 
+    private static readonly SideType[] AllSides = Enum.GetValues<SideType>();
+
     private readonly GraphicsDevice _graphicsDevice;
     private readonly BlockManagerService _blockManagerService;
     private readonly BasicEffect _effect;
@@ -420,7 +422,9 @@ public sealed class ChunkComponent : Base3dComponent
                         continue;
                     }
 
-                    foreach (var side in Enum.GetValues<SideType>())
+                    var blockHeight = definition.Height;
+
+                    foreach (var side in AllSides)
                     {
                         if (!ShouldRenderFace(x, y, z, side))
                         {
@@ -438,7 +442,6 @@ public sealed class ChunkComponent : Base3dComponent
 
                         var uv = ExtractUv(region);
                         var faceColor = CalculateFaceColor(x, y, z, side);
-                        var blockHeight = definition.Height;
                         var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor, blockHeight);
 
                         var baseIndex = vertices.Count;
@@ -484,109 +487,6 @@ public sealed class ChunkComponent : Base3dComponent
         _primitiveCount = meshData.Indices.Length / 3;
 
         _logger.Information("Chunk mesh uploaded: {Vertices} vertices, {Faces} faces", meshData.Vertices.Length, meshData.Indices.Length / 6);
-    }
-
-    private void EnsureGeometry()
-    {
-        if (!_geometryInvalidated)
-        {
-            return;
-        }
-
-        if (_chunk == null)
-        {
-            ClearGeometry();
-            _geometryInvalidated = false;
-            return;
-        }
-
-        var vertices = new List<VertexPositionColorTexture>();
-        var indices = new List<int>();
-        Texture2D? atlasTexture = null;
-
-        for (int x = 0; x < ChunkEntity.Size; x++)
-        {
-            for (int y = 0; y < ChunkEntity.Height; y++)
-            {
-                for (int z = 0; z < ChunkEntity.Size; z++)
-                {
-                    var block = _chunk.Blocks[ChunkEntity.GetIndex(x, y, z)];
-
-                    if (block == null || block.BlockType == BlockType.Air)
-                    {
-                        continue;
-                    }
-
-                    var definition = _blockManagerService.GetBlockDefinition(block.BlockType);
-
-                    if (definition == null)
-                    {
-                        continue;
-                    }
-
-                    if (definition.IsTransparent && !RenderTransparentBlocks)
-                    {
-                        continue;
-                    }
-
-                    foreach (var side in Enum.GetValues<SideType>())
-                    {
-                        if (!ShouldRenderFace(x, y, z, side))
-                        {
-                            continue;
-                        }
-
-                        var region = _blockManagerService.GetBlockSide(block.BlockType, side);
-
-                        if (region == null)
-                        {
-                            continue;
-                        }
-
-                        atlasTexture ??= region.Texture;
-
-                        var uv = ExtractUv(region);
-                        var faceColor = CalculateFaceColor(x, y, z, side);
-                        var blockHeight = definition.Height;
-                        var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor, blockHeight);
-
-                        var baseIndex = vertices.Count;
-                        vertices.AddRange(faceVertices);
-                        indices.AddRange(new[]
-                        {
-                            baseIndex,
-                            baseIndex + 1,
-                            baseIndex + 2,
-                            baseIndex + 2,
-                            baseIndex + 3,
-                            baseIndex
-                        });
-                    }
-                }
-            }
-        }
-
-        if (vertices.Count == 0 || indices.Count == 0 || atlasTexture == null)
-        {
-            ClearGeometry();
-            _geometryInvalidated = false;
-            return;
-        }
-
-        _vertexBuffer?.Dispose();
-        _indexBuffer?.Dispose();
-
-        _vertexBuffer = new VertexBuffer(_graphicsDevice, typeof(VertexPositionColorTexture), vertices.Count, BufferUsage.WriteOnly);
-        _vertexBuffer.SetData(vertices.ToArray());
-
-        _indexBuffer = new IndexBuffer(_graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.WriteOnly);
-        _indexBuffer.SetData(indices.ToArray());
-
-        _texture = atlasTexture;
-        _primitiveCount = indices.Count / 3;
-
-        _geometryInvalidated = false;
-        _logger.Debug("Chunk geometry rebuilt: {Vertices} vertices, {Faces} faces", vertices.Count, indices.Count / 6);
     }
 
     private bool ShouldRenderFace(int x, int y, int z, SideType side)
