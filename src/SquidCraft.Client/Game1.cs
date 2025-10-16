@@ -428,7 +428,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
             }
         }
 
-
         _worldComponent.CalculateInitialLighting(chunk);
 
 
