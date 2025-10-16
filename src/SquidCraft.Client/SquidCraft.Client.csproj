@@ -38,6 +38,7 @@
         <PackageReference Include="System.ValueTuple" Version="4.6.1" />
         <PackageReference Include="FontStashSharp.MonoGame" Version="1.4.1" />
         <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+        <PackageReference Include="Jitter2" Version="2.5.1" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\SquidCraft.Game.Data\SquidCraft.Game.Data.csproj" />

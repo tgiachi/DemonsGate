@@ -113,10 +113,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             MoveSpeed = 25f,
             MouseSensitivity = 0.1f,
             EnableInput = true,
-            EnablePhysics = true,
             FlyMode = false,
-            Gravity = 32f,
-            JumpForce = 10f,
             IsMouseCaptured = true
         };
 
@@ -160,8 +157,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             ChunkGenerator = CreateFlatChunkAsync
         };
 
-        _cameraComponent.CheckCollision = (pos, size) => _worldComponent.IsBlockSolid(pos);
-
+        _cameraComponent.IsBlockSolid = _worldComponent.IsBlockSolid;
 
         _blockOutlineComponent = new BlockOutlineComponent(GraphicsDevice)
         {
