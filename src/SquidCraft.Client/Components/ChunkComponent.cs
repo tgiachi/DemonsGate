@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended.Graphics;
@@ -12,13 +13,34 @@ using SquidCraft.Game.Data.Types;
 
 namespace SquidCraft.Client.Components;
 
+/// <summary>
+/// Represents mesh data containing vertices, indices, and texture for rendering.
+/// </summary>
+/// <summary>
+/// Represents mesh data containing vertices, indices, and texture for rendering.
+/// </summary>
 public sealed class MeshData
 {
+    /// <summary>
+    /// Gets or sets the array of vertices for the mesh.
+    /// </summary>
     public VertexPositionColorTexture[] Vertices { get; set; } = Array.Empty<VertexPositionColorTexture>();
+    /// <summary>
+    /// Gets or sets the array of indices for the mesh.
+    /// </summary>
     public int[] Indices { get; set; } = Array.Empty<int>();
+    /// <summary>
+    /// Gets or sets the texture for the mesh.
+    /// </summary>
     public Texture2D? Texture { get; set; }
 }
 
+/// <summary>
+/// Renders a single 16x64x16 chunk with greedy meshing and async mesh building.
+/// </summary>
+/// <summary>
+/// Renders a single 16x64x16 chunk with greedy meshing and async mesh building.
+/// </summary>
 public sealed class ChunkComponent : Base3dComponent
 {
     private static readonly Dictionary<SideType, (int X, int Y, int Z)> NeighborOffsets = new()
@@ -55,6 +77,12 @@ public sealed class ChunkComponent : Base3dComponent
     private Task<MeshData>? _meshBuildTask;
     private MeshData? _pendingMeshData;
 
+    /// <summary>
+    /// Gets or sets the delegate for retrieving neighboring chunks for cross-chunk face culling.
+    /// </summary>
+    /// <summary>
+    /// Gets or sets the delegate for retrieving neighboring chunks for cross-chunk face culling.
+    /// </summary>
     public Func<Vector3, ChunkEntity?>? GetNeighborChunk { get; set; }
 
     /// <summary>
@@ -119,6 +147,9 @@ public sealed class ChunkComponent : Base3dComponent
     //     _dayNightCycle = dayNightCycle;
     // }
 
+    /// <summary>
+    /// Gets or sets the uniform block scale applied during rendering.
+    /// </summary>
     public float BlockScale { get; set; } = 1f;
 
     /// <summary>
@@ -126,8 +157,20 @@ public sealed class ChunkComponent : Base3dComponent
     /// </summary>
     public bool RenderTransparentBlocks { get; set; } = false;
 
+    /// <summary>
+    /// Gets or sets the speed of the fade-in animation.
+    /// </summary>
+    /// <summary>
+    /// Gets or sets the speed of the fade-in animation.
+    /// </summary>
     public float FadeInSpeed { get; set; } = 2f;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether fade-in animation is enabled.
+    /// </summary>
+    /// <summary>
+    /// Gets or sets a value indicating whether fade-in animation is enabled.
+    /// </summary>
     public bool EnableFadeIn { get; set; } = true;
 
     /// <summary>
@@ -158,8 +201,20 @@ public sealed class ChunkComponent : Base3dComponent
     /// </summary>
     public void InvalidateGeometry() => _geometryInvalidated = true;
 
+    /// <summary>
+    /// Gets a value indicating whether the chunk has a built mesh.
+    /// </summary>
+    /// <summary>
+    /// Gets a value indicating whether the chunk has a built mesh.
+    /// </summary>
     public bool HasMesh => _vertexBuffer != null;
 
+    /// <summary>
+    /// Starts building the mesh data asynchronously if geometry is invalidated.
+    /// </summary>
+    /// <summary>
+    /// Starts building the mesh data asynchronously if geometry is invalidated.
+    /// </summary>
     public void BuildMeshImmediate()
     {
         if (!_geometryInvalidated)

@@ -23,11 +23,16 @@ namespace SquidCraft.Server;
 /// </summary>
 public class SquidCraftBootstrap : IDisposable
 {
+    public delegate void StartedHandler(Container container);
+
+    public event StartedHandler OnStarted;
+
     private readonly SquidCraftServerOptions _options;
 
     private readonly Container _container;
 
     private Func<IContainer, IContainer> _registerServicesCallback;
+
 
     private DirectoriesConfig _directoriesConfig;
 
@@ -58,6 +63,8 @@ public class SquidCraftBootstrap : IDisposable
         }
 
         await _container.Resolve<IEventBusService>().PublishAsync(new EngineStartedEvent(), cancellationToken);
+
+        OnStarted?.Invoke(_container);
 
         try
         {

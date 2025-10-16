@@ -16,6 +16,24 @@ Command: `/oco`
 
 Description: Analyzes the current git changes, generates a conventional commit message, commits the changes, and pushes to the remote repository.
 
+## /check
+
+Command: `/check`
+
+Description: Analyzes all .cs files in the project and reports files that contain more than one type (class, record, struct, interface, enum). This helps maintain the "one file one type" convention by identifying files that violate this rule.
+
+## /checkfix
+
+Command: `/checkfix`
+
+Description: Analyzes all .cs files in the project, reports files with multiple types, and automatically fixes them by separating each type into its own file. This enforces the "one file one type" convention by creating new files for additional types and updating the original files.
+
+## /comments
+
+Command: `/comments`
+
+Description: Analyzes all .cs files in the project and adds XML documentation comments to public methods, properties, fields, and other members that lack them. Generates meaningful comments based on member names, types, and context.
+
 ---
 
 # SquidCraft Client Architecture

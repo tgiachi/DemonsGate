@@ -8,6 +8,9 @@ using SysVector3 = System.Numerics.Vector3;
 
 namespace SquidCraft.Client.Components;
 
+/// <summary>
+/// Manages multiple chunks with dynamic loading/unloading and frustum culling.
+/// </summary>
 public sealed class WorldComponent : IDisposable
 {
     private readonly ILogger _logger = Log.ForContext<WorldComponent>();
@@ -37,36 +40,89 @@ public sealed class WorldComponent : IDisposable
         // _lastSunColor = _dayNightCycle.GetSunColor(); // Initialize with current sun color
     }
 
+    /// <summary>
+    /// Delegate for synchronous chunk generation.
+    /// </summary>
+    /// <param name="chunkX">The X coordinate of the chunk.</param>
+    /// <param name="chunkZ">The Z coordinate of the chunk.</param>
+    /// <returns>The generated chunk entity.</returns>
     public delegate ChunkEntity ChunkGeneratorDelegate(int chunkX, int chunkZ);
-    
+
+    /// <summary>
+    /// Delegate for asynchronous chunk generation.
+    /// </summary>
+    /// <param name="chunkX">The X coordinate of the chunk.</param>
+    /// <param name="chunkZ">The Z coordinate of the chunk.</param>
+    /// <returns>A task that represents the asynchronous operation, containing the generated chunk entity.</returns>
     public delegate Task<ChunkEntity> ChunkGeneratorAsyncDelegate(int chunkX, int chunkZ);
     
+    /// <summary>
+    /// Gets or sets the synchronous chunk generator delegate.
+    /// </summary>
     public ChunkGeneratorDelegate? ChunkGenerator { get; set; }
-    
+
+    /// <summary>
+    /// Gets or sets the asynchronous chunk generator delegate.
+    /// </summary>
     public ChunkGeneratorAsyncDelegate? ChunkGeneratorAsync { get; set; }
 
+    /// <summary>
+    /// Gets the camera component used by the world.
+    /// </summary>
     public CameraComponent Camera => _camera;
 
+    /// <summary>
+    /// Gets a read-only dictionary of loaded chunks.
+    /// </summary>
     public IReadOnlyDictionary<SysVector3, ChunkComponent> Chunks => _chunks;
 
+    /// <summary>
+    /// Gets or sets the render distance for chunks.
+    /// </summary>
     public float ViewRange { get; set; } = 200f;
 
+    /// <summary>
+    /// Gets or sets the pre-load distance for chunks.
+    /// </summary>
     public float GenerationRange { get; set; } = 250f;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether frustum culling is enabled.
+    /// </summary>
     public bool EnableFrustumCulling { get; set; } = true;
 
+    /// <summary>
+    /// Gets or sets the maximum distance for block raycasting.
+    /// </summary>
     public float MaxRaycastDistance { get; set; } = 10f;
 
+    /// <summary>
+    /// Gets or sets the visible chunks grid distance.
+    /// </summary>
     public int ChunkLoadDistance { get; set; } = 2;
 
+    /// <summary>
+    /// Gets or sets the pre-load chunks grid distance.
+    /// </summary>
     public int GenerationDistance { get; set; } = 3;
 
+    /// <summary>
+    /// Gets or sets the maximum number of chunk meshes to build per frame.
+    /// </summary>
     public int MaxChunkBuildsPerFrame { get; set; } = 2;
 
+    /// <summary>
+    /// Gets the currently selected block from raycasting.
+    /// </summary>
     public (ChunkComponent? Chunk, int X, int Y, int Z)? SelectedBlock { get; private set; }
 
     // public DayNightCycle DayNightCycle => _dayNightCycle;
 
+    /// <summary>
+    /// Adds a chunk to the world asynchronously.
+    /// </summary>
+    /// <param name="chunk">The chunk entity to add.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task AddChunkAsync(ChunkEntity chunk)
     {
         ArgumentNullException.ThrowIfNull(chunk);
@@ -81,6 +137,11 @@ public sealed class WorldComponent : IDisposable
         );
     }
 
+    /// <summary>
+    /// Removes a chunk from the world at the specified position.
+    /// </summary>
+    /// <param name="position">The position of the chunk to remove.</param>
+    /// <returns>True if the chunk was removed; otherwise, false.</returns>
     public bool RemoveChunk(SysVector3 position)
     {
         if (_chunks.TryRemove(position, out var chunkComponent))
@@ -93,11 +154,21 @@ public sealed class WorldComponent : IDisposable
         return false;
     }
 
+    /// <summary>
+    /// Gets the chunk component at the specified position.
+    /// </summary>
+    /// <param name="position">The position of the chunk.</param>
+    /// <returns>The chunk component if found; otherwise, null.</returns>
     public ChunkComponent? GetChunk(SysVector3 position)
     {
         return _chunks.TryGetValue(position, out var chunk) ? chunk : null;
     }
 
+    /// <summary>
+    /// Gets the chunk entity at the specified world position.
+    /// </summary>
+    /// <param name="position">The world position.</param>
+    /// <returns>The chunk entity if found; otherwise, null.</returns>
     public ChunkEntity? GetChunkEntity(XnaVector3 position)
     {
         var sysPos = new SysVector3(position.X, position.Y, position.Z);
@@ -105,11 +176,22 @@ public sealed class WorldComponent : IDisposable
         return chunk?.Chunk;
     }
 
+    /// <summary>
+    /// Determines whether the block at the specified world position is solid.
+    /// </summary>
+    /// <param name="worldPosition">The world position to check.</param>
+    /// <returns>True if the block is solid; otherwise, false.</returns>
     public bool IsBlockSolid(XnaVector3 worldPosition)
     {
         return IsBlockSolidForCollision(worldPosition, false);
     }
 
+    /// <summary>
+    /// Determines whether the block at the specified world position is solid for collision purposes.
+    /// </summary>
+    /// <param name="worldPosition">The world position to check.</param>
+    /// <param name="includeWater">Whether to consider water as solid.</param>
+    /// <returns>True if the block is solid; otherwise, false.</returns>
     public bool IsBlockSolidForCollision(XnaVector3 worldPosition, bool includeWater = false)
     {
         var blockX = (int)MathF.Floor(worldPosition.X);
@@ -150,6 +232,9 @@ public sealed class WorldComponent : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Clears all loaded chunks from the world.
+    /// </summary>
     public void ClearChunks()
     {
         foreach (var chunk in _chunks.Values)
@@ -161,6 +246,10 @@ public sealed class WorldComponent : IDisposable
         _logger.Information("All chunks cleared");
     }
 
+    /// <summary>
+    /// Updates the world component, processing chunks, camera, and systems.
+    /// </summary>
+    /// <param name="gameTime">The game time information.</param>
     public void Update(GameTime gameTime)
     {
         ProcessPendingChunks();
@@ -378,6 +467,11 @@ public sealed class WorldComponent : IDisposable
         SelectedBlock = RaycastBlock(ray);
     }
 
+    /// <summary>
+    /// Performs raycasting to find the first solid block hit by the ray.
+    /// </summary>
+    /// <param name="ray">The ray to cast.</param>
+    /// <returns>The hit block information, or null if no block was hit.</returns>
     public (ChunkComponent? Chunk, int X, int Y, int Z)? RaycastBlock(Ray ray)
     {
         var step = 0.1f;
@@ -420,11 +514,27 @@ public sealed class WorldComponent : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// Spawns particles at the specified position.
+    /// </summary>
+    /// <param name="position">The position to spawn particles at.</param>
+    /// <param name="count">The number of particles to spawn.</param>
+    /// <param name="spread">The spread of the particles.</param>
+    /// <param name="speed">The speed of the particles.</param>
+    /// <param name="lifeTime">The lifetime of the particles.</param>
+    /// <param name="color">The color of the particles.</param>
     public void SpawnParticles(XnaVector3 position, int count, float spread = 1f, float speed = 5f, float lifeTime = 2f, Color? color = null)
     {
         _particleComponent.SpawnParticles(position, count, spread, speed, lifeTime, color);
     }
 
+    /// <summary>
+    /// Invalidates the geometry of the specified chunk and adjacent chunks affected by the block change.
+    /// </summary>
+    /// <param name="chunk">The chunk containing the block.</param>
+    /// <param name="blockX">The X coordinate of the block.</param>
+    /// <param name="blockY">The Y coordinate of the block.</param>
+    /// <param name="blockZ">The Z coordinate of the block.</param>
     public void InvalidateBlockAndAdjacentChunks(ChunkComponent chunk, int blockX, int blockY, int blockZ)
     {
         if (chunk == null || chunk.Chunk == null)
@@ -499,6 +609,13 @@ public sealed class WorldComponent : IDisposable
         QueueWaterUpdatesAroundBlock(chunk.Chunk, blockX, blockY, blockZ);
     }
 
+    /// <summary>
+    /// Queues water updates around the specified block.
+    /// </summary>
+    /// <param name="chunk">The chunk containing the block.</param>
+    /// <param name="x">The X coordinate of the block.</param>
+    /// <param name="y">The Y coordinate of the block.</param>
+    /// <param name="z">The Z coordinate of the block.</param>
     public void QueueWaterUpdatesAroundBlock(ChunkEntity chunk, int x, int y, int z)
     {
         _waterSystem.QueueWaterUpdate(chunk, x, y - 1, z);
@@ -515,6 +632,10 @@ public sealed class WorldComponent : IDisposable
         return GetChunkEntity(new XnaVector3(chunkPos.X, chunkPos.Y, chunkPos.Z));
     }
 
+    /// <summary>
+    /// Invalidates the geometry of the specified chunk and queues it for rebuild.
+    /// </summary>
+    /// <param name="chunk">The chunk to invalidate.</param>
     public void InvalidateChunkGeometry(ChunkComponent chunk)
     {
         if (chunk != null)
@@ -567,6 +688,10 @@ public sealed class WorldComponent : IDisposable
         }
     }
 
+    /// <summary>
+    /// Draws all visible chunks and particles.
+    /// </summary>
+    /// <param name="gameTime">The game time information.</param>
     public void Draw(GameTime gameTime)
     {
         if (EnableFrustumCulling)

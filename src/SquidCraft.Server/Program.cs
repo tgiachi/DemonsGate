@@ -27,6 +27,7 @@ using SquidCraft.Game.Data.Context;
 using SquidCraft.Lua.Scripting.Engine.Context;
 using SquidCraft.Lua.Scripting.Engine.Services;
 using SquidCraft.Services.Game.Data.Config;
+using SquidCraft.Services.Game.Handlers;
 using SquidCraft.Services.Game.Impl;
 using SquidCraft.Services.Game.Interfaces;
 
@@ -124,6 +125,16 @@ await ConsoleApp.RunAsync(
                 return container;
             }
         );
+
+        bootstrap.OnStarted += container =>
+        {
+            var networkManager = container.Resolve<INetworkManagerService>();
+
+            networkManager.AddListener<LoginHandler, LoginRequestMessage>();
+
+
+
+        };
 
 
         await bootstrap.RunAsync(cts.Token);

@@ -5,6 +5,9 @@ using SquidCraft.Game.Data.Primitives;
 
 namespace SquidCraft.Client.Components;
 
+/// <summary>
+/// Represents a first-person 3D camera component with input handling, physics, and collision detection.
+/// </summary>
 public sealed class CameraComponent
 {
     private Vector3 _position;
@@ -34,6 +37,10 @@ public sealed class CameraComponent
     private bool _isOnGround;
     private bool _enablePhysics = true;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CameraComponent"/> class.
+    /// </summary>
+    /// <param name="graphicsDevice">The graphics device used for viewport calculations.</param>
     public CameraComponent(GraphicsDevice graphicsDevice)
     {
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
@@ -48,6 +55,9 @@ public sealed class CameraComponent
         Mouse.SetPosition(_graphicsDevice.Viewport.Width / 2, _graphicsDevice.Viewport.Height / 2);
     }
 
+    /// <summary>
+    /// Gets or sets the camera's world position.
+    /// </summary>
     public Vector3 Position
     {
         get => _position;
@@ -61,12 +71,24 @@ public sealed class CameraComponent
         }
     }
 
+    /// <summary>
+    /// Gets the forward direction vector (normalized).
+    /// </summary>
     public Vector3 Front => _front;
     
+    /// <summary>
+    /// Gets the right direction vector (normalized).
+    /// </summary>
     public Vector3 Right => _right;
     
+    /// <summary>
+    /// Gets the up direction vector (normalized).
+    /// </summary>
     public Vector3 Up => _up;
     
+    /// <summary>
+    /// Gets or sets the horizontal rotation in degrees (default: -90°).
+    /// </summary>
     public float Yaw
     {
         get => _yaw;
@@ -77,6 +99,9 @@ public sealed class CameraComponent
         }
     }
     
+    /// <summary>
+    /// Gets or sets the vertical rotation in degrees (clamped: -89° to 89°).
+    /// </summary>
     public float Pitch
     {
         get => _pitch;
@@ -87,6 +112,9 @@ public sealed class CameraComponent
         }
     }
     
+    /// <summary>
+    /// Gets or sets the field of view in degrees (default: 60°, range: 1-120°).
+    /// </summary>
     public float Zoom
     {
         get => _zoom;
@@ -98,6 +126,9 @@ public sealed class CameraComponent
         }
     }
 
+    /// <summary>
+    /// Gets or sets the field of view in radians.
+    /// </summary>
     public float FieldOfView
     {
         get => _fieldOfView;
@@ -111,6 +142,9 @@ public sealed class CameraComponent
         }
     }
 
+    /// <summary>
+    /// Gets or sets the near clipping plane distance.
+    /// </summary>
     public float NearPlane
     {
         get => _nearPlane;
@@ -124,6 +158,9 @@ public sealed class CameraComponent
         }
     }
 
+    /// <summary>
+    /// Gets or sets the far clipping plane distance.
+    /// </summary>
     public float FarPlane
     {
         get => _farPlane;
@@ -137,6 +174,9 @@ public sealed class CameraComponent
         }
     }
 
+    /// <summary>
+    /// Gets the view matrix for the camera.
+    /// </summary>
     public Matrix View
     {
         get
@@ -150,6 +190,9 @@ public sealed class CameraComponent
         }
     }
 
+    /// <summary>
+    /// Gets the projection matrix for the camera.
+    /// </summary>
     public Matrix Projection
     {
         get
@@ -165,12 +208,21 @@ public sealed class CameraComponent
         }
     }
 
+    /// <summary>
+    /// Translates the camera by the specified delta vector.
+    /// </summary>
+    /// <param name="delta">The translation vector to add to the current position.</param>
     public void Move(Vector3 delta)
     {
         _position += delta;
         _viewDirty = true;
     }
 
+    /// <summary>
+    /// Modifies the camera's yaw and pitch based on mouse movement offsets.
+    /// </summary>
+    /// <param name="xOffset">The horizontal offset in degrees.</param>
+    /// <param name="yOffset">The vertical offset in degrees.</param>
     public void ModifyDirection(float xOffset, float yOffset)
     {
         _yaw += xOffset;
@@ -180,6 +232,10 @@ public sealed class CameraComponent
         UpdateCameraVectors();
     }
 
+    /// <summary>
+    /// Adjusts the camera's field of view zoom.
+    /// </summary>
+    /// <param name="zoomAmount">The amount to zoom in (positive) or out (negative).</param>
     public void ModifyZoom(float zoomAmount)
     {
         Zoom = MathHelper.Clamp(_zoom - zoomAmount, 1f, 120f);
@@ -203,11 +259,21 @@ public sealed class CameraComponent
         _viewDirty = true;
     }
 
+    /// <summary>
+    /// Gets a ray from the camera position in the forward direction for raycasting.
+    /// </summary>
+    /// <returns>A ray starting from the camera position in the forward direction.</returns>
     public Ray GetPickRay()
     {
         return new Ray(_position, _front);
     }
 
+    /// <summary>
+    /// Gets a ray from the camera through the specified screen coordinates for raycasting.
+    /// </summary>
+    /// <param name="screenX">The X coordinate on the screen.</param>
+    /// <param name="screenY">The Y coordinate on the screen.</param>
+    /// <returns>A ray from the camera through the screen point.</returns>
     public Ray GetPickRay(int screenX, int screenY)
     {
         var viewport = _graphicsDevice.Viewport;
@@ -232,36 +298,79 @@ public sealed class CameraComponent
         return new Ray(nearPoint, direction);
     }
 
+    /// <summary>
+    /// Gets or sets the movement speed of the camera.
+    /// </summary>
     public float MoveSpeed { get; set; } = 20f;
 
+    /// <summary>
+    /// Gets or sets the mouse look sensitivity.
+    /// </summary>
     public float MouseSensitivity { get; set; } = 0.003f;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether input handling is enabled.
+    /// </summary>
     public bool EnableInput { get; set; } = true;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the mouse is captured for camera control.
+    /// </summary>
     public bool IsMouseCaptured { get; set; } = true;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether physics (gravity and collisions) are enabled.
+    /// </summary>
     public bool EnablePhysics
     {
         get => _enablePhysics;
         set => _enablePhysics = value;
     }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether fly mode is enabled (disables physics for creative flight).
+    /// </summary>
     public bool FlyMode { get; set; } = false;
 
+    /// <summary>
+    /// Gets or sets the gravity acceleration.
+    /// </summary>
     public float Gravity { get; set; } = 32f;
 
+    /// <summary>
+    /// Gets or sets the jump velocity.
+    /// </summary>
     public float JumpForce { get; set; } = 10f;
 
+    /// <summary>
+    /// Gets or sets the player collision box size.
+    /// </summary>
     public Vector3 BoundingBoxSize { get; set; } = new Vector3(0.6f, 1.8f, 0.6f);
 
+    /// <summary>
+    /// Gets a value indicating whether the player is on solid ground.
+    /// </summary>
     public bool IsOnGround => _isOnGround;
 
+    /// <summary>
+    /// Gets or sets the delegate for world collision testing.
+    /// </summary>
     public Func<Vector3, Vector3, bool>? CheckCollision { get; set; }
     
+    /// <summary>
+    /// Gets or sets a value indicating whether collision debugging is enabled.
+    /// </summary>
     public bool EnableCollisionDebug { get; set; } = false;
     
+    /// <summary>
+    /// Gets the current velocity of the camera.
+    /// </summary>
     public Vector3 Velocity => _velocity;
 
+    /// <summary>
+    /// Updates the camera component, handling physics and input.
+    /// </summary>
+    /// <param name="gameTime">The game time information.</param>
     public void Update(GameTime gameTime)
     {
         var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;

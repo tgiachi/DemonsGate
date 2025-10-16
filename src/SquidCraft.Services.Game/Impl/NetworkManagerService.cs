@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using DryIoc;
 using SquidCraft.Network.Args;
 using SquidCraft.Network.Interfaces.Messages;
 using SquidCraft.Network.Interfaces.Services;
@@ -15,6 +16,7 @@ namespace SquidCraft.Services.Game.Impl;
 
 public class NetworkManagerService : INetworkManagerService
 {
+    private readonly IContainer _container;
 
     public event INetworkManagerService.PlayerSessionAddedHandler? PlayerSessionAdded;
     public event INetworkManagerService.PlayerSessionRemovedHandler? PlayerSessionRemoved;
@@ -31,16 +33,17 @@ public class NetworkManagerService : INetworkManagerService
 
     private ConcurrentDictionary<int, PlayerNetworkSession> _sessions = new();
     private readonly ConcurrentBag<Func<PlayerNetworkSession, ISquidCraftMessage, Task>> _listeners = [];
-    private readonly ConcurrentDictionary<NetworkMessageType, ConcurrentBag<Func<PlayerNetworkSession, ISquidCraftMessage, Task>>> _typedListeners = new();
+    private readonly ConcurrentDictionary<NetworkMessageType, ConcurrentBag<object>> _typedListeners = new();
     private bool _isRunning;
 
 
     public NetworkManagerService(
-        INetworkService networkService, IEventLoopService eventLoopService, ITimerService timerService
+        INetworkService networkService, IEventLoopService eventLoopService, ITimerService timerService, IContainer container
     )
     {
         _networkService = networkService;
         _eventLoopService = eventLoopService;
+        _container = container;
         timerService.RegisterTimerAsync("pingClient", 10 * 1000, OnPingClients, 0, true);
         timerService.RegisterTimerAsync("disconnectDeadClients", 15 * 1000, DisconnectDeadClients, 0, true);
         _networkService.AddMessageListener<PongMessage>(OnPongMessage);
@@ -142,13 +145,15 @@ public class NetworkManagerService : INetworkManagerService
     }
 
 
-
     /// <inheritdoc/>
     public void AddListener(Func<PlayerNetworkSession, ISquidCraftMessage, Task> listener)
     {
         ArgumentNullException.ThrowIfNull(listener);
         _listeners.Add(listener);
-        _logger.Debug("Added global listener to NetworkManagerService. Total global listeners: {ListenerCount}", _listeners.Count);
+        _logger.Debug(
+            "Added global listener to NetworkManagerService. Total global listeners: {ListenerCount}",
+            _listeners.Count
+        );
     }
 
     /// <inheritdoc/>
@@ -156,11 +161,57 @@ public class NetworkManagerService : INetworkManagerService
     {
         ArgumentNullException.ThrowIfNull(listener);
 
-        var listeners = _typedListeners.GetOrAdd(messageType, _ => new ConcurrentBag<Func<PlayerNetworkSession, ISquidCraftMessage, Task>>());
+        var listeners = _typedListeners.GetOrAdd(messageType, _ => new ConcurrentBag<object>());
         listeners.Add(listener);
 
         _logger.Debug(
             "Added typed listener for message type {MessageType} to NetworkManagerService. Total listeners for this type: {ListenerCount}",
+            messageType,
+            listeners.Count
+        );
+    }
+
+    /// <inheritdoc/>
+    public void AddListener<TMessage>(NetworkMessageType messageType, Func<PlayerNetworkSession, TMessage, Task> listener)
+        where TMessage : ISquidCraftMessage
+    {
+        ArgumentNullException.ThrowIfNull(listener);
+
+        var listeners = _typedListeners.GetOrAdd(messageType, _ => new ConcurrentBag<object>());
+        listeners.Add(listener);
+
+        _logger.Debug(
+            "Added typed generic listener for message type {MessageType} to NetworkManagerService. Total listeners for this type: {ListenerCount}",
+            messageType,
+            listeners.Count
+        );
+    }
+
+    public void AddListener<TMessageListener, TMessage>() where TMessageListener : IMessageHandler<TMessage>, new()
+        where TMessage : ISquidCraftMessage, new()
+    {
+        if (!_container.IsRegistered<TMessageListener>())
+        {
+            _container.Register<TMessageListener>(Reuse.Singleton);
+        }
+
+        var message = new TMessage();
+        var handler = _container.Resolve<TMessageListener>();
+
+        AddListener(message.MessageType, handler);
+    }
+
+    /// <inheritdoc/>
+    public void AddListener<TMessage>(NetworkMessageType messageType, IMessageHandler<TMessage> handler)
+        where TMessage : ISquidCraftMessage
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+
+        var listeners = _typedListeners.GetOrAdd(messageType, _ => new ConcurrentBag<object>());
+        listeners.Add(handler);
+
+        _logger.Debug(
+            "Added typed handler for message type {MessageType} to NetworkManagerService. Total listeners for this type: {ListenerCount}",
             messageType,
             listeners.Count
         );
@@ -205,10 +256,13 @@ public class NetworkManagerService : INetworkManagerService
     {
         var session = GetOrCreateSession(e.ClientId);
         _logger.Information("Client connected with ID {ClientId}", session.SessionId);
-        SendMessages(session, new VersionResponse()
-        {
-            Version = "0.1.0"
-        });
+        SendMessages(
+            session,
+            new VersionResponse()
+            {
+                Version = "0.1.0"
+            }
+        );
     }
 
     private void OnClientDisconnected(object sender, NetworkClientConnectedEventArgs e)
@@ -232,7 +286,8 @@ public class NetworkManagerService : INetworkManagerService
     private async Task DispatchMessageAsync(PlayerNetworkSession session, ISquidCraftMessage message)
     {
         var hasGlobalListeners = !_listeners.IsEmpty;
-        var hasTypedListeners = _typedListeners.TryGetValue(message.MessageType, out var typedListeners) && !typedListeners.IsEmpty;
+        var hasTypedListeners = _typedListeners.TryGetValue(message.MessageType, out var typedListeners) &&
+                                !typedListeners.IsEmpty;
 
         if (!hasGlobalListeners && !hasTypedListeners)
         {
@@ -266,18 +321,43 @@ public class NetworkManagerService : INetworkManagerService
         // Invoke typed listeners (those registered for this specific message type)
         if (hasTypedListeners)
         {
-            foreach (var listener in typedListeners!)
+            foreach (var listenerObj in typedListeners!)
             {
                 try
                 {
-                    await listener(session, message);
+                    if (listenerObj is Func<PlayerNetworkSession, ISquidCraftMessage, Task> func)
+                    {
+                        await func(session, message);
+                    }
+                    else if (listenerObj is Delegate d)
+                    {
+                        // Typed func listener
+                        var paramType = d.Method.GetParameters()[1].ParameterType;
+                        if (paramType.IsAssignableFrom(message.GetType()))
+                        {
+                            var castedMessage = Convert.ChangeType(message, paramType);
+                            await (Task)d.DynamicInvoke(session, castedMessage);
+                        }
+                    }
+                    else if (listenerObj.GetType().IsGenericType &&
+                             listenerObj.GetType().GetGenericTypeDefinition() == typeof(IMessageHandler<>))
+                    {
+                        // IMessageHandler<TMessage> listener
+                        var messageType = listenerObj.GetType().GetGenericArguments()[0];
+                        if (messageType.IsAssignableFrom(message.GetType()))
+                        {
+                            var castedMessage = Convert.ChangeType(message, messageType);
+                            var method = listenerObj.GetType().GetMethod("HandleAsync");
+                            await (Task)method.Invoke(listenerObj, new object[] { session, castedMessage });
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.Error(
                         ex,
                         "Typed listener {Listener} threw an exception while handling message type {MessageType} for client {ClientId}",
-                        listener.Method.Name,
+                        listenerObj.GetType().Name,
                         message.MessageType,
                         session.SessionId
                     );
