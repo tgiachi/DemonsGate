@@ -377,7 +377,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     }
 
 
-    private Task<ChunkEntity> CreateFlatChunkAsync(int chunkX, int chunkZ)
+    private static Task<ChunkEntity> CreateFlatChunkAsync(int chunkX, int chunkZ)
     {
         var chunkOrigin = new System.Numerics.Vector3(
             chunkX * ChunkEntity.Size,
@@ -392,32 +392,21 @@ public class Game1 : Microsoft.Xna.Framework.Game
         {
             for (int z = 0; z < ChunkEntity.Size; z++)
             {
-                var isWater = (x > 5 && x < 10 && z > 5 && z < 10);
-                var isTower = (x == 3 || x == 12) && (z == 3 || z == 12);
-
                 for (int y = 0; y < ChunkEntity.Height; y++)
                 {
-                    BlockType blockType;
+                    BlockType blockType = BlockType.Air;
 
-                    if (isTower && y > 58 && y < 63)
-                    {
-                        blockType = BlockType.Stone;
-                    }
-                    else if (y == 0)
+                    if (y == 0)
                     {
                         blockType = BlockType.Bedrock;
                     }
-                    else if (y < ChunkEntity.Height - 2)
+                    else if (y < 60)
                     {
                         blockType = BlockType.Dirt;
                     }
-                    else if (y < ChunkEntity.Height - 1)
+                    else if (y == 60)
                     {
-                        blockType = isWater ? BlockType.Dirt : BlockType.Dirt;
-                    }
-                    else
-                    {
-                        blockType = isWater ? BlockType.Water : BlockType.Grass;
+                        blockType = BlockType.Grass;
                     }
 
                     if (blockType != BlockType.Air)
@@ -427,9 +416,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
                 }
             }
         }
-
-        _worldComponent.CalculateInitialLighting(chunk);
-
 
         return Task.FromResult(chunk);
     }
