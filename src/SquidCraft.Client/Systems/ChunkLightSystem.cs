@@ -13,11 +13,34 @@ public class ChunkLightSystem
     private const byte MaxLightLevel = 15;
     private const byte MinAmbientLight = 2; // Minimum ambient light level
 
+    // Cache for block opacity to avoid repeated BlockManagerService calls
+    // Opacity values: 1 = transparent (air/leaves), 2 = semi-transparent (water), 15 = opaque (solid blocks)
+    private static readonly Dictionary<BlockType, byte> BlockOpacity = new()
+    {
+        { BlockType.Air, 1 },
+        { BlockType.Stone, 15 },
+        { BlockType.Dirt, 15 },
+        { BlockType.Grass, 15 },
+        { BlockType.Bedrock, 15 },
+        { BlockType.Snow, 2 }, // Snow is semi-transparent
+        { BlockType.Ice, 1 }, // Ice is transparent
+        { BlockType.Moss, 15 },
+        { BlockType.Wood, 15 },
+        { BlockType.Leaves, 1 }, // Leaves filter light but don't block completely
+        { BlockType.Water, 2 },
+    };
+
     // Delegate to get neighboring chunks for cross-chunk lighting
-    public delegate ChunkEntity? GetNeighborChunkDelegate(int chunkX, int chunkZ);
+    public delegate ChunkEntity? GetNeighborChunkHandler(int chunkX, int chunkZ);
 
     public void CalculateInitialSunlight(ChunkEntity chunk)
     {
+        // Lazy lighting: only recalculate if dirty
+        if (!chunk.IsLightingDirty)
+        {
+            return;
+        }
+
         var lightLevels = new byte[ChunkEntity.Size * ChunkEntity.Size * ChunkEntity.Height];
 
         // Initialize all blocks to 0 light
@@ -30,11 +53,54 @@ public class ChunkLightSystem
         CalculateBlockLights(chunk, lightLevels);
 
         chunk.SetLightLevels(lightLevels);
+        chunk.IsLightingDirty = false; // Mark as clean
 
         _logger.Debug("Calculated lighting for chunk at {Position}", chunk.Position);
     }
 
-    public void CalculateCrossChunkLighting(IEnumerable<ChunkEntity> chunks, GetNeighborChunkDelegate getNeighborChunk)
+    /// <summary>
+    /// Asynchronously calculates initial sunlight for a chunk to avoid blocking the main thread.
+    /// </summary>
+    public async Task CalculateInitialSunlightAsync(ChunkEntity chunk)
+    {
+        // Lazy lighting: only recalculate if dirty
+        if (!chunk.IsLightingDirty)
+        {
+            return;
+        }
+
+        // Run the heavy computation on a background thread
+        var lightLevels = await Task.Run(() =>
+        {
+            var levels = new byte[ChunkEntity.Size * ChunkEntity.Size * ChunkEntity.Height];
+            Array.Fill(levels, (byte)0);
+
+            // Phase 1: Sunlight propagation from top
+            CalculateSunlight(chunk, levels);
+
+            // Phase 2: Block light sources
+            CalculateBlockLights(chunk, levels);
+
+            return levels;
+        });
+
+        chunk.SetLightLevels(lightLevels);
+        chunk.IsLightingDirty = false; // Mark as clean
+
+        _logger.Debug("Calculated lighting asynchronously for chunk at {Position}", chunk.Position);
+    }
+
+    /// <summary>
+    /// Invalidates the lighting for a chunk, marking it as dirty so it will be recalculated on next access.
+    /// Call this when blocks in the chunk are modified.
+    /// </summary>
+    public void InvalidateLighting(ChunkEntity chunk)
+    {
+        chunk.IsLightingDirty = true;
+        _logger.Debug("Invalidated lighting for chunk at {Position}", chunk.Position);
+    }
+
+    public void CalculateCrossChunkLighting(IEnumerable<ChunkEntity> chunks, GetNeighborChunkHandler getNeighborChunk)
     {
         // Create a map of chunk positions to chunks for easy lookup
         var chunkMap = chunks.ToDictionary(c => (c.Position.X / ChunkEntity.Size, c.Position.Z / ChunkEntity.Size), c => c);
@@ -58,7 +124,7 @@ public class ChunkLightSystem
 
     private void CalculateCrossChunkSunlight(
         IEnumerable<ChunkEntity> chunks, Dictionary<(float, float), ChunkEntity> chunkMap,
-        GetNeighborChunkDelegate getNeighborChunk
+        GetNeighborChunkHandler getNeighborChunk
     )
     {
         // For cross-chunk sunlight, we need to process columns that span multiple chunks
@@ -74,7 +140,7 @@ public class ChunkLightSystem
     }
 
     private void PropagateSunlightToNeighbors(
-        ChunkEntity chunk, Dictionary<(float, float), ChunkEntity> chunkMap, GetNeighborChunkDelegate getNeighborChunk
+        ChunkEntity chunk, Dictionary<(float, float), ChunkEntity> chunkMap, GetNeighborChunkHandler getNeighborChunk
     )
     {
         var chunkX = (int)(chunk.Position.X / ChunkEntity.Size);
@@ -182,7 +248,7 @@ public class ChunkLightSystem
 
     private void CalculateCrossChunkBlockLights(
         IEnumerable<ChunkEntity> chunks, Dictionary<(float, float), ChunkEntity> chunkMap,
-        GetNeighborChunkDelegate getNeighborChunk
+        GetNeighborChunkHandler getNeighborChunk
     )
     {
         foreach (var chunk in chunks)
@@ -199,7 +265,7 @@ public class ChunkLightSystem
     }
 
     private void PropagateBlockLightsToNeighbors(
-        ChunkEntity chunk, Dictionary<(float, float), ChunkEntity> chunkMap, GetNeighborChunkDelegate getNeighborChunk
+        ChunkEntity chunk, Dictionary<(float, float), ChunkEntity> chunkMap, GetNeighborChunkHandler getNeighborChunk
     )
     {
         var chunkX = (int)(chunk.Position.X / ChunkEntity.Size);
@@ -382,10 +448,10 @@ public class ChunkLightSystem
         ChunkEntity chunk, byte[] lightLevels, int startX, int startY, int startZ, byte startLight
     )
     {
-        var queue = new Queue<(int x, int y, int z, byte light)>();
+        var queue = new PriorityQueue<(int x, int y, int z, byte light), int>();
         var visited = new HashSet<(int, int, int)>();
 
-        queue.Enqueue((startX, startY, startZ, startLight));
+        queue.Enqueue((startX, startY, startZ, startLight), -startLight); // Higher light = higher priority
         visited.Add((startX, startY, startZ));
 
         // Set the source block light
@@ -414,14 +480,11 @@ public class ChunkLightSystem
                 var neighborIndex = ChunkEntity.GetIndex(nx, ny, nz);
                 var neighborBlock = chunk.Blocks[neighborIndex];
 
-                // Calculate light reduction based on block type
+                // Calculate light reduction based on block type using cached opacity
                 byte reduction = 1; // Default for air
-                if (neighborBlock != null)
+                if (neighborBlock != null && BlockOpacity.TryGetValue(neighborBlock.BlockType, out var opacity))
                 {
-                    var blockDef = SquidCraftClientContext.BlockManagerService.GetBlockDefinition(neighborBlock.BlockType);
-                    reduction = (blockDef?.IsTransparent ?? false)
-                        ? (byte)2
-                        : (byte)15; // Much higher reduction for solid blocks
+                    reduction = opacity;
                 }
 
                 var newLight = (byte)Math.Max(0, light - reduction);
@@ -430,7 +493,7 @@ public class ChunkLightSystem
                 {
                     lightLevels[neighborIndex] = newLight;
                     visited.Add((nx, ny, nz));
-                    queue.Enqueue((nx, ny, nz, newLight));
+                    queue.Enqueue((nx, ny, nz, newLight), -newLight);
                 }
             }
         }

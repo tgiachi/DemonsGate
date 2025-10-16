@@ -50,6 +50,11 @@ public class ChunkEntity
     public byte[] LightLevels { get; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the lighting needs to be recalculated.
+    /// </summary>
+    public bool IsLightingDirty { get; set; } = true;
+
+    /// <summary>
     /// Retrieves the block stored at the specified coordinates.
     /// </summary>
     /// <param name="x">Block coordinate along X.</param>

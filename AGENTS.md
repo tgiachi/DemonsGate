@@ -239,13 +239,9 @@ MaxRaycastDistance = 10f
 
 **Delegates:**
 ```csharp
-// Local/synchronous generation
-public delegate ChunkEntity ChunkGeneratorDelegate(int chunkX, int chunkZ);
-public ChunkGeneratorDelegate? ChunkGenerator { get; set; }
-
-// Server/network generation
-public delegate Task<ChunkEntity> ChunkGeneratorAsyncDelegate(int chunkX, int chunkZ);
-public ChunkGeneratorAsyncDelegate? ChunkGeneratorAsync { get; set; }
+// Asynchronous chunk generation
+public delegate Task<ChunkEntity?> ChunkGeneratorHandler(int chunkX, int chunkZ);
+public ChunkGeneratorHandler? ChunkGenerator { get; set; }
 ```
 
 **Chunk Loading Flow:**
@@ -254,10 +250,8 @@ Player moves to new chunk:
 ├── LoadChunksAroundPlayer(centerX, centerZ)
 │   ├── Loop GenerationDistance (7x7 = 49 chunks)
 │   ├── For each missing chunk:
-│   │   ├── If ChunkGeneratorAsync:
+│   │   ├── If ChunkGenerator:
 │   │   │   └── RequestChunkFromServerAsync(x, z)
-│   │   └── Else if ChunkGenerator:
-│   │       └── Generate locally
 │   └── Invalidate neighbor chunk meshes
 │
 └── UnloadDistantChunks(centerX, centerZ)
@@ -305,9 +299,9 @@ var world = new WorldComponent(GraphicsDevice, camera)
     ChunkLoadDistance = 2,
     GenerationDistance = 3,
     MaxChunkBuildsPerFrame = 5,
-    ChunkGenerator = CreateFlatChunk,
+    ChunkGenerator = CreateFlatChunkAsync,
     // OR for server:
-    ChunkGeneratorAsync = serverProvider.RequestChunkAsync
+    ChunkGenerator = serverProvider.RequestChunkAsync
 };
 ```
 
@@ -328,7 +322,7 @@ public class ServerChunkProvider
 }
 
 // In Game1.cs:
-_worldComponent.ChunkGeneratorAsync = serverProvider.RequestChunkAsync;
+_worldComponent.ChunkGenerator = serverProvider.RequestChunkAsync;
 ```
 
 ---
@@ -575,7 +569,7 @@ var world = new WorldComponent(GraphicsDevice, camera)
     ChunkLoadDistance = 2,
     GenerationDistance = 3,
     MaxChunkBuildsPerFrame = 5,
-    ChunkGenerator = (x, z) => CreateFlatChunk(x, z)
+    ChunkGenerator = async (x, z) => await CreateFlatChunkAsync(x, z)
 };
 
 // Block outline
@@ -615,14 +609,14 @@ public class NetworkChunkService
 
 // Setup
 var networkService = new NetworkChunkService(client);
-_worldComponent.ChunkGeneratorAsync = networkService.RequestChunkAsync;
+_worldComponent.ChunkGenerator = networkService.RequestChunkAsync;
 ```
 
 ---
 
 ## Tips & Best Practices
 
-1. **Always use ChunkGeneratorAsync** for network/server chunks
+1. **Always use ChunkGenerator** for network/server chunks
 2. **Set GenerationRange > ViewRange** for smooth pre-loading
 3. **Adjust MaxChunkBuildsPerFrame** based on hardware
 4. **Enable frustum culling** for large view distances

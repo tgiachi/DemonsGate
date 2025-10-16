@@ -143,7 +143,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         SquidCraftClientContext.RootComponent.AddChild(watchTextComponent);
 
-        _worldComponent = new WorldComponent(GraphicsDevice, _cameraComponent)
+        _worldComponent = new WorldComponent(_cameraComponent)
         {
             ViewRange = 150f,
             EnableFrustumCulling = true,
@@ -185,7 +185,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
         };
 
         _chatBox.MessageSent += OnChatMessageSent;
-        _chatBox.CommandExecuted += OnChatCommandExecuted;
 
         _chatBox.Initialize();
         SquidCraftClientContext.RootComponent.AddChild(_chatBox);

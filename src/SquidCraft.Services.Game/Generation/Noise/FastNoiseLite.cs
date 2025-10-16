@@ -66,7 +66,7 @@ public class FastNoiseLite
     private const int PrimeZ = 1720413743;
 
 
-    private static readonly float[] Gradients2D =
+    private static readonly FNLfloat[] Gradients2D =
     {
         0.130526192220052f, 0.99144486137381f, 0.38268343236509f, 0.923879532511287f, 0.608761429008721f, 0.793353340291235f,
         0.793353340291235f, 0.608761429008721f,
@@ -134,7 +134,7 @@ public class FastNoiseLite
         0.38268343236509f, -0.38268343236509f, 0.923879532511287f
     };
 
-    private static readonly float[] RandVecs2D =
+    private static readonly FNLfloat[] RandVecs2D =
     {
         -0.2700222198f, -0.9628540911f, 0.3863092627f, -0.9223693152f, 0.04444859006f, -0.999011673f, -0.5992523158f,
         -0.8005602176f, -0.7819280288f, 0.6233687174f, 0.9464672271f, 0.3227999196f, -0.6514146797f, -0.7587218957f,
@@ -234,7 +234,7 @@ public class FastNoiseLite
         -0.7743120191f, -0.6328039957f
     };
 
-    private static readonly float[] Gradients3D =
+    private static readonly FNLfloat[] Gradients3D =
     {
         0, 1, 1, 0, 0, -1, 1, 0, 0, 1, -1, 0, 0, -1, -1, 0,
         1, 0, 1, 0, -1, 0, 1, 0, 1, 0, -1, 0, -1, 0, -1, 0,
@@ -254,7 +254,7 @@ public class FastNoiseLite
         1, 1, 0, 0, 0, -1, 1, 0, -1, 1, 0, 0, 0, -1, -1, 0
     };
 
-    private static readonly float[] RandVecs3D =
+    private static readonly FNLfloat[] RandVecs3D =
     {
         -0.7292736885f, -0.6618439697f, 0.1735581948f, 0, 0.790292081f, -0.5480887466f, -0.2739291014f, 0, 0.7217578935f,
         0.6226212466f, -0.3023380997f, 0, 0.565683137f, -0.8208298145f, -0.0790000257f, 0, 0.760049034f, -0.5555979497f,
