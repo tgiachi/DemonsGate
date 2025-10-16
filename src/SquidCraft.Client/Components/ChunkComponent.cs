@@ -73,7 +73,6 @@ public sealed class ChunkComponent : Base3dComponent
     private Vector3? _customCameraTarget;
 
     private float _opacity = 0f;
-    // private DayNightCycle? _dayNightCycle;
     private float _targetOpacity = 1f;
     private bool _isFadingIn;
 
@@ -148,14 +147,6 @@ public sealed class ChunkComponent : Base3dComponent
     }
 
     private Vector3 DefaultCameraTarget => Position + _chunkCenter * BlockScale;
-
-    /// <summary>
-    /// Gets or sets the uniform block scale applied during rendering.
-    /// </summary>
-    // public void SetDayNightCycle(DayNightCycle dayNightCycle)
-    // {
-    //     _dayNightCycle = dayNightCycle;
-    // }
 
     /// <summary>
     /// Gets or sets the uniform block scale applied during rendering.

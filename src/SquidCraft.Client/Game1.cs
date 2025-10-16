@@ -128,22 +128,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
         );
 
         // // Add day/night cycle display
-        // var timeDisplayComponent = new WatchTextComponent(
-        //     new Vector2(16, 32),
-        //     TimeSpan.FromSeconds(0.5f),
-        //     () => {
-        //         if (_worldComponent != null)
-        //         {
-        //             var timeOfDay = _worldComponent.DayNightCycle.TimeOfDay;
-        //             var hour = (int)(timeOfDay * 24);
-        //             var minute = (int)((timeOfDay * 24 - hour) * 60);
-        //             var sunIntensity = _worldComponent.DayNightCycle.GetSunIntensity();
-        //             return $"Time: {hour:D2}:{minute:D2} | Sun: {(sunIntensity * 100):F0}%";
-        //         }
-        //         return "Time: --:--";
-        //     }
-        // );
-
         SquidCraftClientContext.RootComponent.AddChild(watchTextComponent);
 
         _worldComponent = new WorldComponent(_cameraComponent)
@@ -318,43 +302,6 @@ public class Game1 : Microsoft.Xna.Framework.Game
     protected override void Draw(GameTime gameTime)
     {
         // Dynamic sky color based on time of day
-        // var skyColor = Color.CornflowerBlue; // Default fallback
-        // if (_worldComponent != null)
-        // {
-        //     var sunColor = _worldComponent.DayNightCycle.GetSunColor();
-        //     var sunIntensity = _worldComponent.DayNightCycle.GetSunIntensity();
-
-        //     // Create sky color based on sun color and intensity
-        //     var timeOfDay = _worldComponent.DayNightCycle.TimeOfDay;
-
-        //     if (timeOfDay < 0.2f || timeOfDay > 0.8f)
-        //     {
-        //         // Night sky: dark blue with slight sun color tint
-        //         skyColor = new Color(0.1f, 0.1f, 0.3f) * 0.3f;
-        //     }
-        //     else if (timeOfDay >= 0.2f && timeOfDay <= 0.3f)
-        //     {
-        //         // Sunrise: blend from night to day
-        //         var t = (timeOfDay - 0.2f) / 0.1f;
-        //         var nightSky = new Color(0.1f, 0.1f, 0.3f) * 0.3f;
-        //         var daySky = new Color(0.4f, 0.6f, 1.0f);
-        //         skyColor = Color.Lerp(nightSky, daySky, t);
-        //     }
-        //     else if (timeOfDay >= 0.7f && timeOfDay <= 0.8f)
-        //     {
-        //         // Sunset: blend from day to night
-        //         var t = (timeOfDay - 0.7f) / 0.1f;
-        //         var daySky = new Color(0.4f, 0.6f, 1.0f);
-        //         var nightSky = new Color(0.1f, 0.1f, 0.3f) * 0.3f;
-        //         skyColor = Color.Lerp(daySky, nightSky, t);
-        //     }
-        //     else
-        //     {
-        //         // Day sky: light blue
-        //         skyColor = new Color(0.4f, 0.6f, 1.0f);
-        //     }
-        // }
-
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         _networkClientComponent.Draw(gameTime, _spriteBatch);

@@ -99,8 +99,6 @@ public sealed class WorldComponent : IDisposable
     /// </summary>
     public (ChunkComponent? Chunk, int X, int Y, int Z)? SelectedBlock { get; private set; }
 
-    // public DayNightCycle DayNightCycle => _dayNightCycle;
-
     public void CalculateInitialLighting(ChunkEntity chunk)
     {
         ArgumentNullException.ThrowIfNull(chunk);
@@ -769,7 +767,6 @@ public sealed class WorldComponent : IDisposable
             };
 
             chunkComponent.SetChunk(chunk);
-            // chunkComponent.SetDayNightCycle(_dayNightCycle);
 
             // Calculate initial lighting for the new chunk
             // For now, use single-chunk lighting for new chunks
