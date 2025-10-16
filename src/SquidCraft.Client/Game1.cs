@@ -31,6 +31,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private static readonly RasterizerState ScissorRasterizerState = new() { ScissorTestEnable = true };
 
     private NetworkClientComponent _networkClientComponent;
+    private MouseState _previousMouseState;
 
 
 
@@ -223,7 +224,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
 
         // Handle block breaking with left mouse click
-        if (Mouse.GetState().LeftButton == ButtonState.Pressed)
+        var currentMouseState = Mouse.GetState();
+        if (currentMouseState.LeftButton == ButtonState.Pressed && 
+            _previousMouseState.LeftButton == ButtonState.Released)
         {
             if (_worldComponent?.SelectedBlock is var selected && selected.HasValue)
             {
@@ -237,18 +240,35 @@ public class Game1 : Microsoft.Xna.Framework.Game
                 _worldComponent?.InvalidateBlockAndAdjacentChunks(chunk, x, y, z);
 
                 // Spawn particles at block position
+                var blockType = chunk.Chunk?.GetBlock(x, y, z)?.BlockType ?? BlockType.Dirt;
+                var blockColor = blockType switch
+                {
+                    BlockType.Grass => Color.Green,
+                    BlockType.Dirt => new Color(139, 69, 19),
+                    BlockType.Stone => Color.Gray,
+                    BlockType.Wood => new Color(139, 90, 43),
+                    BlockType.Leaves => Color.DarkGreen,
+                    BlockType.Water => Color.Blue,
+                    BlockType.Snow => Color.White,
+                    BlockType.TallGrass => Color.YellowGreen,
+                    BlockType.Flower => Color.Yellow,
+                    _ => Color.White
+                };
+
                 _worldComponent.SpawnParticles(
                     blockWorldPos + new Vector3(0.5f, 0.5f, 0.5f),
-                    20,
-                    spread: 0.5f,
-                    speed: 3f,
-                    lifeTime: 1.5f,
-                    Color.Orange
+                    12,
+                    spread: 2f,
+                    speed: 4f,
+                    lifeTime: 1.0f,
+                    blockColor
                 );
 
                 _logger.Information("Block broken at {Position}", blockWorldPos);
             }
         }
+        
+        _previousMouseState = currentMouseState;
 
         // Handle block placing with right mouse click
         if (Mouse.GetState().RightButton == ButtonState.Pressed)

@@ -11,15 +11,21 @@ public class Particle
     public Vector3 Position;
     public Vector3 Velocity;
     public float LifeTime;
+    public float MaxLifeTime;
     public Color Color;
     public float Size;
     public bool IsActive;
+    public Vector3 Rotation;
+    public Vector3 RotationSpeed;
+    private const float Gravity = 15f;
 
     public void Update(float deltaTime)
     {
         if (!IsActive) return;
 
+        Velocity.Y -= Gravity * deltaTime;
         Position += Velocity * deltaTime;
+        Rotation += RotationSpeed * deltaTime;
         LifeTime -= deltaTime;
 
         if (LifeTime <= 0)
@@ -28,14 +34,22 @@ public class Particle
         }
     }
 
-    public void Reset(Vector3 position, Vector3 velocity, float lifeTime, Color color, float size)
+    public float GetAlpha()
+    {
+        return MathHelper.Clamp(LifeTime / MaxLifeTime, 0f, 1f);
+    }
+
+    public void Reset(Vector3 position, Vector3 velocity, float lifeTime, Color color, float size, Vector3 rotationSpeed)
     {
         Position = position;
         Velocity = velocity;
         LifeTime = lifeTime;
+        MaxLifeTime = lifeTime;
         Color = color;
         Size = size;
         IsActive = true;
+        Rotation = Vector3.Zero;
+        RotationSpeed = rotationSpeed;
     }
 }
 
@@ -170,13 +184,25 @@ public class Particle3dComponent : Base3dComponent
             var particle = _particlePool.GetParticle();
             if (particle == null) break;
 
+            var offsetPos = position + new Vector3(
+                (float)(random.NextDouble() - 0.5) * 0.8f,
+                (float)(random.NextDouble() - 0.5) * 0.8f,
+                (float)(random.NextDouble() - 0.5) * 0.8f
+            );
+
             var velocity = new Vector3(
                 (float)(random.NextDouble() - 0.5) * spread,
-                (float)(random.NextDouble() - 0.5) * spread + 2f, // Upward bias
+                (float)(random.NextDouble() * 0.5 + 0.3) * spread,
                 (float)(random.NextDouble() - 0.5) * spread
             ) * speed;
 
-            particle.Reset(position, velocity, lifeTime, c, 1.0f);
+            var rotationSpeed = new Vector3(
+                (float)(random.NextDouble() - 0.5) * 10f,
+                (float)(random.NextDouble() - 0.5) * 10f,
+                (float)(random.NextDouble() - 0.5) * 10f
+            );
+
+            particle.Reset(offsetPos, velocity, lifeTime, c, 0.15f, rotationSpeed);
         }
     }
 
@@ -225,14 +251,18 @@ public class Particle3dComponent : Base3dComponent
                 new Vector3(-0.5f, 0.5f, 0)
             };
 
-            var world = Matrix.CreateScale(particle.Size) * Matrix.CreateTranslation(particle.Position);
+            var rotation = Matrix.CreateFromYawPitchRoll(particle.Rotation.Y, particle.Rotation.X, particle.Rotation.Z);
+            var world = Matrix.CreateScale(particle.Size) * rotation * Matrix.CreateTranslation(particle.Position);
+
+            var alpha = particle.GetAlpha();
+            var colorWithAlpha = particle.Color * alpha;
 
             for (int i = 0; i < 4; i++)
             {
                 var transformedPos = Vector3.Transform(baseVertices[i], world);
                 vertices[vertexIndex + i] = new VertexPositionColorTexture(
                     transformedPos,
-                    particle.Color,
+                    colorWithAlpha,
                     i switch
                     {
                         0 => new Vector2(0, 1),
@@ -268,7 +298,13 @@ public class Particle3dComponent : Base3dComponent
         _effect.View = View;
         _effect.Projection = Projection;
         _effect.Texture = _particleTexture;
-        _effect.World = Matrix.Identity; // World is baked into vertices
+        _effect.World = Matrix.Identity;
+
+        var previousBlendState = _graphicsDevice.BlendState;
+        var previousDepthStencilState = _graphicsDevice.DepthStencilState;
+        
+        _graphicsDevice.BlendState = BlendState.AlphaBlend;
+        _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
 
         _graphicsDevice.SetVertexBuffer(dynamicVertexBuffer);
         _graphicsDevice.Indices = dynamicIndexBuffer;
@@ -281,6 +317,9 @@ public class Particle3dComponent : Base3dComponent
 
         _graphicsDevice.SetVertexBuffer(null);
         _graphicsDevice.Indices = null;
+        
+        _graphicsDevice.BlendState = previousBlendState;
+        _graphicsDevice.DepthStencilState = previousDepthStencilState;
 
         // Dispose dynamic buffers
         dynamicVertexBuffer.Dispose();
