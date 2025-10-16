@@ -20,8 +20,10 @@ public sealed class WorldComponent : IDisposable
     private readonly Queue<ChunkComponent> _meshBuildQueue = new();
 
     private readonly Particle3dComponent _particleComponent;
-    private readonly Systems.ChunkLightSystem _lightSystem;
-    private readonly Systems.WaterSimulationSystem _waterSystem;
+    private readonly ChunkLightSystem _lightSystem;
+    private readonly WaterSimulationSystem _waterSystem;
+    private readonly ChunkLightSystem _lightingSystem = new();
+
     private bool _isDisposed;
     private BoundingFrustum? _frustum;
     private (int X, int Z)? _lastPlayerChunk;
@@ -36,14 +38,6 @@ public sealed class WorldComponent : IDisposable
     }
 
     /// <summary>
-    /// Delegate for synchronous chunk generation.
-    /// </summary>
-    /// <param name="chunkX">The X coordinate of the chunk.</param>
-    /// <param name="chunkZ">The Z coordinate of the chunk.</param>
-    /// <returns>The generated chunk entity.</returns>
-    public delegate ChunkEntity ChunkGeneratorHandler(int chunkX, int chunkZ);
-
-    /// <summary>
     /// Delegate for asynchronous chunk generation.
     /// </summary>
     /// <param name="chunkX">The X coordinate of the chunk.</param>
@@ -52,14 +46,9 @@ public sealed class WorldComponent : IDisposable
     public delegate Task<ChunkEntity> ChunkGeneratorAsyncHandler(int chunkX, int chunkZ);
 
     /// <summary>
-    /// Gets or sets the synchronous chunk generator delegate.
-    /// </summary>
-    public ChunkGeneratorHandler? ChunkGenerator { get; set; }
-
-    /// <summary>
     /// Gets or sets the asynchronous chunk generator delegate.
     /// </summary>
-    public ChunkGeneratorAsyncHandler? ChunkGeneratorAsync { get; set; }
+    public ChunkGeneratorAsyncHandler? ChunkGenerator { get; set; }
 
     /// <summary>
     /// Gets the camera component used by the world.
@@ -112,6 +101,13 @@ public sealed class WorldComponent : IDisposable
     public (ChunkComponent? Chunk, int X, int Y, int Z)? SelectedBlock { get; private set; }
 
     // public DayNightCycle DayNightCycle => _dayNightCycle;
+
+    public void CalculateInitialLighting(ChunkEntity chunk)
+    {
+        ArgumentNullException.ThrowIfNull(chunk);
+
+        _lightingSystem.CalculateInitialSunlight(chunk);
+    }
 
     /// <summary>
     /// Adds a chunk to the world asynchronously.
@@ -380,16 +376,7 @@ public sealed class WorldComponent : IDisposable
 
                 if (!_chunks.ContainsKey(chunkPos))
                 {
-                    if (ChunkGeneratorAsync != null)
-                    {
-                        _ = RequestChunkFromServerAsync(x, z);
-                    }
-                    else if (ChunkGenerator != null)
-                    {
-                        var chunk = ChunkGenerator(x, z);
-                        _ = AddChunkAsync(chunk);
-                    }
-
+                    _ = RequestChunkAsync(x, z);
                     loadedNewChunks = true;
                 }
             }
@@ -408,21 +395,21 @@ public sealed class WorldComponent : IDisposable
         }
     }
 
-    private async Task RequestChunkFromServerAsync(int chunkX, int chunkZ)
+    private async Task RequestChunkAsync(int chunkX, int chunkZ)
     {
         try
         {
-            _logger.Debug("Requesting chunk ({X}, {Z}) from server", chunkX, chunkZ);
+            _logger.Debug("Requesting chunk ({X}, {Z})", chunkX, chunkZ);
 
-            var chunk = await ChunkGeneratorAsync!(chunkX, chunkZ);
+            var chunk = await ChunkGenerator!(chunkX, chunkZ);
 
             await AddChunkAsync(chunk);
 
-            _logger.Debug("Chunk ({X}, {Z}) received from server", chunkX, chunkZ);
+            _logger.Debug("Chunk ({X}, {Z}) received", chunkX, chunkZ);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to load chunk ({X}, {Z}) from server", chunkX, chunkZ);
+            _logger.Error(ex, "Failed to load chunk ({X}, {Z})", chunkX, chunkZ);
         }
     }
 

@@ -151,7 +151,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
             ChunkLoadDistance = 2,
             MaxChunkBuildsPerFrame = 5,
             GenerationDistance = 3,
-            ChunkGenerator = CreateFlatChunk
+            ChunkGenerator = CreateFlatChunkAsync
         };
 
         _cameraComponent.CheckCollision = (pos, size) => _worldComponent.IsBlockSolid(pos);
@@ -377,7 +377,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     }
 
 
-    private static ChunkEntity CreateFlatChunk(int chunkX, int chunkZ)
+    private Task<ChunkEntity> CreateFlatChunkAsync(int chunkX, int chunkZ)
     {
         var chunkOrigin = new System.Numerics.Vector3(
             chunkX * ChunkEntity.Size,
@@ -428,9 +428,10 @@ public class Game1 : Microsoft.Xna.Framework.Game
             }
         }
 
-        var lightSystem = new Systems.ChunkLightSystem();
-        lightSystem.CalculateInitialSunlight(chunk);
 
-        return chunk;
+        _worldComponent.CalculateInitialLighting(chunk);
+
+
+        return Task.FromResult(chunk);
     }
 }
