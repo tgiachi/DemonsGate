@@ -30,6 +30,12 @@ public class ChunkLightSystem
         { BlockType.Water, 2 },
     };
 
+    // Light sources and their emission levels
+    private static readonly Dictionary<BlockType, byte> LightSources = new()
+    {
+        { BlockType.Water, 8 }, // Water glows
+    };
+
     // Delegate to get neighboring chunks for cross-chunk lighting
     public delegate ChunkEntity? GetNeighborChunkHandler(int chunkX, int chunkZ);
 
@@ -58,37 +64,7 @@ public class ChunkLightSystem
         _logger.Debug("Calculated lighting for chunk at {Position}", chunk.Position);
     }
 
-    /// <summary>
-    /// Asynchronously calculates initial sunlight for a chunk to avoid blocking the main thread.
-    /// </summary>
-    public async Task CalculateInitialSunlightAsync(ChunkEntity chunk)
-    {
-        // Lazy lighting: only recalculate if dirty
-        if (!chunk.IsLightingDirty)
-        {
-            return;
-        }
 
-        // Run the heavy computation on a background thread
-        var lightLevels = await Task.Run(() =>
-        {
-            var levels = new byte[ChunkEntity.Size * ChunkEntity.Size * ChunkEntity.Height];
-            Array.Fill(levels, (byte)0);
-
-            // Phase 1: Sunlight propagation from top
-            CalculateSunlight(chunk, levels);
-
-            // Phase 2: Block light sources
-            CalculateBlockLights(chunk, levels);
-
-            return levels;
-        });
-
-        chunk.SetLightLevels(lightLevels);
-        chunk.IsLightingDirty = false; // Mark as clean
-
-        _logger.Debug("Calculated lighting asynchronously for chunk at {Position}", chunk.Position);
-    }
 
     /// <summary>
     /// Invalidates the lighting for a chunk, marking it as dirty so it will be recalculated on next access.
@@ -233,7 +209,11 @@ public class ChunkLightSystem
                         var toIndex = ChunkEntity.GetIndex(toX, y, toZ);
 
                         var toBlock = toChunk.GetBlock(toX, y, toZ);
-                        var reduction = (toBlock != null && toBlock.BlockType != BlockType.Air) ? (byte)15 : (byte)1;
+                        byte reduction = 1;
+                        if (toBlock != null && BlockOpacity.TryGetValue(toBlock.BlockType, out var opacity))
+                        {
+                            reduction = opacity;
+                        }
 
                         var propagatedLight = (byte)Math.Max(0, fromLight - reduction);
                         if (propagatedLight > toLightLevels[toIndex])
@@ -281,95 +261,13 @@ public class ChunkLightSystem
 
             if (chunkMap.TryGetValue((neighborX, neighborZ), out var neighborChunk))
             {
-                // Propagate block lights across the boundary
-                PropagateBlockLightAcrossBoundary(chunk, neighborChunk, dx, dz);
+                // Propagate block lights across the boundary (uses same method as sunlight)
+                PropagateLightAcrossBoundary(chunk, neighborChunk, dx, dz);
             }
         }
     }
 
-    private void PropagateBlockLightAcrossBoundary(ChunkEntity fromChunk, ChunkEntity toChunk, int dx, int dz)
-    {
-        // Similar to sunlight propagation but for block lights
-        int fromStartX, fromEndX, fromStartZ, fromEndZ;
-        int toStartX, toEndX, toStartZ, toEndZ;
 
-        if (dx == 1) // fromChunk is west of toChunk
-        {
-            fromStartX = ChunkEntity.Size - 1;
-            fromEndX = ChunkEntity.Size - 1;
-            toStartX = 0;
-            toEndX = 0;
-            fromStartZ = 0;
-            fromEndZ = ChunkEntity.Size - 1;
-            toStartZ = 0;
-            toEndZ = ChunkEntity.Size - 1;
-        }
-        else if (dx == -1) // fromChunk is east of toChunk
-        {
-            fromStartX = 0;
-            fromEndX = 0;
-            toStartX = ChunkEntity.Size - 1;
-            toEndX = ChunkEntity.Size - 1;
-            fromStartZ = 0;
-            fromEndZ = ChunkEntity.Size - 1;
-            toStartZ = 0;
-            toEndZ = ChunkEntity.Size - 1;
-        }
-        else if (dz == 1) // fromChunk is north of toChunk
-        {
-            fromStartZ = ChunkEntity.Size - 1;
-            fromEndZ = ChunkEntity.Size - 1;
-            toStartZ = 0;
-            toEndZ = 0;
-            fromStartX = 0;
-            fromEndX = ChunkEntity.Size - 1;
-            toStartX = 0;
-            toEndX = ChunkEntity.Size - 1;
-        }
-        else // dz == -1, fromChunk is south of toChunk
-        {
-            fromStartZ = 0;
-            fromEndZ = 0;
-            toStartZ = ChunkEntity.Size - 1;
-            toEndZ = ChunkEntity.Size - 1;
-            fromStartX = 0;
-            fromEndX = ChunkEntity.Size - 1;
-            toStartX = 0;
-            toEndX = ChunkEntity.Size - 1;
-        }
-
-        var fromLightLevels = fromChunk.LightLevels;
-        var toLightLevels = toChunk.LightLevels;
-
-        // Propagate light from boundary blocks
-        for (int x = fromStartX; x <= fromEndX; x++)
-        {
-            for (int z = fromStartZ; z <= fromEndZ; z++)
-            {
-                for (int y = 0; y < ChunkEntity.Height; y++)
-                {
-                    var fromIndex = ChunkEntity.GetIndex(x, y, z);
-                    var fromLight = fromLightLevels[fromIndex];
-
-                    if (fromLight > 1)
-                    {
-                        var toX = dx == 0 ? x : (dx == 1 ? toStartX : toEndX);
-                        var toZ = dz == 0 ? z : (dz == 1 ? toStartZ : toEndZ);
-                        var toIndex = ChunkEntity.GetIndex(toX, y, toZ);
-
-                        var toBlock = toChunk.GetBlock(toX, y, toZ);
-                        var reduction = (toBlock != null && toBlock.BlockType != BlockType.Air) ? (byte)15 : (byte)1;
-
-                        var propagatedLight = (byte)Math.Max(0, fromLight - reduction);
-                        if (propagatedLight > toLightLevels[toIndex])
-                        {
-                            toLightLevels[toIndex] = propagatedLight;
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     private void CalculateSunlight(ChunkEntity chunk, byte[] lightLevels)
     {
@@ -395,11 +293,13 @@ public class ChunkLightSystem
                         // Solid blocks get current light but reduce it for blocks below
                         lightLevels[index] = Math.Max(lightLevels[index], Math.Max(currentLight, MinAmbientLight));
 
-                        var blockDef = SquidCraftClientContext.BlockManagerService.GetBlockDefinition(block.BlockType);
-                        if (blockDef?.IsTransparent ?? false)
+                        // Use cached opacity for performance
+                        byte opacity = BlockOpacity.TryGetValue(block.BlockType, out var op) ? op : (byte)15;
+                        
+                        if (opacity <= 2)
                         {
-                            // Transparent blocks reduce light by 2, but not below ambient
-                            currentLight = (byte)Math.Max(MinAmbientLight, currentLight - 2);
+                            // Transparent/semi-transparent blocks reduce light slightly
+                            currentLight = (byte)Math.Max(MinAmbientLight, currentLight - opacity);
                         }
                         else
                         {
@@ -418,12 +318,6 @@ public class ChunkLightSystem
 
     private void CalculateBlockLights(ChunkEntity chunk, byte[] lightLevels)
     {
-        // Light sources and their emission levels
-        var lightSources = new Dictionary<BlockType, byte>
-        {
-            { BlockType.Water, 8 }, // Water glows
-        };
-
         // Find all light sources and propagate their light
         for (int x = 0; x < ChunkEntity.Size; x++)
         {
@@ -434,7 +328,7 @@ public class ChunkLightSystem
                     var index = ChunkEntity.GetIndex(x, y, z);
                     var block = chunk.Blocks[index];
 
-                    if (block != null && lightSources.TryGetValue(block.BlockType, out var emissionLevel))
+                    if (block != null && LightSources.TryGetValue(block.BlockType, out var emissionLevel))
                     {
                         // This block emits light - propagate it
                         PropagateLightFromSource(chunk, lightLevels, x, y, z, emissionLevel);

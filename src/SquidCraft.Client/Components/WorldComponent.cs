@@ -295,6 +295,7 @@ public sealed class WorldComponent : IDisposable
             (chunk, x, y, z, block) =>
             {
                 chunk.SetBlock(x, y, z, block);
+                chunk.IsLightingDirty = true;
                 var chunkPos = new SysVector3(chunk.Position.X, chunk.Position.Y, chunk.Position.Z);
                 if (_chunks.TryGetValue(chunkPos, out var chunkComponent))
                 {
