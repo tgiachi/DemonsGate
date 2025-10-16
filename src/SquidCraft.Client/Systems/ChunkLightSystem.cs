@@ -22,12 +22,14 @@ public class ChunkLightSystem
         { BlockType.Dirt, 15 },
         { BlockType.Grass, 15 },
         { BlockType.Bedrock, 15 },
-        { BlockType.Snow, 2 }, // Snow is semi-transparent
-        { BlockType.Ice, 1 }, // Ice is transparent
+        { BlockType.Snow, 2 },
+        { BlockType.Ice, 1 },
         { BlockType.Moss, 15 },
         { BlockType.Wood, 15 },
-        { BlockType.Leaves, 1 }, // Leaves filter light but don't block completely
+        { BlockType.Leaves, 1 },
         { BlockType.Water, 2 },
+        { BlockType.TallGrass, 1 },
+        { BlockType.Flower, 1 },
     };
 
     // Light sources and their emission levels

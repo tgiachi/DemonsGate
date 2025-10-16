@@ -57,5 +57,14 @@ public enum BlockType : byte
     /// </summary>
     Water,
 
+    /// <summary>
+    /// Tall grass - billboard decoration.
+    /// </summary>
+    TallGrass,
+
+    /// <summary>
+    /// Flower - billboard decoration.
+    /// </summary>
+    Flower,
 
 }

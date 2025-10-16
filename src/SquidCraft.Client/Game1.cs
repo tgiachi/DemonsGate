@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Serilog;
 using SquidCraft.Client.Components;
+using SquidCraft.Client.Components.Networks;
 using SquidCraft.Client.Context;
 using SquidCraft.Client.Data;
 using SquidCraft.Client.Services;
@@ -13,6 +14,7 @@ using SquidCraft.Game.Data.Types;
 using SquidCraft.Game.Data.Primitives;
 using SquidCraft.Game.Data.Assets;
 using SquidCraft.Game.Data.Context;
+using SquidCraft.Services.Data.Config.Sections;
 
 namespace SquidCraft.Client;
 
@@ -25,9 +27,12 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private WorldComponent? _worldComponent;
     private CameraComponent? _cameraComponent;
     private BlockOutlineComponent? _blockOutlineComponent;
-    private float _progressTimer;
     private ChatBoxComponent? _chatBox;
     private static readonly RasterizerState ScissorRasterizerState = new() { ScissorTestEnable = true };
+
+    private NetworkClientComponent _networkClientComponent;
+
+
 
 
     public Game1()
@@ -192,6 +197,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _chatBox.AddSystemMessage("Welcome to SquidCraft!");
         _chatBox.AddSystemMessage("Press T to open chat");
         _chatBox.AddMessage("Use /help to see available commands", ChatMessageType.Info);
+
+        _networkClientComponent = new NetworkClientComponent(new GameNetworkConfig());
+
     }
 
     protected override void Update(GameTime gameTime)
@@ -209,6 +217,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
         }
 
         IsMouseVisible = !(_cameraComponent?.IsMouseCaptured ?? false);
+
+        _networkClientComponent.Update(gameTime);
 
 
 
@@ -331,6 +341,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
+        _networkClientComponent.Draw(gameTime, _spriteBatch);
+
         var viewportBounds = GraphicsDevice.Viewport.Bounds;
         GraphicsDevice.ScissorRectangle = viewportBounds;
 
@@ -388,6 +400,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
         var chunk = new ChunkEntity(chunkOrigin);
         long id = (chunkX * 1000000L) + (chunkZ * 1000L) + 1;
 
+        var random = new Random((chunkX * 73856093) ^ (chunkZ * 19349663));
+
         for (int x = 0; x < ChunkEntity.Size; x++)
         {
             for (int z = 0; z < ChunkEntity.Size; z++)
@@ -407,6 +421,18 @@ public class Game1 : Microsoft.Xna.Framework.Game
                     else if (y == 60)
                     {
                         blockType = BlockType.Grass;
+                    }
+                    else if (y == 61)
+                    {
+                        var rand = random.NextDouble();
+                        if (rand < 0.15)
+                        {
+                            blockType = BlockType.TallGrass;
+                        }
+                        else if (rand < 0.20)
+                        {
+                            blockType = BlockType.Flower;
+                        }
                     }
 
                     if (blockType != BlockType.Air)

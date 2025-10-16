@@ -13,6 +13,8 @@ public class BlockDefinitionData
 
     public bool IsSolid { get; set; }
 
+    public bool IsBillboard { get; set; }
+
     public float Height { get; set; } = 1.0f;
 
     public void AddSide(SideType type, string side)

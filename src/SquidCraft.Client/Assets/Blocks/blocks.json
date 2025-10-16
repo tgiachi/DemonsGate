@@ -153,5 +153,37 @@
       "East": "2",
       "West": "2"
     }
+  },
+  {
+    "BlockType": "TallGrass",
+    "IsTransparent": true,
+    "IsLiquid": false,
+    "IsSolid": false,
+    "IsBillboard": true,
+    "Height": 0.8,
+    "Sides": {
+      "Top": "181",
+      "Bottom": "181",
+      "North": "181",
+      "South": "181",
+      "East": "181",
+      "West": "181"
+    }
+  },
+  {
+    "BlockType": "Flower",
+    "IsTransparent": true,
+    "IsLiquid": false,
+    "IsSolid": false,
+    "IsBillboard": true,
+    "Height": 0.6,
+    "Sides": {
+      "Top": "206",
+      "Bottom": "206",
+      "North": "206",
+      "South": "206",
+      "East": "206",
+      "West": "206"
+    }
   }
 ]

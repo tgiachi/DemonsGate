@@ -215,7 +215,9 @@ public sealed class WorldComponent : IDisposable
             return false;
         }
 
-        return true;
+        // Controlla la proprietà IsSolid della definizione del blocco
+        var definition = Context.SquidCraftClientContext.BlockManagerService.GetBlockDefinition(block.BlockType);
+        return definition?.IsSolid ?? false;
     }
 
     /// <summary>

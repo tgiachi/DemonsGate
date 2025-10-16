@@ -58,6 +58,7 @@ public sealed class ChunkComponent : Base3dComponent
     private readonly GraphicsDevice _graphicsDevice;
     private readonly BlockManagerService _blockManagerService;
     private readonly BasicEffect _effect;
+    private readonly AlphaTestEffect _alphaTestEffect;
     private readonly ILogger _logger = Log.ForContext<ChunkComponent>();
 
     private VertexBuffer? _vertexBuffer;
@@ -102,6 +103,13 @@ public sealed class ChunkComponent : Base3dComponent
             TextureEnabled = true,
             LightingEnabled = false,
             VertexColorEnabled = true
+        };
+
+        _alphaTestEffect = new AlphaTestEffect(_graphicsDevice)
+        {
+            VertexColorEnabled = true,
+            AlphaFunction = CompareFunction.Greater,
+            ReferenceAlpha = 128
         };
     }
 
@@ -352,18 +360,40 @@ public sealed class ChunkComponent : Base3dComponent
         var previousSamplerState = _graphicsDevice.SamplerStates[0];
 
         var needsBlending = RenderTransparentBlocks || _opacity < 1f;
-        _graphicsDevice.BlendState = needsBlending ? BlendState.AlphaBlend : BlendState.Opaque;
-        _graphicsDevice.DepthStencilState = DepthStencilState.Default;
-        _graphicsDevice.RasterizerState = RasterizerState.CullNone;
-        _graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
-
+        
         _graphicsDevice.SetVertexBuffer(_vertexBuffer);
         _graphicsDevice.Indices = _indexBuffer;
 
-        foreach (var pass in _effect.CurrentTechnique.Passes)
+        if (needsBlending)
         {
-            pass.Apply();
-            _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _primitiveCount);
+            _graphicsDevice.BlendState = BlendState.AlphaBlend;
+            _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+            _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+            _graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+
+            _alphaTestEffect.World = world;
+            _alphaTestEffect.View = view;
+            _alphaTestEffect.Projection = projection;
+            _alphaTestEffect.Texture = _texture;
+
+            foreach (var pass in _alphaTestEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _primitiveCount);
+            }
+        }
+        else
+        {
+            _graphicsDevice.BlendState = BlendState.Opaque;
+            _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+            _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+            _graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+
+            foreach (var pass in _effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _primitiveCount);
+            }
         }
 
         _graphicsDevice.SetVertexBuffer(null);
@@ -382,6 +412,7 @@ public sealed class ChunkComponent : Base3dComponent
         {
             ClearGeometry();
             _effect.Dispose();
+            _alphaTestEffect.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -424,37 +455,64 @@ public sealed class ChunkComponent : Base3dComponent
 
                     var blockHeight = definition.Height;
 
-                    foreach (var side in AllSides)
+                    if (definition.IsBillboard)
                     {
-                        if (!ShouldRenderFace(x, y, z, side))
+                        var region = _blockManagerService.GetBlockSide(block.BlockType, SideType.North);
+                        if (region != null)
                         {
-                            continue;
+                            atlasTexture ??= region.Texture;
+                            var uv = ExtractUv(region);
+                            var faceColor = CalculateFaceColor(x, y, z, SideType.Top);
+
+                            var billboardVertices = GetBillboardVertices(x, y, z, uv, faceColor, blockHeight);
+                            var baseIndex = vertices.Count;
+                            
+                            vertices.AddRange(billboardVertices);
+                            
+                            indices.AddRange(new[]
+                            {
+                                baseIndex, baseIndex + 1, baseIndex + 2,
+                                baseIndex + 2, baseIndex + 3, baseIndex,
+                                
+                                baseIndex + 4, baseIndex + 5, baseIndex + 6,
+                                baseIndex + 6, baseIndex + 7, baseIndex + 4
+                            });
                         }
-
-                        var region = _blockManagerService.GetBlockSide(block.BlockType, side);
-
-                        if (region == null)
+                    }
+                    else
+                    {
+                        foreach (var side in AllSides)
                         {
-                            continue;
+                            if (!ShouldRenderFace(x, y, z, side))
+                            {
+                                continue;
+                            }
+
+                            var region = _blockManagerService.GetBlockSide(block.BlockType, side);
+
+                            if (region == null)
+                            {
+                                continue;
+                            }
+
+                            atlasTexture ??= region.Texture;
+
+                            var uv = ExtractUv(region);
+                            var faceColor = CalculateFaceColor(x, y, z, side);
+                            var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor, blockHeight);
+
+                            var baseIndex = vertices.Count;
+                            vertices.AddRange(faceVertices);
+                            indices.AddRange(new[]
+                            {
+                                baseIndex,
+                                baseIndex + 1,
+                                baseIndex + 2,
+                                baseIndex + 2,
+                                baseIndex + 3,
+                                baseIndex
+                            });
                         }
-
-                        atlasTexture ??= region.Texture;
-
-                        var uv = ExtractUv(region);
-                        var faceColor = CalculateFaceColor(x, y, z, side);
-                        var faceVertices = GetFaceVertices(side, x, y, z, uv, faceColor, blockHeight);
-
-                        var baseIndex = vertices.Count;
-                        vertices.AddRange(faceVertices);
-                        indices.AddRange(new[]
-                        {
-                            baseIndex,
-                            baseIndex + 1,
-                            baseIndex + 2,
-                            baseIndex + 2,
-                            baseIndex + 3,
-                            baseIndex
-                        });
                     }
                 }
             }
@@ -736,6 +794,30 @@ public sealed class ChunkComponent : Base3dComponent
                 new VertexPositionColorTexture(new Vector3(x, y1, z), color, new Vector2(max.X, min.Y))
             },
             _ => throw new ArgumentOutOfRangeException(nameof(side), side, "Unsupported side type")
+        };
+    }
+
+    private static VertexPositionColorTexture[] GetBillboardVertices(int blockX, int blockY, int blockZ, (Vector2 Min, Vector2 Max) uv, Color color, float height = 1.0f)
+    {
+        var (min, max) = uv;
+        float x = blockX + 0.5f;
+        float y = blockY;
+        float z = blockZ + 0.5f;
+        float y1 = blockY + height;
+        
+        const float offset = 0.4f;
+
+        return new[]
+        {
+            new VertexPositionColorTexture(new Vector3(x - offset, y1, z - offset), color, new Vector2(min.X, min.Y)),
+            new VertexPositionColorTexture(new Vector3(x - offset, y, z - offset), color, new Vector2(min.X, max.Y)),
+            new VertexPositionColorTexture(new Vector3(x + offset, y, z + offset), color, new Vector2(max.X, max.Y)),
+            new VertexPositionColorTexture(new Vector3(x + offset, y1, z + offset), color, new Vector2(max.X, min.Y)),
+            
+            new VertexPositionColorTexture(new Vector3(x + offset, y1, z - offset), color, new Vector2(min.X, min.Y)),
+            new VertexPositionColorTexture(new Vector3(x + offset, y, z - offset), color, new Vector2(min.X, max.Y)),
+            new VertexPositionColorTexture(new Vector3(x - offset, y, z + offset), color, new Vector2(max.X, max.Y)),
+            new VertexPositionColorTexture(new Vector3(x - offset, y1, z + offset), color, new Vector2(max.X, min.Y))
         };
     }
 
