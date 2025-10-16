@@ -23,6 +23,8 @@ public class PlayerNetworkSession : IDisposable
 
     public int SessionId { get; set; }
 
+    public bool IsLoggedIn { get; set; }
+
     public DateTime LastPing { get; set; }
 
     private Vector3 _position;

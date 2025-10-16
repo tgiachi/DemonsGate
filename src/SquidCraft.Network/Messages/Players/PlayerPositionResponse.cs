@@ -1,3 +1,4 @@
+using System.Numerics;
 using MemoryPack;
 using SquidCraft.Network.Attributes;
 using SquidCraft.Network.Messages.Base;
@@ -10,6 +11,10 @@ namespace SquidCraft.Network.Messages.Players;
 public partial class PlayerPositionResponse : BaseSquidCraftGameMessage
 {
     public bool Success { get; set; }
+
+    public Vector3 Position { get; set; }
+
+    public Vector3 Rotation { get; set; }
 
     public PlayerPositionResponse() : base(NetworkMessageType.PlayerPositionResponse)
     {

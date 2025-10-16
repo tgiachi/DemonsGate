@@ -10,6 +10,7 @@ using SquidCraft.Network.Extensions;
 using SquidCraft.Network.Messages.Auth;
 using SquidCraft.Network.Messages.Pings;
 using SquidCraft.Network.Generated;
+using SquidCraft.Network.Types;
 using SquidCraft.Server;
 using SquidCraft.Services.Context;
 using SquidCraft.Services.Data.Config.Options;
@@ -130,7 +131,7 @@ await ConsoleApp.RunAsync(
         {
             var networkManager = container.Resolve<INetworkManagerService>();
 
-            networkManager.AddListener<LoginHandler, LoginRequestMessage>();
+            networkManager.AddListener<LoginRequestMessage>(NetworkMessageType.LoginRequest, new LoginHandler());
 
 
 

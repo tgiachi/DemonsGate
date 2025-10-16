@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Serilog;
+using SquidCraft.Client.Systems;
 using SquidCraft.Game.Data.Primitives;
 using XnaVector3 = Microsoft.Xna.Framework.Vector3;
 using SysVector3 = System.Numerics.Vector3;
@@ -14,30 +15,24 @@ namespace SquidCraft.Client.Components;
 public sealed class WorldComponent : IDisposable
 {
     private readonly ILogger _logger = Log.ForContext<WorldComponent>();
-    private readonly GraphicsDevice _graphicsDevice;
     private readonly ConcurrentDictionary<SysVector3, ChunkComponent> _chunks = new();
     private readonly ConcurrentQueue<(SysVector3 Position, ChunkEntity Chunk)> _pendingChunks = new();
     private readonly Queue<ChunkComponent> _meshBuildQueue = new();
 
-    private readonly CameraComponent _camera;
     private readonly Particle3dComponent _particleComponent;
     private readonly Systems.ChunkLightSystem _lightSystem;
     private readonly Systems.WaterSimulationSystem _waterSystem;
-    // private readonly DayNightCycle _dayNightCycle;
     private bool _isDisposed;
     private BoundingFrustum? _frustum;
     private (int X, int Z)? _lastPlayerChunk;
     // private Color _lastSunColor;
 
-    public WorldComponent(GraphicsDevice graphicsDevice, CameraComponent camera)
+    public WorldComponent(CameraComponent camera)
     {
-        _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
-        _camera = camera ?? throw new ArgumentNullException(nameof(camera));
+        Camera = camera ?? throw new ArgumentNullException(nameof(camera));
         _particleComponent = new Particle3dComponent();
-        _lightSystem = new Systems.ChunkLightSystem();
-        _waterSystem = new Systems.WaterSimulationSystem();
-        // _dayNightCycle = new DayNightCycle();
-        // _lastSunColor = _dayNightCycle.GetSunColor(); // Initialize with current sun color
+        _lightSystem = new ChunkLightSystem();
+        _waterSystem = new WaterSimulationSystem();
     }
 
     /// <summary>
@@ -46,7 +41,7 @@ public sealed class WorldComponent : IDisposable
     /// <param name="chunkX">The X coordinate of the chunk.</param>
     /// <param name="chunkZ">The Z coordinate of the chunk.</param>
     /// <returns>The generated chunk entity.</returns>
-    public delegate ChunkEntity ChunkGeneratorDelegate(int chunkX, int chunkZ);
+    public delegate ChunkEntity ChunkGeneratorHandler(int chunkX, int chunkZ);
 
     /// <summary>
     /// Delegate for asynchronous chunk generation.
@@ -54,22 +49,22 @@ public sealed class WorldComponent : IDisposable
     /// <param name="chunkX">The X coordinate of the chunk.</param>
     /// <param name="chunkZ">The Z coordinate of the chunk.</param>
     /// <returns>A task that represents the asynchronous operation, containing the generated chunk entity.</returns>
-    public delegate Task<ChunkEntity> ChunkGeneratorAsyncDelegate(int chunkX, int chunkZ);
-    
+    public delegate Task<ChunkEntity> ChunkGeneratorAsyncHandler(int chunkX, int chunkZ);
+
     /// <summary>
     /// Gets or sets the synchronous chunk generator delegate.
     /// </summary>
-    public ChunkGeneratorDelegate? ChunkGenerator { get; set; }
+    public ChunkGeneratorHandler? ChunkGenerator { get; set; }
 
     /// <summary>
     /// Gets or sets the asynchronous chunk generator delegate.
     /// </summary>
-    public ChunkGeneratorAsyncDelegate? ChunkGeneratorAsync { get; set; }
+    public ChunkGeneratorAsyncHandler? ChunkGeneratorAsync { get; set; }
 
     /// <summary>
     /// Gets the camera component used by the world.
     /// </summary>
-    public CameraComponent Camera => _camera;
+    public CameraComponent Camera { get; }
 
     /// <summary>
     /// Gets a read-only dictionary of loaded chunks.
@@ -256,7 +251,7 @@ public sealed class WorldComponent : IDisposable
 
         ProcessMeshBuildQueue();
 
-        _camera.Update(gameTime);
+        Camera.Update(gameTime);
 
         // Update day/night cycle
         // _dayNightCycle.Update(gameTime);
@@ -285,14 +280,14 @@ public sealed class WorldComponent : IDisposable
         // }
 
         // Update particle component with camera matrices
-        _particleComponent.View = _camera.View;
-        _particleComponent.Projection = _camera.Projection;
+        _particleComponent.View = Camera.View;
+        _particleComponent.Projection = Camera.Projection;
         _particleComponent.Update(gameTime);
 
         UpdateChunkLoading();
 
         UpdateBlockSelection();
-        
+
         UpdateWaterSimulation();
 
         foreach (var chunk in _chunks.Values)
@@ -324,12 +319,12 @@ public sealed class WorldComponent : IDisposable
         var chunkX = MathF.Floor(worldPos.X / ChunkEntity.Size) * ChunkEntity.Size;
         var chunkZ = MathF.Floor(worldPos.Z / ChunkEntity.Size) * ChunkEntity.Size;
         var chunkPos = new SysVector3(chunkX, 0f, chunkZ);
-        
+
         if (_chunks.TryGetValue(chunkPos, out var chunkComponent))
         {
             return chunkComponent.Chunk;
         }
-        
+
         return null;
     }
 
@@ -355,7 +350,7 @@ public sealed class WorldComponent : IDisposable
             return;
         }
 
-        var cameraPos = _camera.Position;
+        var cameraPos = Camera.Position;
         var playerChunkX = (int)MathF.Floor(cameraPos.X / ChunkEntity.Size);
         var playerChunkZ = (int)MathF.Floor(cameraPos.Z / ChunkEntity.Size);
 
@@ -394,7 +389,7 @@ public sealed class WorldComponent : IDisposable
                         var chunk = ChunkGenerator(x, z);
                         _ = AddChunkAsync(chunk);
                     }
-                    
+
                     loadedNewChunks = true;
                 }
             }
@@ -418,11 +413,11 @@ public sealed class WorldComponent : IDisposable
         try
         {
             _logger.Debug("Requesting chunk ({X}, {Z}) from server", chunkX, chunkZ);
-            
+
             var chunk = await ChunkGeneratorAsync!(chunkX, chunkZ);
-            
+
             await AddChunkAsync(chunk);
-            
+
             _logger.Debug("Chunk ({X}, {Z}) received from server", chunkX, chunkZ);
         }
         catch (Exception ex)
@@ -463,7 +458,7 @@ public sealed class WorldComponent : IDisposable
 
     private void UpdateBlockSelection()
     {
-        var ray = _camera.GetPickRay();
+        var ray = Camera.GetPickRay();
         SelectedBlock = RaycastBlock(ray);
     }
 
@@ -500,7 +495,7 @@ public sealed class WorldComponent : IDisposable
                     blockZ >= 0 && blockZ < ChunkEntity.Size)
                 {
                     var block = chunk.Chunk.GetBlock(blockX, blockY, blockZ);
-                    
+
                     if (block != null && block.BlockType != Game.Data.Types.BlockType.Air)
                     {
                         return (chunk, blockX, blockY, blockZ);
@@ -605,7 +600,7 @@ public sealed class WorldComponent : IDisposable
 
             _logger.Debug("Cross-chunk lighting recalculated for {Count} chunks", affectedChunks.Count);
         }
-        
+
         QueueWaterUpdatesAroundBlock(chunk.Chunk, blockX, blockY, blockZ);
     }
 
@@ -696,10 +691,10 @@ public sealed class WorldComponent : IDisposable
     {
         if (EnableFrustumCulling)
         {
-            _frustum = new BoundingFrustum(_camera.View * _camera.Projection);
+            _frustum = new BoundingFrustum(Camera.View * Camera.Projection);
         }
 
-        var cameraPosition = _camera.Position;
+        var cameraPosition = Camera.Position;
         var visibleChunks = 0;
         var culledChunks = 0;
 
@@ -771,7 +766,7 @@ public sealed class WorldComponent : IDisposable
             return;
         }
 
-        chunk.DrawWithCamera(gameTime, _camera.View, _camera.Projection);
+        chunk.DrawWithCamera(gameTime, Camera.View, Camera.Projection);
     }
 
     private void ProcessPendingChunks()

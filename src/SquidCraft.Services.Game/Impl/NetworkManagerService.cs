@@ -16,7 +16,7 @@ namespace SquidCraft.Services.Game.Impl;
 
 public class NetworkManagerService : INetworkManagerService
 {
-    private readonly IContainer _container;
+
 
     public event INetworkManagerService.PlayerSessionAddedHandler? PlayerSessionAdded;
     public event INetworkManagerService.PlayerSessionRemovedHandler? PlayerSessionRemoved;
@@ -38,12 +38,11 @@ public class NetworkManagerService : INetworkManagerService
 
 
     public NetworkManagerService(
-        INetworkService networkService, IEventLoopService eventLoopService, ITimerService timerService, IContainer container
+        INetworkService networkService, IEventLoopService eventLoopService, ITimerService timerService
     )
     {
         _networkService = networkService;
         _eventLoopService = eventLoopService;
-        _container = container;
         timerService.RegisterTimerAsync("pingClient", 10 * 1000, OnPingClients, 0, true);
         timerService.RegisterTimerAsync("disconnectDeadClients", 15 * 1000, DisconnectDeadClients, 0, true);
         _networkService.AddMessageListener<PongMessage>(OnPongMessage);
@@ -187,19 +186,7 @@ public class NetworkManagerService : INetworkManagerService
         );
     }
 
-    public void AddListener<TMessageListener, TMessage>() where TMessageListener : IMessageHandler<TMessage>, new()
-        where TMessage : ISquidCraftMessage, new()
-    {
-        if (!_container.IsRegistered<TMessageListener>())
-        {
-            _container.Register<TMessageListener>(Reuse.Singleton);
-        }
 
-        var message = new TMessage();
-        var handler = _container.Resolve<TMessageListener>();
-
-        AddListener(message.MessageType, handler);
-    }
 
     /// <inheritdoc/>
     public void AddListener<TMessage>(NetworkMessageType messageType, IMessageHandler<TMessage> handler)
@@ -333,7 +320,7 @@ public class NetworkManagerService : INetworkManagerService
                     {
                         // Typed func listener
                         var paramType = d.Method.GetParameters()[1].ParameterType;
-                        if (paramType.IsAssignableFrom(message.GetType()))
+                        if (paramType.IsInstanceOfType(message))
                         {
                             var castedMessage = Convert.ChangeType(message, paramType);
                             await (Task)d.DynamicInvoke(session, castedMessage);
@@ -344,7 +331,7 @@ public class NetworkManagerService : INetworkManagerService
                     {
                         // IMessageHandler<TMessage> listener
                         var messageType = listenerObj.GetType().GetGenericArguments()[0];
-                        if (messageType.IsAssignableFrom(message.GetType()))
+                        if (messageType.IsInstanceOfType(message))
                         {
                             var castedMessage = Convert.ChangeType(message, messageType);
                             var method = listenerObj.GetType().GetMethod("HandleAsync");

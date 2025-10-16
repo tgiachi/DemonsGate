@@ -24,14 +24,6 @@ public class NetworkManagerServiceTests
         _eventLoopService = Substitute.For<IEventLoopService>();
         _timerService = Substitute.For<ITimerService>();
 
-        _eventLoopService.EnqueueTask(Arg.Any<string>(), Arg.Any<Func<Task>>())
-            .Returns(callInfo =>
-            {
-                var taskFunc = callInfo.Arg<Func<Task>>();
-                taskFunc.Invoke().GetAwaiter().GetResult();
-                return Guid.NewGuid().ToString();
-            });
-
         _service = new NetworkManagerService(_networkService, _eventLoopService, _timerService);
     }
 

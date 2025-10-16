@@ -42,10 +42,6 @@ public interface INetworkManagerService : ISquidCraftStartableService
 
     Task SendMessages(PlayerNetworkSession session, params ISquidCraftMessage[] messages);
 
-
-    void AddListener<TMessageListener, TMessage>() where TMessageListener : IMessageHandler<TMessage>, new()
-        where TMessage : ISquidCraftMessage, new();
-
     /// <summary>
     /// Adds a typed listener for a specific message type using an interface.
     /// </summary>

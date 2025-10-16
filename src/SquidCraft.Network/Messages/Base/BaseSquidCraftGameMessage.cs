@@ -27,5 +27,6 @@ public abstract class BaseSquidCraftGameMessage : ISquidCraftMessage
     protected BaseSquidCraftGameMessage(NetworkMessageType type)
     {
         MessageType = type;
+        RequestId = Guid.NewGuid();
     }
 }
